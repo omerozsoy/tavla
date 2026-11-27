@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Models\MatchResult;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\Analysis\AnalysisOrchestrator;
 use App\Support\PrPool;
+use App\Support\RankService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Career PR (PR Sıralaması) — oyuncunun TÜM geçerli maçlarini TEK büyük analiz seti gibi
@@ -39,7 +42,7 @@ class CareerPrService
             ->whereNotNull('room_code')       // insan/online maç -> tüm bot (pvb) maçlari HARIÇ
             // MİN-KARAR KAPISI: < MIN_PR_DECISIONS kararlı maçlar PR gürültüsü (2-3 kararda 300+) ->
             // career toplamına GİRMEZ (tek maç ekranında da PR'ları null = "—").
-            ->where('pr_decisions', '>=', \App\Services\Analysis\AnalysisOrchestrator::MIN_PR_DECISIONS)
+            ->where('pr_decisions', '>=', AnalysisOrchestrator::MIN_PR_DECISIONS)
             // HAVUZ kariyer: havuz kaybı hesaplanabilen maçlar — pr_equity_lost (review-yazımı) VEYA
             // otoriter pooled gnubg_pr (fallback: gnubg_pr×pr_decisions/500). gnubg analizi olan maçlar.
             ->where(fn ($q) => $q->whereNotNull('pr_equity_lost')->orWhereNotNull('gnubg_pr'))
@@ -89,6 +92,10 @@ class CareerPrService
             'career_cube_decisions' => $cubeDec,
             'career_cube_equity_lost' => $cubePr !== null ? round($cubePr * $cubeWtot / self::SCALE, 4) : 0,
         ])->save();
+
+        // Yeni sistem AÇIKsa oyuncunun efektif rütbe önbelleğini (rank_key) tazele. KAPALIysa
+        // RankService hızlıca null döner (ek sorgu yok). Analiz her tamamlandığında burada güncel kalır.
+        RankService::refresh($user);
     }
 
     /** TÜM oyuncular icin yeniden kur (chunk -> production'da timeout/memory güvenli). Sayi döner. */
@@ -111,7 +118,7 @@ class CareerPrService
      */
     public function backfillTotalsFromLog(int $chunk = 500): int
     {
-        if (! \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'pr_equity_lost')) {
+        if (! Schema::hasColumn('match_results', 'pr_equity_lost')) {
             return 0;
         }
         $updated = 0;

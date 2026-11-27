@@ -32,6 +32,7 @@ export const BADGE_MAP: Record<string, BadgeDef> = Object.fromEntries(
 export interface Division {
   min: number // rating alt esigi
   prMax: number // bu seviye icin en yuksek (en kotu) PR degeri
+  epMin: number // bu seviye icin gereken en az EP (tecrube; Σ mac hedef puani). Rookie=0.
   key: string
   icon: IconName
   color: string
@@ -39,27 +40,28 @@ export interface Division {
 
 // 20 kademe. Dusukten yuksege (rating). divisionOf en yuksek uyani secer.
 // prMax: o kademeye karsilik gelen en yuksek (yaklasik) PR esigi (PR dusuk = iyi).
+// epMin: o kademe icin gereken en az tecrube (EP). Kademe yukseldikce artar (plato olabilir).
 export const DIVISIONS: Division[] = [
-  { min: 0, prMax: Infinity, key: 'div.rookie', icon: 'medal', color: '#8a8377' },
-  { min: 1200, prMax: 40, key: 'div.novice', icon: 'medal', color: '#9aa3ab' },
-  { min: 1400, prMax: 30, key: 'div.beginner', icon: 'medal', color: '#a1663a' },
-  { min: 1450, prMax: 22, key: 'div.developing', icon: 'trophy', color: '#cd7f32' },
-  { min: 1500, prMax: 16.0, key: 'div.i3', icon: 'trophy', color: '#e6b422' },
-  { min: 1600, prMax: 14.0, key: 'div.i2', icon: 'trophy', color: '#e6b422' },
-  { min: 1700, prMax: 12.0, key: 'div.i1', icon: 'trophy', color: '#e6b422' },
-  { min: 1800, prMax: 10.0, key: 'div.a3', icon: 'trophy', color: '#3fb6a8' },
-  { min: 1900, prMax: 8.5, key: 'div.a2', icon: 'trophy', color: '#3fb6a8' },
-  { min: 1950, prMax: 7.5, key: 'div.a1', icon: 'trophy', color: '#3fb6a8' },
-  { min: 2000, prMax: 6.5, key: 'div.m3', icon: 'crown', color: '#7b6fd4' },
-  { min: 2050, prMax: 5.5, key: 'div.m2', icon: 'crown', color: '#7b6fd4' },
-  { min: 2100, prMax: 4.75, key: 'div.m1', icon: 'crown', color: '#7b6fd4' },
-  { min: 2150, prMax: 4.0, key: 'div.g3', icon: 'crown', color: '#c9563f' },
-  { min: 2200, prMax: 3.5, key: 'div.g2', icon: 'crown', color: '#c9563f' },
-  { min: 2250, prMax: 3.0, key: 'div.g1', icon: 'crown', color: '#c9563f' },
-  { min: 2300, prMax: 2.75, key: 'div.g0', icon: 'crown', color: '#c9563f' },
-  { min: 2350, prMax: 2.5, key: 'div.sgm3', icon: 'crown', color: '#ffcf40' },
-  { min: 2400, prMax: 2.25, key: 'div.sgm2', icon: 'crown', color: '#ffcf40' },
-  { min: 2500, prMax: 2.0, key: 'div.sgm1', icon: 'crown', color: '#ffcf40' },
+  { min: 0, prMax: Infinity, epMin: 0, key: 'div.rookie', icon: 'medal', color: '#8a8377' },
+  { min: 1200, prMax: 40, epMin: 0, key: 'div.novice', icon: 'medal', color: '#9aa3ab' },
+  { min: 1400, prMax: 30, epMin: 0, key: 'div.beginner', icon: 'medal', color: '#a1663a' },
+  { min: 1450, prMax: 22, epMin: 20, key: 'div.developing', icon: 'trophy', color: '#cd7f32' },
+  { min: 1500, prMax: 16.0, epMin: 50, key: 'div.i3', icon: 'trophy', color: '#e6b422' },
+  { min: 1600, prMax: 14.0, epMin: 100, key: 'div.i2', icon: 'trophy', color: '#e6b422' },
+  { min: 1700, prMax: 12.0, epMin: 150, key: 'div.i1', icon: 'trophy', color: '#e6b422' },
+  { min: 1800, prMax: 10.0, epMin: 200, key: 'div.a3', icon: 'trophy', color: '#3fb6a8' },
+  { min: 1900, prMax: 8.5, epMin: 250, key: 'div.a2', icon: 'trophy', color: '#3fb6a8' },
+  { min: 1950, prMax: 7.5, epMin: 300, key: 'div.a1', icon: 'trophy', color: '#3fb6a8' },
+  { min: 2000, prMax: 6.5, epMin: 300, key: 'div.m3', icon: 'crown', color: '#7b6fd4' },
+  { min: 2050, prMax: 5.5, epMin: 350, key: 'div.m2', icon: 'crown', color: '#7b6fd4' },
+  { min: 2100, prMax: 4.75, epMin: 400, key: 'div.m1', icon: 'crown', color: '#7b6fd4' },
+  { min: 2150, prMax: 4.0, epMin: 400, key: 'div.g3', icon: 'crown', color: '#c9563f' },
+  { min: 2200, prMax: 3.5, epMin: 450, key: 'div.g2', icon: 'crown', color: '#c9563f' },
+  { min: 2250, prMax: 3.0, epMin: 500, key: 'div.g1', icon: 'crown', color: '#c9563f' },
+  { min: 2300, prMax: 2.75, epMin: 500, key: 'div.g0', icon: 'crown', color: '#c9563f' },
+  { min: 2350, prMax: 2.5, epMin: 600, key: 'div.sgm3', icon: 'crown', color: '#ffcf40' },
+  { min: 2400, prMax: 2.25, epMin: 600, key: 'div.sgm2', icon: 'crown', color: '#ffcf40' },
+  { min: 2500, prMax: 2.0, epMin: 600, key: 'div.sgm1', icon: 'crown', color: '#ffcf40' },
 ]
 
 // ---- Rating esiklerinin CALISMA ZAMANI hidrasyonu ----
@@ -126,9 +128,36 @@ export function applyPrThresholds(prMax: Record<string, unknown>): boolean {
   return true
 }
 
+/**
+ * Sunucudan gelen MIN EP esiklerini uygula. EP kademe yukseldikce AZALMAYAN olmali (plato OK);
+ * azalan bir deger tumuyle REDDEDILIR. Rookie dahil tum kademeler sayisaldir (0+).
+ * @returns uygulandi mi
+ */
+export function applyEpThresholds(epMin: Record<string, unknown>): boolean {
+  const next = DIVISIONS.map((d) => {
+    const v = epMin[d.key]
+    return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.round(v) : d.epMin
+  })
+  for (let i = 1; i < next.length; i++) if (next[i] < next[i - 1]) return false // azalmayan
+  DIVISIONS.forEach((d, i) => {
+    d.epMin = next[i]
+  })
+  const byKey = Object.fromEntries(DIVISIONS.map((d) => [d.key, d.epMin]))
+  for (const m of MAIN_DIVISIONS) {
+    const tier = MAIN_TO_TIER[m.key]
+    if (tier !== undefined && byKey[tier] !== undefined) m.epMin = byKey[tier]
+  }
+  return true
+}
+
 /** Yururlukteki esikler (anahtar => min) — onbellege yazmak icin. */
 export function rankThresholds(): Record<string, number> {
   return Object.fromEntries(DIVISIONS.map((d) => [d.key, d.min]))
+}
+
+/** Yururlukteki min EP esikleri (anahtar => epMin) — onbellege yazmak icin. */
+export function epThresholds(): Record<string, number> {
+  return Object.fromEntries(DIVISIONS.map((d) => [d.key, d.epMin]))
 }
 
 /** Yururlukteki PR ust esikleri (anahtar => prMax; rookie=Infinity HARIC — JSON'a yazilamaz). */
@@ -147,15 +176,15 @@ export function divisionOf(rating: number): Division {
 
 // Ana rutbeler (alt-tier'lar S1/S2, I1/I2 vb. katlanmis) - Lig sekmesi bunlari kullanir.
 export const MAIN_DIVISIONS: Division[] = [
-  { min: 0, prMax: Infinity, key: 'div.rookie', icon: 'medal', color: '#8a8377' },
-  { min: 1200, prMax: 40, key: 'div.novice', icon: 'medal', color: '#9aa3ab' },
-  { min: 1400, prMax: 30, key: 'div.beginner', icon: 'medal', color: '#a1663a' },
-  { min: 1450, prMax: 22, key: 'div.developing', icon: 'trophy', color: '#cd7f32' },
-  { min: 1500, prMax: 16.0, key: 'div.intermediate', icon: 'trophy', color: '#e6b422' },
-  { min: 1800, prMax: 10.0, key: 'div.advanced', icon: 'trophy', color: '#3fb6a8' },
-  { min: 2000, prMax: 6.5, key: 'div.master', icon: 'crown', color: '#7b6fd4' },
-  { min: 2150, prMax: 4.0, key: 'div.grandmaster', icon: 'crown', color: '#c9563f' },
-  { min: 2350, prMax: 2.5, key: 'div.superGrandmaster', icon: 'crown', color: '#ffcf40' },
+  { min: 0, prMax: Infinity, epMin: 0, key: 'div.rookie', icon: 'medal', color: '#8a8377' },
+  { min: 1200, prMax: 40, epMin: 0, key: 'div.novice', icon: 'medal', color: '#9aa3ab' },
+  { min: 1400, prMax: 30, epMin: 0, key: 'div.beginner', icon: 'medal', color: '#a1663a' },
+  { min: 1450, prMax: 22, epMin: 20, key: 'div.developing', icon: 'trophy', color: '#cd7f32' },
+  { min: 1500, prMax: 16.0, epMin: 50, key: 'div.intermediate', icon: 'trophy', color: '#e6b422' },
+  { min: 1800, prMax: 10.0, epMin: 200, key: 'div.advanced', icon: 'trophy', color: '#3fb6a8' },
+  { min: 2000, prMax: 6.5, epMin: 300, key: 'div.master', icon: 'crown', color: '#7b6fd4' },
+  { min: 2150, prMax: 4.0, epMin: 400, key: 'div.grandmaster', icon: 'crown', color: '#c9563f' },
+  { min: 2350, prMax: 2.5, epMin: 600, key: 'div.superGrandmaster', icon: 'crown', color: '#ffcf40' },
 ]
 
 // Rating -> ana rutbe (Lig sekmesi gruplamasi icin).

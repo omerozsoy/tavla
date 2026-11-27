@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\CareerPrService;
 use App\Support\DuelService;
+use App\Support\RankService;
 use App\Support\TeamLeague\TeamSeason;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -34,7 +35,7 @@ class LeaderboardController extends Controller
                 ->orderByDesc('wins')
                 ->limit($limit)
                 // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
-                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'rank_key', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
 
             return $users->values()->map(function ($u, $i) {
                 // Isim yani nokta: cevrimiciyse gercek durum (busy -> kirmizi), degilse 'offline' (gri).
@@ -50,6 +51,7 @@ class LeaderboardController extends Controller
                     'frame' => $u->avatar_frame,
                     'country' => $u->country,
                     'rating' => $u->rating ?? 1500,
+                    'rank_key' => RankService::active() ? $u->rank_key : null,
                     'coins' => $u->coins ?? 0,
                     'wxp' => $u->total_wxp ?? 0,
                     'wins' => $u->wins ?? 0,
@@ -110,7 +112,7 @@ class LeaderboardController extends Controller
                 ->orderByDesc('career_pr_decisions')          // esitlik: daha cok karar
                 ->orderByDesc('career_pr_matches')            // sonra daha cok maç
                 ->limit($limit)
-                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'rank_key', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
 
             return $users->values()->map(function ($u, $i) {
                 $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
@@ -124,6 +126,7 @@ class LeaderboardController extends Controller
                     'frame' => $u->avatar_frame,
                     'country' => $u->country,
                     'rating' => (int) $u->rating, // isim altindaki rutbe: site geneli TEK kaynak rating'dir (PR degil)
+                    'rank_key' => RankService::active() ? $u->rank_key : null, // isim altindaki rutbe (yeni sistem AÇIKken)
                     'career_pr' => $u->career_pr, // TAM hassasiyet (UI 2 ondalik gosterir; siralama full)
                     'matches' => (int) $u->career_pr_matches,
                     'decisions' => (int) $u->career_pr_decisions,
@@ -165,7 +168,7 @@ class LeaderboardController extends Controller
             $base = fn () => User::whereNotNull('career_pr')->where('is_system', false)->notDeleted()
                 ->where('career_pr_matches', '>=', $minM)->where('career_pr_decisions', '>=', $minD);
             $users = $base()->where($nameMatch)->orderBy('career_pr', 'asc')->limit(15)
-                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'rank_key', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
             $rows = $users->map(function ($u) use ($base) {
                 // ponytail: N+1 sira sayimi, sonuc <=15 -> onemsiz
                 $rank = $base()->where('career_pr', '<', $u->career_pr)->count() + 1;
@@ -180,6 +183,7 @@ class LeaderboardController extends Controller
                     'frame' => $u->avatar_frame,
                     'country' => $u->country,
                     'rating' => (int) $u->rating,
+                    'rank_key' => RankService::active() ? $u->rank_key : null,
                     'career_pr' => $u->career_pr,
                     'matches' => (int) $u->career_pr_matches,
                     'decisions' => (int) $u->career_pr_decisions,
@@ -196,7 +200,7 @@ class LeaderboardController extends Controller
         $sortCol = $by === 'coins' ? 'coins' : ($by === 'wxp' ? 'total_wxp' : 'rating');
         $users = User::where('is_system', false)->notDeleted()->where($nameMatch)
             ->orderByDesc($sortCol)->orderByDesc('wins')->limit(15)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'rank_key', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
         $rows = $users->map(function ($u) use ($sortCol) {
             // ponytail: N+1 sira sayimi, sonuc <=15 -> onemsiz. Rank = kendisinden ustte kac kisi var + 1.
             $rank = User::where('is_system', false)->notDeleted()->where($sortCol, '>', $u->{$sortCol})->count() + 1;
@@ -224,6 +228,24 @@ class LeaderboardController extends Controller
         });
 
         return response()->json(['players' => $rows->values()]);
+    }
+
+    // Herkese acik: id -> efektif rütbe anahtarı (div.*) haritası. İsim yanındaki rozet
+    // (<PlayerIdentity userId>) bunu batch okur -> her liste endpoint'ine rank_key eklemek gerekmez.
+    // Yeni sistem KAPALIysa boş döner (rozet rating'e düşer). En fazla 200 id.
+    public function ranks(Request $request)
+    {
+        if (! RankService::active()) {
+            return response()->json(['ranks' => (object) []]);
+        }
+        $ids = collect(explode(',', (string) $request->query('ids', '')))
+            ->map(fn ($x) => (int) trim($x))->filter()->unique()->take(200)->values();
+        if ($ids->isEmpty()) {
+            return response()->json(['ranks' => (object) []]);
+        }
+        $map = User::whereIn('id', $ids)->whereNotNull('rank_key')->pluck('rank_key', 'id');
+
+        return response()->json(['ranks' => $map]);
     }
 
     // Herkese acik: SITE GENELI top-3 rozet haritasi. PR sIralamasInda ilk 3 (madalya) +

@@ -19,6 +19,7 @@ interface Props {
 export default function RankInfo({ currentRating, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  // PR/EP + "Senin Durumun" kartını RankProgression kendi çeker (giriş yapılmışsa) -> burada prop yok.
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card rank-info-card" onClick={(e) => e.stopPropagation()}>

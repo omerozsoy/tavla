@@ -29,6 +29,8 @@ use App\Support\DuelService;
 use App\Support\EmailVerification;
 use App\Support\MatchFinalize;
 use App\Support\NicknameFilter;
+use App\Support\RankProgress;
+use App\Support\RankService;
 use App\Support\RatingPolicy;
 use App\Support\Referral;
 use App\Support\RoomResult;
@@ -500,7 +502,21 @@ class AuthController extends Controller
         $user->wins = $wins;
         $user->losses = max(0, $games - $wins);
 
-        return response()->json(['user' => $user, 'rank' => $rank, 'total_players' => $total]);
+        // YENİ rütbe sistemi (rating + PR + EP): oyuncunun güncel pencere-PR'ı + toplam tecrübesi.
+        // Rütbeler sayfası "şartlar + kendi durumun" bunu kullanır.
+        $prog = RankProgress::forUser($user);
+        // Efektif rütbe önbelleğini (rank_key) tazele -> dönen $user modelinde güncel gelir
+        // (sistem KAPALIyken null -> frontend rating'e düşer; AÇIKken rozet 3-kritere göre).
+        RankService::refresh($user);
+
+        return response()->json([
+            'user' => $user,
+            'rank' => $rank,
+            'total_players' => $total,
+            'rank_window_pr' => $prog['window_pr'],
+            'rank_ep' => $prog['ep'],
+            'rank_window_ep' => $prog['window_ep'],
+        ]);
     }
 
     /**
@@ -1825,6 +1841,8 @@ class AuthController extends Controller
             // (eskiden yalnız viewerIsAdmin prop geçen yollarda görünüyordu).
             'viewer_is_admin' => (bool) ($me && $me->is_admin && $me->id !== $user->id),
             'rank' => $rank,
+            // Efektif rütbe anahtarı (yeni sistem AÇIKken div.*; KAPALIyken null -> rozet rating'e düşer).
+            'rank_key' => RankService::active() ? $user->rank_key : null,
             // Career PR (PR Sıralaması): havuzlanmis PR + analiz edilmis maç/karar (null=veri yok).
             'career_pr' => Schema::hasColumn('users', 'career_pr') ? $user->career_pr : null,
             'career_pr_matches' => (int) ($user->career_pr_matches ?? 0),

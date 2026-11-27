@@ -75,6 +75,22 @@ Saf fonksiyonlar (`params`, `compare_position`, `kfold_split`, `accept_params`, 
 → `python -m pytest test_params.py test_calibrate.py test_eval.py`. `recognize` importu gereken davranış
 testi (`test_recognize_params.py`) venv'de koşar.
 
+## Faz 1 — Yönelim (açık/koyu) sınıflandırıcısı
+`_orient_to_photographer` "fotoğrafı çekenin taşları hangi renk" kararını **min-pip** sezgisiyle verir;
+marj küçükken yanılır (tüm pozisyon renk-ters). Faz 1 bu kararı etiketlerden öğrenir (saf-python lojistik,
+YENİ bağımlılık yok). Model yoksa davranış **birebir min-pip** → güvenle yayınlanır.
+1. **Temsili etiket:** admin panelde doğru-taranan fotoları **"Doğru olarak işaretle"** (toplu aksiyon) →
+   `ground_truth=position`, `review_status='correct'`. Böylece eğitim/gate seti kolay+zor TEMSİLİ olur
+   (yalnız düzeltilenler değil — aksi halde "min-pip'i geçti" kapısı yanıltır).
+6. **Eğit:** `python train_orientation.py eval-data` → her etiketli fotoyu `recognize` edip `debug.raw_points`'ten
+   özellik+etiket çıkarır; **k-fold** ile min-pip tabanına karşı eğitir. Model YALNIZCA ortalama +%5 VE hiçbir fold
+   gerilemiyorsa `orient_model.json`'a yazılır (yoksa dokunmaz). Yayın: `recognize.py`+`orient_model.py`+
+   `train_orientation.py`+`orient_model.json` → `shared/recognition` + daemon restart (admin akışı QD ile).
+   (Faz 1 yalnız açık/koyu'yu öğrenir; sol/sağ `flip` kullanıcıdan, warp `argmin(RMS)`.)
+
+Saf çekirdek (`orient_features`/`orient_label`/`train_logistic`/`predict`/`fold_accuracy`) modelsiz →
+`python -m pytest test_orient_model.py test_train_orientation.py`. Kanca davranış testi `test_recognize_orient.py` venv'de.
+
 ## ⚠ Açık uçlar (Faz 2 kalan)
 - **gnubg round-trip doğrulama:** yapısal konum → `gnubg-service` `structured_to_gnubgid` → hint.
   MUTLAK yönelim + `turn` + renk→oyuncu KONVANSİYONU burada kesinleşir (foto doğal yön belirsizliği).

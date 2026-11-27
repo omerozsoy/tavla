@@ -102,6 +102,7 @@ export interface ServerUser {
   avatar?: string | null
   birth_date?: string | null
   rating?: number
+  rank_key?: string | null // efektif rütbe (yeni sistem AÇIKken div.*; yoksa null -> rating'e düşer)
   coins?: number
   unlocks?: string[]
   prefs?: Record<string, string> | null // cihazdan-bağımsız tercihler (tahta/tema/ses/dil...) — web↔app senkron
@@ -268,6 +269,8 @@ export interface PhotoHintCandidate {
   move: string
   equity?: number
   eqdiff?: number
+  /** gnubg servisi notasyondan türetir (fixed-board index: beyaz p-1 / siyah 24-p); okları çizmek için */
+  steps?: Step[]
 }
 export interface PhotoAnalysisResult {
   id: number
@@ -573,11 +576,27 @@ export interface MyStats {
   user: ServerUser
   rank: number
   total: number
+  // YENI rutbe sistemi (rating + PR + EP) icin: guncel pencere-PR (son 400 EP, dusuk=iyi; null=veri yok)
+  // ve toplam tecrube (EP). Rutbeler sayfasi "sartlar + kendi durumun" bunlari gosterir.
+  rankWindowPr?: number | null
+  rankEp?: number
 }
 
 export async function myStats(): Promise<MyStats> {
-  const data = await req<{ user: ServerUser; rank: number; total_players: number }>('/me')
-  return { user: data.user, rank: data.rank, total: data.total_players }
+  const data = await req<{
+    user: ServerUser
+    rank: number
+    total_players: number
+    rank_window_pr?: number | null
+    rank_ep?: number
+  }>('/me')
+  return {
+    user: data.user,
+    rank: data.rank,
+    total: data.total_players,
+    rankWindowPr: data.rank_window_pr ?? null,
+    rankEp: data.rank_ep ?? 0,
+  }
 }
 
 // "Şikayetlerim": oyuncunun gönderdiği küfür şikayetleri + yönetim sonucu (durum).
@@ -664,6 +683,7 @@ export interface LeaderRow {
   frame?: string | null
   country?: string | null
   rating: number
+  rank_key?: string | null // efektif rütbe (yeni sistem AÇIKken)
   coins?: number
   wxp?: number
   wins: number
@@ -719,6 +739,7 @@ export interface PrLeaderRow {
   frame?: string | null
   country?: string | null
   rating?: number // isim altindaki rutbe icin (site geneli rutbe = rating)
+  rank_key?: string | null // efektif rütbe (yeni sistem AÇIKken; yoksa rating'e düşer)
   career_pr: number // TAM hassasiyet (UI 2 ondalik gosterir)
   matches: number
   decisions: number
@@ -788,6 +809,16 @@ export async function roles(): Promise<Roles> {
 export async function onlineIds(): Promise<number[]> {
   const d = await req<{ ids: number[] }>('/online-ids')
   return d.ids ?? []
+}
+
+// id -> efektif rütbe anahtarı (div.*). Yeni sistem AÇIKken dolu; KAPALIyken boş (rozet rating'e düşer).
+// PlayerIdentity (useRank) ekrandaki id'leri batch'ler -> tek istek.
+export async function fetchRanks(ids: number[]): Promise<Record<number, string>> {
+  if (!ids.length) return {}
+  const d = await req<{ ranks: Record<string, string> }>(`/ranks?ids=${ids.join(',')}`)
+  const out: Record<number, string> = {}
+  for (const [k, v] of Object.entries(d.ranks ?? {})) out[Number(k)] = v
+  return out
 }
 
 // ---- Sol menu yapilandirmasi (admin panelden: sira/ad/gorunurluk/grup) ----
@@ -898,12 +929,15 @@ export async function getSiteTags(): Promise<{ gtag: { enabled: boolean; id: str
 export interface RankDivisionCfg {
   divisions: Record<string, number>
   prMax: Record<string, number>
+  epMin: Record<string, number>
 }
 export async function getRankDivisions(): Promise<RankDivisionCfg> {
-  const d = await req<{ divisions?: Record<string, number>; prMax?: Record<string, number> }>(
-    '/rank-divisions',
-  )
-  return { divisions: d.divisions || {}, prMax: d.prMax || {} }
+  const d = await req<{
+    divisions?: Record<string, number>
+    prMax?: Record<string, number>
+    epMin?: Record<string, number>
+  }>('/rank-divisions')
+  return { divisions: d.divisions || {}, prMax: d.prMax || {}, epMin: d.epMin || {} }
 }
 
 // ---- Kulupler & Lig ----
@@ -1340,6 +1374,7 @@ export interface PublicProfile {
   games: number
   tournaments_won?: number // kazanilan online turnuva sayisi (user_stats)
   rank: number
+  rank_key?: string | null // efektif rütbe (yeni sistem AÇIKken div.*; yoksa rating'e düşer)
   career_pr?: number | null // Career PR (dusuk=iyi); null/0 maç = veri yok
   career_pr_matches?: number // PR'a sayilan (analiz edilmis) maç sayisi
   career_pr_decisions?: number

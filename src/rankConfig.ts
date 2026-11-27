@@ -14,10 +14,17 @@
  *
  * Bozuk siralanmis ayar apply*Thresholds() tarafindan REDDEDILIR -> o taraf varsayilanda kalir.
  */
-import { applyPrThresholds, applyRankThresholds, prThresholds, rankThresholds } from './badges'
+import {
+  applyEpThresholds,
+  applyPrThresholds,
+  applyRankThresholds,
+  epThresholds,
+  prThresholds,
+  rankThresholds,
+} from './badges'
 import { getRankDivisions, type RankDivisionCfg } from './api'
 
-const CACHE_KEY = 'tavla.rankDivisions.v2' // v2: PR ust esikleri de onbellekte
+const CACHE_KEY = 'tavla.rankDivisions.v3' // v3: min EP esikleri de onbellekte
 
 let version = 0
 const listeners = new Set<() => void>()
@@ -32,10 +39,15 @@ function emit(): void {
 interface CachedCfg {
   divisions?: Record<string, unknown>
   prMax?: Record<string, unknown>
+  epMin?: Record<string, unknown>
 }
 
 function snapshot(): string {
-  return JSON.stringify({ divisions: rankThresholds(), prMax: prThresholds() })
+  return JSON.stringify({
+    divisions: rankThresholds(),
+    prMax: prThresholds(),
+    epMin: epThresholds(),
+  })
 }
 
 /** Onbellekteki esikleri SENKRON uygula (render oncesi; sessizce basarisiz olur). */
@@ -48,6 +60,7 @@ export function applyCachedRankThresholds(): void {
     const cfg = parsed as CachedCfg
     if (cfg.divisions) applyRankThresholds(cfg.divisions)
     if (cfg.prMax) applyPrThresholds(cfg.prMax)
+    if (cfg.epMin) applyEpThresholds(cfg.epMin)
   } catch {
     /* localStorage kapali / bozuk JSON -> varsayilan esikler kalir */
   }
@@ -65,6 +78,7 @@ export async function initRankThresholds(): Promise<void> {
   // Bozuk (artan/azalan olmayan) taraf yok sayilir; digeri yine de uygulanir.
   applyRankThresholds(cfg.divisions)
   applyPrThresholds(cfg.prMax)
+  applyEpThresholds(cfg.epMin)
   const after = snapshot()
   try {
     localStorage.setItem(CACHE_KEY, after)

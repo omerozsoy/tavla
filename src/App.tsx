@@ -2414,6 +2414,8 @@ export default function App() {
   const [inviteWaitName, setInviteWaitName] = useState<string | null>(null)
   // Davet edilenin rating'i (bekleme ekraninda isim altinda). Yalniz inviteWaitName varken gorunur.
   const [inviteWaitRating, setInviteWaitRating] = useState<number | null>(null)
+  // Davet edilenin userId'si -> bekleme ekranı rozeti yeni sistemde (useRank) 3-kritere göre.
+  const [inviteWaitUserId, setInviteWaitUserId] = useState<number | null>(null)
   // Davet edenin bu macta rating riski (sunucu Elo'su, davet yanitindan). null = puansiz.
   const [inviteWaitPreview, setInviteWaitPreview] = useState<{ win: number; loss: number } | null>(null)
   // Oda poll'u (deps: room.code) bayat closure'dan okur -> reddeden adini ref'ten al.
@@ -8586,6 +8588,7 @@ export default function App() {
     try { sessionStorage.removeItem('inviteCtx') } catch { /* yoksay */ }
     setInviteWaitName(tgt.name) // bekleme ekrani "kod paylas" yerine "{ad} bekleniyor" gostersin
     setInviteWaitRating(tgt.rating ?? null)
+    setInviteWaitUserId(tgt.id ?? null)
     setInviteWaitPreview(null) // onceki davetin tahmini kalmasin; yanit gelince set edilir
     setTimeControl(opts.timeControl)
     clockRef.current = CLOCK_PRESETS[opts.timeControl]
@@ -11012,7 +11015,7 @@ export default function App() {
                 {inv.rating != null && (
                   <span className="invite-rank">
                     <span className="invite-rating">{inv.rating}</span>
-                    <DivisionChip rating={inv.rating} size="md" />
+                    <DivisionChip rating={inv.rating} userId={inv.fromUserId} size="md" />
                   </span>
                 )}
                 {/* Bu macta davetlinin rating riski: kazanirsa +N / kaybederse -N (puansizsa gizli). */}
@@ -12674,6 +12677,7 @@ export default function App() {
           error={roomError}
           inviteWaitName={inviteWaitName}
           inviteWaitRating={inviteWaitRating}
+          inviteWaitUserId={inviteWaitUserId}
           inviteWaitPreview={inviteWaitPreview}
           isTournament={online && !!tournRoom && room?.code === tournRoom.code}
           myAvatar={profile.avatar}

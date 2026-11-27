@@ -21,6 +21,7 @@ interface Props {
    *  "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterilir). */
   inviteWaitName?: string | null
   inviteWaitRating?: number | null // davet edilenin rating'i -> isim altinda sayi + rutbe
+  inviteWaitUserId?: number | null // davet edilenin userId'si -> rozet yeni sistemde (useRank)
   inviteWaitPreview?: { win: number; loss: number } | null // bu macta kazanirsan/kaybedersen (null = puansiz)
   myAvatar?: string | null
   onCreate: () => void
@@ -43,6 +44,7 @@ export default function Lobby({
   error,
   inviteWaitName,
   inviteWaitRating,
+  inviteWaitUserId,
   inviteWaitPreview,
   myAvatar,
   onCreate,
@@ -158,7 +160,7 @@ export default function Lobby({
               {inviteWaitRating != null && (
                 <div className="invite-rank invite-wait-rank">
                   <span className="invite-rating">{inviteWaitRating}</span>
-                  <DivisionChip rating={inviteWaitRating} size="md" />
+                  <DivisionChip rating={inviteWaitRating} userId={inviteWaitUserId} size="md" />
                 </div>
               )}
               {inviteWaitPreview && (

@@ -1296,6 +1296,52 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'rank.maxed': 'En yüksek rütbeye ulaştın',
   'rank.completed': 'Tamamlandı',
   'rank.upcoming': 'Kilitli',
+  // Yeni rütbe sistemi açıklaması (Puan + PR + EP)
+  'rank.howTitle': 'Rütbe Nasıl Kazanılır?',
+  'rank.howIntro':
+    'Rütben tek bir şeyle değil, üç şeyle belirlenir. Bir üst rütbeye geçmek için üçünü birden sağlaman gerekir — biri eksikse geçemezsin.',
+  'rank.c1Title': 'Puan',
+  'rank.c1Desc':
+    'Ne kadar kazanıyorsun? Maç kazandıkça artar, kaybedince azalır. Ama tek başına yüksek puan artık yetmiyor.',
+  'rank.c2Title': 'PR',
+  'rank.c2Desc':
+    'Ne kadar İYİ oynuyorsun? Her maçın sonunda bilgisayar hamlelerini en iyi hamlelerle karşılaştırır. Ne kadar az hata yaparsan PR o kadar DÜŞÜK olur — düşük PR = iyi oyuncu.',
+  'rank.c3Title': 'EP · Tecrübe',
+  'rank.c3Desc':
+    'Ne kadar oynadın? Ciddi maçlarının puan toplamı: 5 puanlık maç = 5 EP, 7 puanlık = 7 EP. Rütbenin güvenilir olması için yeterince oynamış olman gerekir.',
+  'rank.howExample':
+    'Örneğin Grandmaster olmak için: yüksek puan VE çok iyi oyun (düşük PR) VE yeterli tecrübe. Sadece puanın yüksek diye Grandmaster olamazsın; gerçekten iyi oynaman gerekir.',
+  'rank.reqPrMax': 'PR ≤ {n}',
+  'rank.reqEpMin': '{n} EP',
+  'rank.statusTitle': 'Senin Durumun',
+  'rank.yourRating': 'Puanın',
+  'rank.yourPr': 'PR’ın',
+  'rank.yourEp': 'Tecrüben',
+  'rank.prNoData': 'Yeterli veri yok',
+  'rank.provisional':
+    'Geçici: rütbe için yeterli analizli maçın yok. Biraz daha oyna, PR’ın netleşsin.',
+  'rank.eligibleTitle': 'Üç şarta göre rütben',
+  'rank.nextNeeds': 'Bir üst rütbe ({r}) için gerekenler',
+  'rank.met': 'tamam',
+  'rank.notMet': 'eksik',
+  // "Senin Durumun" kartı (mockup: Rating / Performance Rating / Tecrübe)
+  'rank.scRating': 'Rating',
+  'rank.scPr': 'Performance Rating',
+  'rank.scEp': 'Tecrübe',
+  'rank.nextTitle': 'Sonraki unvan: {r}',
+  'rank.hintRating': '{r} olmak için puanını {n} değerine çıkarmalısın.',
+  'rank.hintPr': '{r} olmak için PR değerini {n} veya altına düşürmelisin.',
+  'rank.hintEp': '{r} olmak için {n} EP’ye ulaşmalısın.',
+  // Kaynaklar / referanslar — neyi referans aldığımız
+  'rank.refTitle': 'Kaynaklar',
+  'rank.refIntro': 'Rütbe, PR ve EP eşiklerinde aşağıdaki uluslararası kaynakları referans aldık:',
+  'rank.src1': 'Rütbelerin PR ve EP kriterlerine göre belirlenmesi, kalıcı unvan sistemi.',
+  'rank.src2': 'Super Grandmaster 2.50, Grandmaster 4.00, Master 6.50 PR sınırları.',
+  'rank.src3': 'Detaylı rütbe tablosu, minimum EP şartları ve en az 7 puanlık maç kriteri.',
+  'rank.src4':
+    'PR hesaplama mantığı, rating ile PR arasındaki fark ve son 300 EP üzerinden performans değerlendirmesi.',
+  'rank.src5':
+    'Rating algoritması, K faktörü, rakipler arasındaki puan farkı ve maç uzunluğunun rating üzerindeki etkisinin araştırılması. Ek araştırma referansıdır; buradan doğrulanmış bir formül veya katsayı alınmamıştır.',
   'lb.byCoins': 'Coin',
   'lb.byWxp': 'WXP',
   'lb.byPr': 'PR',

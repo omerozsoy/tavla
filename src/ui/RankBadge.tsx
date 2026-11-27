@@ -12,12 +12,17 @@
  */
 
 import { useT } from '../i18n'
-import { rankOf, rankByFamily, type RankFamily, type RankTier } from '../ranks'
+import { rankOf, rankByFamily, rankByDivKey, type RankFamily, type RankTier } from '../ranks'
 
 export type RankVariant = 'compact' | 'standard' | 'featured'
 export type RankSize = 'sm' | 'md' | 'lg'
 
 export interface RankBadgeProps {
+  /**
+   * Otoriter efektif rütbe anahtarı (div.*) — YENİ sistem (rating+PR+EP) AÇIKken backend
+   * hesaplar. Verilirse rating/rank'e göre ÖNCELİKLİDİR. null/undefined -> rating'e düşer.
+   */
+  rankKey?: string | null
   /** Rating verilirse kademe otomatik çözülür (rank/level'e göre önceliklidir). */
   rating?: number
   /** Aile (rating verilmediyse). */
@@ -40,6 +45,7 @@ function threshold(t: RankTier): string {
 }
 
 export function RankBadge({
+  rankKey,
   rating,
   rank,
   level,
@@ -52,8 +58,10 @@ export function RankBadge({
 }: RankBadgeProps) {
   const { t } = useT()
 
+  // Öncelik: otoriter rankKey -> rating -> aile/kod. (rankKey yalnız yeni sistem AÇIKken dolu gelir.)
   const tier: RankTier | undefined =
-    rating != null ? rankOf(rating) : rankByFamily(rank ?? 'rookie', level)
+    (rankKey ? rankByDivKey(rankKey) : undefined) ??
+    (rating != null ? rankOf(rating) : rankByFamily(rank ?? 'rookie', level))
   if (!tier) return null
 
   const familyName = t(tier.familyKey)

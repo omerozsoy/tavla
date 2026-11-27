@@ -22,6 +22,7 @@ class RankDivisionController extends Controller
         return response()->json([
             'divisions' => (object) RankDivisions::thresholds(),
             'prMax' => (object) RankDivisions::prThresholds(),
+            'epMin' => (object) RankDivisions::epThresholds(),
         ]);
     }
 }

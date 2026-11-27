@@ -1274,6 +1274,51 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'rank.maxed': 'Highest rank reached',
   'rank.completed': 'Completed',
   'rank.upcoming': 'Locked',
+  // New rank system explainer (Rating + PR + EP)
+  'rank.howTitle': 'How Do You Earn a Rank?',
+  'rank.howIntro':
+    'Your rank is decided by three things, not one. To reach a higher rank you must meet all three at once — miss one and you stay put.',
+  'rank.c1Title': 'Rating',
+  'rank.c1Desc':
+    'How much do you win? It rises when you win and falls when you lose. But a high rating alone is no longer enough.',
+  'rank.c2Title': 'PR',
+  'rank.c2Desc':
+    'How WELL do you play? After each match the computer compares your moves to the best moves. The fewer mistakes, the LOWER your PR — low PR = strong player.',
+  'rank.c3Title': 'EP · Experience',
+  'rank.c3Desc':
+    'How much have you played? The sum of your serious matches’ target points: a 5-point match = 5 EP, a 7-pointer = 7 EP. Enough play makes your rank reliable.',
+  'rank.howExample':
+    'For example, to become Grandmaster you need a high rating AND very good play (low PR) AND enough experience. A high rating alone won’t make you Grandmaster; you have to actually play well.',
+  'rank.reqPrMax': 'PR ≤ {n}',
+  'rank.reqEpMin': '{n} EP',
+  'rank.statusTitle': 'Your Status',
+  'rank.yourRating': 'Your rating',
+  'rank.yourPr': 'Your PR',
+  'rank.yourEp': 'Your experience',
+  'rank.prNoData': 'Not enough data',
+  'rank.provisional':
+    'Provisional: not enough analyzed matches yet. Play a little more to settle your PR.',
+  'rank.eligibleTitle': 'Your rank by all three',
+  'rank.nextNeeds': 'To reach the next rank ({r})',
+  'rank.met': 'met',
+  'rank.notMet': 'missing',
+  'rank.scRating': 'Rating',
+  'rank.scPr': 'Performance Rating',
+  'rank.scEp': 'Experience',
+  'rank.nextTitle': 'Next title: {r}',
+  'rank.hintRating': 'To reach {r}, raise your rating to {n}.',
+  'rank.hintPr': 'To reach {r}, lower your PR to {n} or below.',
+  'rank.hintEp': 'To reach {r}, reach {n} EP.',
+  'rank.refTitle': 'Sources',
+  'rank.refIntro': 'We based our rank, PR and EP thresholds on the following international sources:',
+  'rank.src1': 'Ranks determined by PR and EP criteria; a permanent title system.',
+  'rank.src2': 'Super Grandmaster 2.50, Grandmaster 4.00, Master 6.50 PR limits.',
+  'rank.src3':
+    'Detailed rank table, minimum EP requirements and a minimum 7-point match criterion.',
+  'rank.src4':
+    'PR calculation logic, the difference between rating and PR, and performance assessed over the last 300 EP.',
+  'rank.src5':
+    'Rating algorithm, K factor, the rating gap between opponents and the effect of match length on rating. An additional research reference; no verified formula or coefficient was taken from it.',
   'lb.byCoins': 'Coins',
   'lb.byWxp': 'WXP',
   'lb.byPr': 'PR',

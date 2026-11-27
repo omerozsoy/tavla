@@ -125,6 +125,7 @@ export default function PublicProfile({
                 userId={p.id}
                 name={p.name}
                 rating={p.rating}
+                rankKey={p.rank_key}
                 avatar={p.avatar}
                 frame={p.frame}
                 country={p.country}

@@ -109,6 +109,7 @@ Route::get('/leaderboard/pr', [LeaderboardController::class, 'prLeaderboard']); 
 Route::get('/leaderboard/search', [LeaderboardController::class, 'leaderboardSearch']); // isme göre ara (ilk 100'de olmayanlar)
 Route::get('/duels/leaderboard', [LeaderboardController::class, 'duelLeaderboard']); // Bireysel Düello sıralaması (bireysel + takım)
 Route::get('/top-ranks', [LeaderboardController::class, 'topRanks']); // site geneli top-3 rozet haritası (PR madalya + Rating kupa)
+Route::get('/ranks', [LeaderboardController::class, 'ranks']); // id→efektif rütbe (yeni sistem AÇIKken); PlayerIdentity batch okur
 // Soru Maratonu: anonim skor tabelası (giriş YOK). submit throttle'lı (spam), leaderboard 30sn cache.
 Route::post('/quiz-marathon/score', [QuizScoreController::class, 'submit'])->middleware('throttle:20,1');
 Route::get('/quiz-marathon/leaderboard', [QuizScoreController::class, 'leaderboard']);

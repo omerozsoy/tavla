@@ -59,6 +59,8 @@ export interface RankTier {
   special: boolean // Grandmaster G0: ailenin elit tier'ı
   apex: boolean // Super Grandmaster S1: sistemin mutlak zirvesi
   min: number // rating alt eşiği (DIVISIONS'tan)
+  prMax: number // bu kademe için en yüksek (en kötü) PR eşiği (DIVISIONS'tan; düşük = iyi)
+  epMin: number // bu kademe için gereken en az EP/tecrübe (DIVISIONS'tan)
   Icon: TablerIcon
   iconName: string // kodda açık: kullanılan gerçek Tabler export adı
   stroke: number // Tabler çizgi kalınlığı (rütbeyle artar; Filled ikonlarda yok sayılır)
@@ -66,7 +68,9 @@ export interface RankTier {
 
 // divKey → (family, code, tier, special/apex, icon, weight).
 // Rating eşiği (min) DIVISIONS'tan otomatik bağlanır; burada tekrar yazılmaz.
-type Meta = Omit<RankTier, 'min' | 'divKey' | 'familyKey'> & { familyKey: string }
+type Meta = Omit<RankTier, 'min' | 'prMax' | 'epMin' | 'divKey' | 'familyKey'> & {
+  familyKey: string
+}
 
 const META: Record<string, Meta> = {
   // ---- Taban rütbeler (alt-seviye yok) — sade, nötr, growth metaforu ----
@@ -112,6 +116,12 @@ export const RANKS: RankTier[] = DIVISIONS.map((d) => {
     ...m,
     get min() {
       return d.min
+    },
+    get prMax() {
+      return d.prMax
+    },
+    get epMin() {
+      return d.epMin
     },
   }
 })

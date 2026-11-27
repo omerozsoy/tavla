@@ -7,6 +7,7 @@ import RoleBadge from './RoleBadge'
 import TeamTag from './TeamTag'
 import { useOnline } from '../presence'
 import { useRole } from '../roles'
+import { useRank } from '../rankProvider'
 
 /**
  * PlayerIdentity — site geneli tek oyuncu kimlik blogu: avatar + isim (ustte) +
@@ -18,6 +19,7 @@ export default function PlayerIdentity({
   name,
   userId,
   rating,
+  rankKey,
   subtitle,
   avatar,
   frame,
@@ -40,6 +42,8 @@ export default function PlayerIdentity({
   /** Oyuncu id — verilirse isim yanında site geneli top-3 rozeti (PR madalya / Rating kupa). */
   userId?: number | null
   rating?: number | null
+  /** Otoriter efektif rütbe (yeni sistem AÇIKken div.*); verilince rating yerine bu gösterilir. */
+  rankKey?: string | null
   /** İsim ALTINDA küçük muted metin (rütbe yerine; örn. turnuva adı). rating ile birlikte kullanılmaz. */
   subtitle?: string | null
   avatar?: string | null
@@ -78,6 +82,10 @@ export default function PlayerIdentity({
   const ctxRole = useRole(userId)
   const isAdmin = admin || ctxRole.admin
   const isSupport = support || ctxRole.support
+  // Efektif rütbe: prop (rankKey, ör. liderlik satırı) ÖNCELİKLİ; verilmemişse site-geneli
+  // provider userId'den çözer (lobby/canlı-maç/turnuva/arkadaş/mesaj). rankKey=undefined ise sorar.
+  const providerRank = useRank(rankKey === undefined ? userId : null)
+  const effRankKey = rankKey ?? providerRank
   return (
     <span
       className={`player-id${lg ? ' lg' : ''}${onClick ? ' player-id-clickable' : ''}${className ? ' ' + className : ''}`}
@@ -126,7 +134,7 @@ export default function PlayerIdentity({
         {/* Rütbe isim altında. */}
         {rating != null && (
           <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0 }}>
-            <DivisionChip rating={rating} size={rankSize} />
+            <DivisionChip rating={rating} rankKey={effRankKey} size={rankSize} />
           </span>
         )}
         {/* Serbest altbaşlık (örn. turnuva adı): isim altında küçük muted, kırpılır. */}
