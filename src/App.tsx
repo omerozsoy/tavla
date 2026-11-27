@@ -1695,6 +1695,8 @@ export default function App() {
                                       ? 'pozisyon-analizi'
                                       : matAnalyzerOpen
                                         ? 'mat-analiz'
+                                      : photoAnalysisOpen
+                                        ? 'foto-analiz'
                                       : achOpen
                                         ? 'basarimlar'
                                       : friendSetupOpen
@@ -11094,6 +11096,7 @@ export default function App() {
     rulesOpen ||
     analyzerOpen ||
     matAnalyzerOpen ||
+    photoAnalysisOpen ||
     achOpen ||
     friendSetupOpen ||
     editProfile ||
@@ -11139,6 +11142,8 @@ export default function App() {
                       ? 'analyzer'
                       : matAnalyzerOpen
                         ? 'matAnalyzer'
+                      : photoAnalysisOpen
+                        ? 'photoAnalysis'
                       : friendSetupOpen
                         ? (inviteTarget ? '' : friendClassic ? 'klassikFriend' : 'playFriend') // maç daveti = menü öğesi değil (vurgu yok)
                       : clubsOpen
