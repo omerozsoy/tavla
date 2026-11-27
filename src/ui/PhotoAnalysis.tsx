@@ -208,6 +208,16 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   const [result, setResult] = useState<PhotoAnalysisResult | null>(null)
   const [cubeBusy, setCubeBusy] = useState(false)
   const [match, setMatch] = useState<MatchSet>(loadMatch)
+  // Kup DEGERI ve SKOR tahtadan OKUNAMIYOR (model yok) -> analiz varsayimla yapilir. Kullanici bunlari
+  // acikca secene kadar ekranda "okunamadi, kontrol et" uyarisi gosterilir (kararlari dogrudan etkiler).
+  const [cubeChosen, setCubeChosen] = useState(false) // bu sonuc icin kup elle secildi mi
+  const [matchChosen, setMatchChosen] = useState(() => {
+    try {
+      return localStorage.getItem(MATCH_KEY) !== null
+    } catch {
+      return false
+    }
+  })
   // Evler hangi tarafta (tek fotodan guvenilir cikarilamiyor: iki yorumun pip toplami ~esit).
   // Oyuncu genelde hep ayni duzende oynar -> secim hatirlanir. Sunucuya flip=1 olarak gider.
   const [homeLeft, setHomeLeft] = useState(() => {
@@ -258,16 +268,21 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
 
   async function applySettings(m: MatchSet, value?: number, owner?: 'white' | 'black' | null) {
     if (!result || cubeBusy) return
+    const fromCube = value !== undefined
     const n = normMatch(m)
     setMatch(n)
-    try {
-      localStorage.setItem(MATCH_KEY, JSON.stringify(n))
-    } catch {
-      /* gizli mod */
+    if (!fromCube) {
+      try {
+        localStorage.setItem(MATCH_KEY, JSON.stringify(n))
+      } catch {
+        /* gizli mod */
+      }
     }
     setCubeBusy(true)
     try {
       setResult(await setPhotoAnalysisSettings(result.id, settingsFor(result, n, value, owner)))
+      if (fromCube) setCubeChosen(true)
+      else setMatchChosen(true)
     } catch (e) {
       notify.error((e as { message?: string })?.message || t('photo.failed'))
     } finally {
@@ -296,6 +311,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     if (!f || busy) return
     setBusy(true)
     setResult(null)
+    setCubeChosen(false)
     try {
       const blob = await downscale(f)
       const { id } = await uploadPhotoAnalysis(blob, left)
@@ -565,6 +581,46 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                 {/* tanima kurali: zar bar'in saginda -> fotografi ceken, solunda -> rakip */}
                 <b>{result!.position?.turn === 'black' ? t('photo.turnOpp') : t('photo.turnMe')}</b>
               </div>
+              {/* ANALIZ NEYE GORE YAPILDI: kup degeri + skor okunamiyor -> varsayim acikca gosterilir */}
+              {(() => {
+                const pc = result!.position?.cube
+                const ml = result!.position?.matchLength ?? 0
+                const sc = result!.position?.score
+                const cubeTxt = !pc?.owner
+                  ? t('photo.cubeStateCenter')
+                  : `${pc.value} · ${pc.owner === 'black' ? t('photo.cubeStateOpp') : t('photo.cubeStateMine')}`
+                const matchTxt = !ml
+                  ? t('photo.money')
+                  : `${ml} ${t('photo.points')} · ${t('photo.you')} ${sc?.white ?? 0} – ${t('photo.opp')} ${sc?.black ?? 0}${result!.position?.crawford ? ' · Crawford' : ''}`
+                const src = result!.debug?.cube?.value_src
+                const cubeBadge = cubeChosen
+                  ? ['ok', t('photo.asChosen')]
+                  : src === 'model'
+                    ? ['ok', t('photo.asCubeRead')]
+                    : src === 'model_ge8'
+                      ? ['warn', t('photo.asCubeGe8')]
+                      : result!.debug?.cube
+                        ? ['warn', t('photo.asCubeFoundNoValue')]
+                        : ['warn', t('photo.asCubeNotFound')]
+                const matchBadge = matchChosen ? ['ok', t('photo.asChosen')] : ['warn', t('photo.asMatchUnread')]
+                return (
+                  <div className="photo-assume">
+                    <div className="photo-assume-title">{t('photo.asTitle')}</div>
+                    <div className="photo-assume-row">
+                      <span>
+                        {t('photo.cube')}: <b>{cubeTxt}</b>
+                      </span>
+                      <span className={`photo-assume-badge ${cubeBadge[0]}`}>{cubeBadge[1]}</span>
+                    </div>
+                    <div className="photo-assume-row">
+                      <span>
+                        {t('photo.match')}: <b>{matchTxt}</b>
+                      </span>
+                      <span className={`photo-assume-badge ${matchBadge[0]}`}>{matchBadge[1]}</span>
+                    </div>
+                  </div>
+                )
+              })()}
               {cube ? (
                 <div className="photo-cube">
                   <div className="photo-best">

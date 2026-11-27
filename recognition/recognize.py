@@ -324,17 +324,20 @@ def recognize(bgr, flip=False):
                 else:
                     left += 1
 
-        # KUP (kendi modellerimiz Cube_v2 + CubeClassify_v2): bulunursa sahip konumdan (bar'in sagi =
-        # ceken katladi -> rakipte, solu = cekende, bar = ortada), deger varsayilan (sahipli 2 / orta 1)
-        # -> kullanici sonuc ekraninda duzeltir.
-        cb = _cube.find_cube(_get, lambda crop: _run("CubeClassify_v2.tflite", crop, (96, 96), stretch=True)[0][0][0],
-                             warp, res["checker_boxes"], res["dice_boxes"], res["debug"]["barcenter"])
+        # KUP (kendi modellerimiz): Cube_v2 bulur, CubeClassify_v2 DEGERI okur (2 / 4 / 8+); sahip konumdan
+        # (bar'in sagi = ceken katladi -> rakipte, solu = cekende, bar = ortada; tahta disinda onunde = o
+        # kabul etti). 8+ icin tam deger kullaniciya 'kontrol et' uyarisiyla gosterilir.
+        run_cls = lambda crop: _run("CubeClassify_v2.tflite", crop, (96, 96), stretch=True)[0][0][0]  # noqa: E731
+        qw = np.roll(quad, 1, axis=0) if res["debug"]["rotated"] else quad
+        minv = np.linalg.inv(cv2.getPerspectiveTransform(qw, np.array([[0, 0], [Wd, 0], [Wd, Hd], [0, Hd]], np.float32)))
+        cb = _cube.find_cube(_get, run_cls, warp, res["checker_boxes"], res["dice_boxes"], res["debug"]["barcenter"],
+                             img=bgr, minv=minv)
         if cb is None and not res["debug"]["rotated"] and len(res["checker_boxes"]):
             # tahtada kup yok -> bir oyuncunun ONUNDE (tahta disi, kabul edilmis) kup var mi?
             # tas capini orijinal foto olcegine cevir (warp genisligi Wd <-> tahtanin fotodaki genisligi)
             scale = float(quad[:, 0].max() - quad[:, 0].min()) / Wd
             med = float(np.median([b[2] - b[0] for b in res["checker_boxes"]])) * scale
-            cb = _cube.find_front_cube(_get, bgr, quad, med)
+            cb = _cube.find_front_cube(_get, run_cls, bgr, quad, med)
         cube_pos = {"value": cb["value"], "owner": cb["owner"]} if cb else {"value": 1, "owner": None}
 
         points, photographer, margin = _orient_to_photographer(res["points"])

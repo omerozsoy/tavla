@@ -306,6 +306,8 @@ export interface PhotoAnalysisResult {
       zone: 'left' | 'right' | 'bar' | 'front_me' | 'front_opp'
       owner: 'white' | 'black' | null
       value: number
+      /** model = CubeClassify 2/4 kesin okudu; model_ge8 = "8 veya ustu" (tam deger tahmini) */
+      value_src?: 'model' | 'model_ge8' | 'centered'
     } | null
   } | null
   error: string | null
