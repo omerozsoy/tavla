@@ -12,6 +12,7 @@ import numpy as np
 import cv2
 from ai_edge_litert.interpreter import Interpreter
 import cube as _cube
+from params import PARAMS  # Faz 3: kalibre edilebilir geometri sabitleri (params.json varsa override)
 
 MODELS = os.environ.get("RECOG_MODELS_DIR", "tensor-models")
 Wd, Hd = 1000, 800
@@ -162,14 +163,14 @@ def _colors(feats):
     Dejenerasyon (<2 tas / ayrismiyor) -> sabit S esigine dus."""
     n = len(feats)
     if n < 2:
-        return ["W" if s < COLOR_S_THRESH else "R" for s, _ in feats]
+        return ["W" if s < PARAMS['color_s_thresh'] else "R" for s, _ in feats]
     f = np.array(feats, np.float32)
     crit = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 20, 1.0)
     _, labels, centers = cv2.kmeans(f, 2, None, crit, 5, cv2.KMEANS_PP_CENTERS)
     labels = labels.ravel()
     # iki kume ayrismiyor mu (ayni renk) -> sabit esige dus
     if abs(centers[0][0] - centers[1][0]) < 35 and abs(centers[0][1] - centers[1][1]) < 35:
-        return ["W" if s < COLOR_S_THRESH else "R" for s, _ in feats]
+        return ["W" if s < PARAMS['color_s_thresh'] else "R" for s, _ in feats]
     white = int(np.argmax(centers[:, 1]))  # daha parlak (yuksek V) kume = beyaz/sedef
     return ["W" if lb == white else "R" for lb in labels]
 
@@ -179,7 +180,7 @@ def _cluster(items):
     for row, grp in (("T", [i for i in items if i[1] < Hd / 2]), ("B", [i for i in items if i[1] >= Hd / 2])):
         grp.sort(key=lambda i: i[0]); cur = []
         for it in grp:
-            if cur and it[0] - cur[-1][0] > GAP:
+            if cur and it[0] - cur[-1][0] > PARAMS['gap']:
                 pts.append(_mk(row, cur)); cur = []
             cur.append(it)
         if cur:
@@ -222,8 +223,8 @@ def _fit_lattice(pts):
     # carpisma: ayni satir + ayni yari + ayni j'de iki kume = imkansiz (zit renk silinir / sayi bozulur)
     slot = row * 12 + np.where(left, 0, 6) + jc
     ss = np.sort(slot, axis=-1)
-    cost = cost + (ss[..., 1:] == ss[..., :-1]).sum(-1) * 4 * 35.0 ** 2
-    cost = cost + 0.002 * (BC[..., 0] - Wd / 2) ** 2 + 200 * (K[..., 0] - 1.07) ** 2
+    cost = cost + (ss[..., 1:] == ss[..., :-1]).sum(-1) * PARAMS['collision_w'] * 35.0 ** 2
+    cost = cost + PARAMS['bc_prior_w'] * (BC[..., 0] - Wd / 2) ** 2 + PARAMS['k_prior_w'] * (K[..., 0] - PARAMS['k_center']) ** 2
     i = np.unravel_index(int(np.argmin(cost)), cost.shape)
     bc, s, k = float(BC[i[0], 0, 0, 0]), float(S[0, i[1], 0, 0]), float(K[0, 0, i[2], 0])
     fit = float(np.sqrt(((u - jc) ** 2)[i].mean()))   # RMS kalinti (hane biriminde): warp kalitesi olcusu
