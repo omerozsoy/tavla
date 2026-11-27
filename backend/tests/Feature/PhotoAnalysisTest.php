@@ -201,4 +201,31 @@ class PhotoAnalysisTest extends TestCase
         $this->assertNull(PhotoAnalysis::parseGroundTruth(null));
         $this->assertNull(PhotoAnalysis::parseGroundTruth('not json'));
     }
+
+    public function test_mark_correct_sets_ground_truth_from_position(): void
+    {
+        $pos = ['points' => array_fill(0, 24, 0), 'turn' => 'white'];
+        $pa = PhotoAnalysis::create(['image_path' => 'p/a.jpg', 'status' => 'done', 'valid' => true, 'position' => $pos]);
+        $pa->markCorrect();
+        $this->assertSame($pos, $pa->refresh()->ground_truth);
+        $this->assertSame('correct', $pa->review_status);
+    }
+
+    public function test_mark_correct_noop_when_position_null(): void
+    {
+        $pa = PhotoAnalysis::create(['image_path' => 'p/b.jpg', 'status' => 'failed']);
+        $pa->markCorrect();
+        $this->assertNull($pa->refresh()->ground_truth);
+    }
+
+    public function test_labelable_scope_includes_reported_and_valid_done_only(): void
+    {
+        $rep = PhotoAnalysis::create(['image_path' => 'p/r.jpg', 'status' => 'invalid', 'reported_at' => now()]);
+        $good = PhotoAnalysis::create(['image_path' => 'p/g.jpg', 'status' => 'done', 'valid' => true]);
+        $bad = PhotoAnalysis::create(['image_path' => 'p/x.jpg', 'status' => 'done', 'valid' => false]);
+        $ids = PhotoAnalysis::labelable()->pluck('id')->all();
+        $this->assertContains($rep->id, $ids);
+        $this->assertContains($good->id, $ids);
+        $this->assertNotContains($bad->id, $ids);
+    }
 }

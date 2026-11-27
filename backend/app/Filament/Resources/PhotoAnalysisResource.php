@@ -41,7 +41,7 @@ class PhotoAnalysisResource extends Resource
     // kuyrugu). Bildirilmemis analizler listede YOK.
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->whereNotNull('reported_at');
+        return parent::getEloquentQuery()->labelable();
     }
 
     /**
@@ -122,10 +122,21 @@ class PhotoAnalysisResource extends Resource
                     ->options(['pending' => 'pending', 'done' => 'done', 'invalid' => 'invalid', 'failed' => 'failed']),
                 Tables\Filters\Filter::make('unlabeled')->label('Henüz düzeltilmemiş')
                     ->query(fn ($query) => $query->whereNull('review_status'))->default(),
+                // Temsili etiket: bildirilmemiş, tanıması güvenilir (valid+done), henüz etiketsiz = "doğru adayları".
+                Tables\Filters\Filter::make('correct_candidates')->label('Doğru adayları')
+                    ->query(fn ($query) => $query->whereNull('reported_at')->where('status', 'done')
+                        ->where('valid', true)->whereNull('review_status')),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('İncele'),
                 Tables\Actions\DeleteAction::make()->label('Sil'),
+            ])
+            ->bulkActions([
+                // Seçili doğru-taranmış fotoları eğitim etiketi olarak onayla (ground_truth = tanınan konum).
+                Tables\Actions\BulkAction::make('markCorrect')->label('Doğru olarak işaretle')
+                    ->icon('heroicon-o-check-badge')->color('success')->requiresConfirmation()
+                    ->action(fn ($records) => $records->each->markCorrect()),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
