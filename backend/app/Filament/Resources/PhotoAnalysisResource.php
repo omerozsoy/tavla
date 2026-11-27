@@ -68,12 +68,6 @@ class PhotoAnalysisResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            // Admin fotografa bakip tanimayi karsilastirir -> yanlissa dogru konumu asagida elle girer.
-            Forms\Components\Placeholder::make('image')->label('Fotoğraf')
-                ->content(fn (?PhotoAnalysis $r) => $r
-                    ? new HtmlString('<img src="'.route('admin.photo-analysis.image', $r).'" alt="" style="max-width:480px;width:100%;border-radius:8px;border:1px solid #e5e7eb" />')
-                    : '—')
-                ->columnSpanFull(),
             Forms\Components\Placeholder::make('status')->label('Durum')
                 ->content(fn (?PhotoAnalysis $r) => $r?->status ?? '—'),
             Forms\Components\Placeholder::make('valid')->label('Öz-denetim')
@@ -97,6 +91,7 @@ class PhotoAnalysisResource extends Resource
                     'pos' => self::editorPosition($get('ground_truth'), $record),
                     'mineDark' => ($record->debug['photographer'] ?? null) === 'dark',
                     'homeLeft' => (bool) $record->flip,
+                    'photoUrl' => route('admin.photo-analysis.image', $record),
                 ])->render()))
                 ->columnSpanFull(),
             Forms\Components\Select::make('review_status')->label('İnceleme durumu')
