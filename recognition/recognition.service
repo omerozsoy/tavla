@@ -1,0 +1,29 @@
+[Unit]
+Description=Tavla fotograftan pozisyon tanima servisi (TFLite gorus)
+After=network.target
+StartLimitIntervalSec=300
+StartLimitBurst=20
+
+[Service]
+Type=simple
+# RECOG_SECRET'i UZUN-RASTGELE bir degerle degistir (backend .env RECOG_SECRET ile AYNI olacak).
+Environment=RECOG_PORT=8095
+Environment=RECOG_SECRET=CHANGE_ME_UZUN_RASTGELE
+# Modeller shared/ altinda (deploy'da silinmez) -> oraya yuklenmeli (gitignore, ~43MB).
+Environment=RECOG_MODELS_DIR=/home/tavla/tavlatv.com/shared/recognition/tensor-models
+WorkingDirectory=/home/tavla/tavlatv.com/current
+ExecStart=/home/tavla/tavlatv.com/shared/recognition/venv/bin/python /home/tavla/tavlatv.com/current/recognition/service.py
+Restart=always
+RestartSec=3
+PrivateTmp=yes
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
+
+# NOT: Uretim Forge-yonetimli -> systemd DEGIL. Forge panel > Daemons ile ekle:
+#   Command:   /home/tavla/tavlatv.com/shared/recognition/venv/bin/python current/recognition/service.py
+#   Directory: /home/tavla/tavlatv.com/current
+#   User:      tavla
+#   Env:       RECOG_PORT / RECOG_SECRET / RECOG_MODELS_DIR (yukaridaki gibi)
+# Bu dosya referans/dokumantasyon; gercek daemon panelden kurulur.

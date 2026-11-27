@@ -125,6 +125,13 @@ playwright.audit.config.ts
 scripts/board-inspect.mjs
 scripts/webview-diag.mjs
 backend/heal_referral_*.php
+# Fotograftan Pozisyon Analizi: coklu-oturum is listesi (yerel, repoya girmez)
+/TODO.md
+# Fotograftan Pozisyon Analizi: test icin tavla tahtasi fotograflari (yerel, repoya girmez)
+/example-images/
+# Fotograftan Pozisyon Analizi: ~43MB TFLite gorus modelleri (yerel, repoya girmez; deploy'da ayri tasinir)
+/tensor-models/
+
 # android/app koku: elle birakilan scratch gorsel/veri (res/ icindeki gercek varliklar etkilenmez)
 android/app/*.jpg
 android/app/*.jpeg
