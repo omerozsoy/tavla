@@ -446,3 +446,23 @@
   font-size: 0.95rem;
   line-height: 1.5;
 }
+.photo-report {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed color-mix(in srgb, currentColor 18%, transparent);
+  text-align: center;
+}
+.photo-report-hint {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+.photo-report-btn {
+  gap: 6px;
+}
+.photo-report-thanks {
+  font-size: 0.9rem;
+  color: #2e7d32;
+  font-weight: 600;
+}

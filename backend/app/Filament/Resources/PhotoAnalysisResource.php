@@ -6,9 +6,12 @@ use App\Filament\Resources\PhotoAnalysisResource\Pages;
 use App\Models\PhotoAnalysis;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 /**
  * "Foto Analizleri": kullanicilarin yukledigi tahta fotograflarinin tanima + gnubg hint kayitlari.
@@ -34,33 +37,78 @@ class PhotoAnalysisResource extends Resource
         return false;
     }
 
+    // Panel YALNIZ kullanicilarin "hatali tarama bildir" ile isaretledigi kayitlari gosterir (inceleme
+    // kuyrugu). Bildirilmemis analizler listede YOK.
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->whereNotNull('reported_at');
+    }
+
+    /**
+     * Editörün başlangıç konumu: form state'teki ground_truth (JSON metni, mutateFormDataBeforeFill)
+     * yoksa tanınan konum. Alpine'a tam iskelet (points[24]+bar+turn+dice+cube) verilir ki alanlar
+     * undefined patlatmasın.
+     */
+    public static function editorPosition(mixed $groundTruthJson, PhotoAnalysis $record): array
+    {
+        $pos = is_string($groundTruthJson) ? json_decode($groundTruthJson, true) : $groundTruthJson;
+        if (! is_array($pos)) {
+            $pos = is_array($record->position) ? $record->position : [];
+        }
+
+        return array_merge([
+            'points' => array_fill(0, 24, 0),
+            'bar' => ['white' => 0, 'black' => 0],
+            'turn' => 'white',
+            'dice' => [],
+            'cube' => ['value' => 1, 'owner' => null],
+        ], $pos);
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
+            // Admin fotografa bakip tanimayi karsilastirir -> yanlissa dogru konumu asagida elle girer.
+            Forms\Components\Placeholder::make('image')->label('Fotoğraf')
+                ->content(fn (?PhotoAnalysis $r) => $r
+                    ? new HtmlString('<img src="'.route('admin.photo-analysis.image', $r).'" alt="" style="max-width:480px;width:100%;border-radius:8px;border:1px solid #e5e7eb" />')
+                    : '—')
+                ->columnSpanFull(),
             Forms\Components\Placeholder::make('status')->label('Durum')
                 ->content(fn (?PhotoAnalysis $r) => $r?->status ?? '—'),
             Forms\Components\Placeholder::make('valid')->label('Öz-denetim')
                 ->content(fn (?PhotoAnalysis $r) => $r?->valid ? '✓ geçerli' : '✗ güvenilmez'),
-            Forms\Components\Placeholder::make('image_path')->label('Görsel yolu (private disk)')
-                ->content(fn (?PhotoAnalysis $r) => $r?->image_path ?? '—')->columnSpanFull(),
+            Forms\Components\Placeholder::make('reported_at')->label('Hatalı bildirimi')
+                ->content(fn (?PhotoAnalysis $r) => $r?->reported_at ? '⚑ '.$r->reported_at->format('d.m.Y H:i') : '—'),
             Forms\Components\Placeholder::make('debug')->label('Tanıma debug')
                 ->content(fn (?PhotoAnalysis $r) => json_encode($r?->debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '—')
                 ->columnSpanFull(),
-            Forms\Components\Placeholder::make('position')->label('Yapısal konum')
+            Forms\Components\Placeholder::make('position')->label('Tanınan konum (ham)')
                 ->content(fn (?PhotoAnalysis $r) => json_encode($r?->position, JSON_PRETTY_PRINT) ?: '—')
                 ->columnSpanFull(),
             Forms\Components\Placeholder::make('hint')->label('gnubg hint')
                 ->content(fn (?PhotoAnalysis $r) => json_encode($r?->hint, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '—')
                 ->columnSpanFull(),
-            Forms\Components\Placeholder::make('error')->label('Hata')
-                ->content(fn (?PhotoAnalysis $r) => $r?->error ?: '—'),
+            // --- ELLE DÜZELTME (görsel tahta editörü -> eğitim etiketi) ---
+            // ground_truth JSON metni Hidden'da tutulur; editör (Alpine) tıklamalarla ona yazar.
+            Forms\Components\Hidden::make('ground_truth')->rules(['nullable', 'json']),
+            Forms\Components\Placeholder::make('board_editor')->label('Doğru konumu işaretle')
+                ->content(fn (PhotoAnalysis $record, Get $get) => new HtmlString(view('filament.photo-board-editor', [
+                    'pos' => self::editorPosition($get('ground_truth'), $record),
+                    'mineDark' => ($record->debug['photographer'] ?? null) === 'dark',
+                    'homeLeft' => (bool) $record->flip,
+                ])->render()))
+                ->columnSpanFull(),
+            Forms\Components\Select::make('review_status')->label('İnceleme durumu')
+                ->options(['labeled' => 'Düzeltildi (eğitime hazır)', 'skipped' => 'Kullanılamaz / atla'])
+                ->placeholder('İncelenmedi'),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('reported_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('user.nickname')->label('Kullanıcı')->default('—'),
@@ -69,13 +117,16 @@ class PhotoAnalysisResource extends Resource
                         'done' => 'success', 'invalid' => 'warning', 'failed' => 'danger', default => 'gray',
                     }),
                 Tables\Columns\IconColumn::make('valid')->label('Geçerli')->boolean(),
+                Tables\Columns\TextColumn::make('reported_at')->label('Bildirildi')->dateTime('d.m.Y H:i')->sortable(),
+                Tables\Columns\TextColumn::make('review_status')->label('İnceleme')->badge()
+                    ->placeholder('—')->color(fn (?string $state) => $state === 'labeled' ? 'success' : 'gray'),
                 Tables\Columns\TextColumn::make('debug.board_conf')->label('Board'),
-                Tables\Columns\TextColumn::make('debug.checkers')->label('Taş'),
-                Tables\Columns\TextColumn::make('created_at')->label('Tarih')->dateTime('d.m.Y H:i')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Durum')
                     ->options(['pending' => 'pending', 'done' => 'done', 'invalid' => 'invalid', 'failed' => 'failed']),
+                Tables\Filters\Filter::make('unlabeled')->label('Henüz düzeltilmemiş')
+                    ->query(fn ($query) => $query->whereNull('review_status'))->default(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('İncele'),

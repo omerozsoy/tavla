@@ -361,6 +361,11 @@ export async function getPhotoAnalysis(id: number): Promise<PhotoAnalysisResult>
   return req(`/photo-analysis/${id}`)
 }
 
+/** "Hatali tarama bildir" -> kayit admin incelemesine isaretlenir (elle duzeltme + egitim etiketi). */
+export async function reportPhotoAnalysis(id: number): Promise<{ ok: boolean }> {
+  return req(`/photo-analysis/${id}/report`, { method: 'POST' })
+}
+
 export async function register(
   input: Profile & { password: string },
 ): Promise<ServerUser> {

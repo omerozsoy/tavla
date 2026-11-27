@@ -7,6 +7,7 @@ import {
   uploadPhotoAnalysis,
   getPhotoAnalysis,
   setPhotoAnalysisSettings,
+  reportPhotoAnalysis,
   type PhotoAnalysisResult,
 } from '../api'
 import PhotoCamera from './PhotoCamera'
@@ -237,6 +238,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   const [preview, setPreview] = useState('')
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<PhotoAnalysisResult | null>(null)
+  const [reported, setReported] = useState(false) // bu sonuc icin "hatali tarama" bildirildi mi
   const [cubeBusy, setCubeBusy] = useState(false)
   const [match, setMatch] = useState<MatchSet>(loadMatch)
   // Kup DEGERI ve SKOR tahtadan OKUNAMIYOR (model yok) -> analiz varsayimla yapilir. Kullanici bunlari
@@ -337,6 +339,19 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     void applySettings(match, over)
   }
 
+  // "Hatali tarama bildir": kaydi admin incelemesine isaretler. Admin resme bakip dogru konumu elle
+  // girer -> tanima modeli bu etiketli verilerle gelecekte yeniden egitilir (kendini gelistiren dongu).
+  async function reportWrong() {
+    if (!result || reported) return
+    setReported(true) // iyimser: tesekkur metni hemen gorunsun
+    try {
+      await reportPhotoAnalysis(result.id)
+    } catch {
+      setReported(false)
+      notify.error(t('photo.reportFail'))
+    }
+  }
+
   function chooseHome(left: boolean) {
     if (left === homeLeft) return
     setHomeLeft(left)
@@ -354,6 +369,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     if (!f || busy) return
     setBusy(true)
     setResult(null)
+    setReported(false)
     setCubeChosen(false)
     try {
       const blob = await downscale(f)
@@ -765,6 +781,19 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
           ) : (
             <div className="photo-invalid">{t(result!.status === 'invalid' ? 'photo.invalid' : 'photo.failed')}</div>
           )}
+          {/* Hatali tarama bildir: kullanici yardimiyla tanima zamanla gelisir (admin elle duzeltir). */}
+          <div className="photo-report">
+            {reported ? (
+              <div className="photo-report-thanks">✓ {t('photo.reportThanks')}</div>
+            ) : (
+              <>
+                <p className="photo-report-hint">{t('photo.reportHint')}</p>
+                <Button variant="outline" onClick={reportWrong} type="button" className="photo-report-btn">
+                  <Icon name="flag" size={15} /> {t('photo.reportBtn')}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

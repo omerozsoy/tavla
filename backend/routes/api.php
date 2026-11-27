@@ -32,8 +32,8 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\OpeningPositionController;
 use App\Http\Controllers\OrganizerController;
-use App\Http\Controllers\PhotoAnalysisController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PhotoAnalysisController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PushController;
@@ -281,6 +281,9 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     // Kullanici ayarlari (kup deger/sahip + mac uzunluk/skor/crawford) -> ayni konum gnubg'ye yeniden
     Route::post('/photo-analysis/{photoAnalysis}/settings', [PhotoAnalysisController::class, 'settings'])
         ->middleware('throttle:30,1,photo-settings');
+    // "Hatali tarama bildir" -> admin incelemesine isaretle (kendini gelistiren egitim dongusu).
+    Route::post('/photo-analysis/{photoAnalysis}/report', [PhotoAnalysisController::class, 'report'])
+        ->middleware('throttle:20,1,photo-report');
     // Arkadaş davet (referral): durum (kod/link/kalan hak) + davet maili gönder (günlük sınır).
     Route::get('/me/referral', [ReferralController::class, 'status']);
     Route::post('/me/referral/invite', [ReferralController::class, 'invite'])

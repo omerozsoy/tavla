@@ -6,6 +6,7 @@ use App\Jobs\AnalyzePhotoJob;
 use App\Models\PhotoAnalysis;
 use App\Services\GnuBg\GnuBgClient;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /**
@@ -113,6 +114,35 @@ class PhotoAnalysisController extends Controller
         $photoAnalysis->update(['position' => $position, 'hint' => $hint]);
 
         return $this->show($request, $photoAnalysis);
+    }
+
+    /**
+     * Kullanici "hatali tarama bildir" -> kayit admin incelemesine isaretlenir (reported_at). Admin
+     * panelde resme bakip dogru konumu girer (ground_truth) -> yeniden egitim etiketi. Idempotent.
+     */
+    public function report(Request $request, PhotoAnalysis $photoAnalysis)
+    {
+        abort_unless($photoAnalysis->user_id === $request->user()?->id, 403);
+        if ($photoAnalysis->reported_at === null) {
+            $photoAnalysis->update(['reported_at' => now()]);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Admin panel foto onizlemesi: private disk'teki tahta fotografini akitir (yukleme downscale ile
+     * JPEG). Yalniz admin (web rotasi 'admin' middleware); kullanici-sahiplik kontrolu YOK (admin hepsini
+     * inceler). Egitim etiketleme icin admin resmi gormeli.
+     */
+    public function adminImage(PhotoAnalysis $photoAnalysis)
+    {
+        abort_unless(Storage::disk('local')->exists($photoAnalysis->image_path), 404);
+
+        return response(Storage::disk('local')->get($photoAnalysis->image_path), 200, [
+            'Content-Type' => 'image/jpeg',
+            'Cache-Control' => 'private, max-age=600',
+        ]);
     }
 
     public function show(Request $request, PhotoAnalysis $photoAnalysis)

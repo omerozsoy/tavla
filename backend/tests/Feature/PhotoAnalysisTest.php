@@ -172,4 +172,33 @@ class PhotoAnalysisTest extends TestCase
         $this->assertSame('invalid', $pa->status);
         $this->assertFalse($pa->valid);
     }
+
+    public function test_report_flags_record_for_admin_review_and_is_idempotent(): void
+    {
+        $user = User::factory()->create();
+        $pa = $this->donePhoto($user);
+
+        $this->actingAs($user)->postJson("/api/photo-analysis/{$pa->id}/report")
+            ->assertOk()->assertJson(['ok' => true]);
+        $first = $pa->refresh()->reported_at;
+        $this->assertNotNull($first);
+
+        // tekrar bildir -> zaman degismez (idempotent)
+        $this->actingAs($user)->postJson("/api/photo-analysis/{$pa->id}/report")->assertOk();
+        $this->assertEquals($first, $pa->refresh()->reported_at);
+
+        // baskasinin kaydini bildiremez
+        $other = User::factory()->create();
+        $this->actingAs($other)->postJson("/api/photo-analysis/{$pa->id}/report")->assertStatus(403);
+    }
+
+    public function test_parse_ground_truth_turns_admin_json_into_training_label(): void
+    {
+        $pos = ['points' => array_fill(0, 24, 0), 'turn' => 'white', 'dice' => [3, 1]];
+        $this->assertSame($pos, PhotoAnalysis::parseGroundTruth(json_encode($pos)));
+        // bos / gecersiz -> etiket yazilmaz (null)
+        $this->assertNull(PhotoAnalysis::parseGroundTruth(''));
+        $this->assertNull(PhotoAnalysis::parseGroundTruth(null));
+        $this->assertNull(PhotoAnalysis::parseGroundTruth('not json'));
+    }
 }

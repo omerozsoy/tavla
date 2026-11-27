@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\PanelController;
+use App\Http\Controllers\PhotoAnalysisController;
+use App\Http\Controllers\ShopierController;
 use App\Http\Controllers\VerificationController;
 use App\Models\MenuItem;
 use App\Support\Brand;
@@ -143,6 +145,10 @@ Route::prefix('panel')->group(function () {
     });
 });
 
+// Filament "Foto Analizleri" onizlemesi: private disk'teki tahta fotografini admin'e akitir.
+Route::get('/admin/photo-analyses/{photoAnalysis}/image', [PhotoAnalysisController::class, 'adminImage'])
+    ->middleware('admin')->name('admin.photo-analysis.image');
+
 // ---- Odeme donus sayfasi ----
 // Kullanici donus sayfasi: ?ok=1/0. Gercek fulfillment admin onayinda (kart/havale PENDING).
 Route::get('/pay/result', fn (Request $r) => view('pay.result', [
@@ -153,7 +159,7 @@ Route::get('/pay/result', fn (Request $r) => view('pay.result', [
 
 // Shopier hosted ödeme: kullanıcı tarayıcısı buraya yönlenir -> imzalı form auto-submit ile Shopier'e.
 // (Callback POST'u CSRF'siz olması için api.php'de /api/pay/shopier/callback.)
-Route::get('/pay/shopier/{order}', [\App\Http\Controllers\ShopierController::class, 'redirect'])
+Route::get('/pay/shopier/{order}', [ShopierController::class, 'redirect'])
     ->where('order', '[A-Za-z0-9]+')
     ->name('pay.shopier');
 
