@@ -44,4 +44,15 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Fotograftan Pozisyon Analizi (/foto-analiz): WebView <input capture> ile kameradan foto cek /
+         galeriden sec. Kamera = capture; galeri = Android 13+ READ_MEDIA_IMAGES, <=12 READ_EXTERNAL_STORAGE.
+         Temp capture dosyasi yukaridaki FileProvider ile paylasilir (depolama yazma izni gerekmez). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <!-- Kamera donanimi ZORUNLU DEGIL (galeri-only / kamerasiz cihazlar app'i yukleyebilsin) -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

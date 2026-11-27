@@ -97,11 +97,11 @@ export const PAGES: PageDef[] = [
   { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'package', group: 'content', hideInGame: true, inMenu: false },
 
   // --- ARACLAR: analiz araclari ---
+  // Fotograftan Analiz: tahta fotografi cek/sec -> sunucu tanima + gnubg -> en iyi hamle. Araclar'in 1.si.
+  { key: 'photoAnalysis', slug: 'foto-analiz', labelKey: 'photo.title', icon: 'camera', group: 'tools', gate: 'user' },
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },
   // Mat Analiz: kullanici .mat maci yukler, motor tam analiz eder (ozet: PR/blunder/hata/kesinsizlik).
   { key: 'matAnalyzer', slug: 'mat-analiz', labelKey: 'ma.title', icon: 'file-magnifying-glass', group: 'tools' },
-  // Fotograftan Analiz: tahta fotografi cek/sec -> sunucu tanima + gnubg -> en iyi hamle. Giris gerekli.
-  { key: 'photoAnalysis', slug: 'foto-analiz', labelKey: 'photo.title', icon: 'camera', group: 'tools', gate: 'user' },
   { key: 'achievements', slug: 'basarimlar', labelKey: 'ach.title', icon: 'medal', group: 'tools', inMenu: false },
   { key: 'blunders', slug: 'hata-gunlugu', labelKey: 'menu.blunders', icon: 'warning-circle', group: 'tools' },
   { key: 'matchHistory', slug: 'mac-analizleri', labelKey: 'menu.matchHistory', icon: 'chart-line', group: 'tools' },

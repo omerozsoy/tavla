@@ -57,6 +57,21 @@ workflows:
           /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$PLIST" 2>/dev/null \
             || /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$PLIST"
 
+      - name: Kamera/Galeri izin açıklamaları (Fotoğraftan Analiz) enjekte et
+        # /foto-analiz WebView <input capture> ile kameradan foto ceker / galeriden secer.
+        # iOS WKWebView bu izin DIALOG metinlerini (NSCameraUsageDescription / NSPhotoLibraryUsageDescription)
+        # ARAR; YOKSA kamera/galeri erisimi reddedilir + App Store reddi. cap add ios Info.plist'i sifirdan
+        # urettigi icin encryption flag'i gibi enjekte ediyoruz (Set-varsa / Add-yoksa, idempotent).
+        script: |
+          set -e
+          PLIST=ios/App/App/Info.plist
+          CAM="Tavla tahtanızın fotoğrafını çekip pozisyonu analiz etmek için kamera erişimi gerekir."
+          LIB="Galeriden tavla tahtası fotoğrafı seçip pozisyonu analiz etmek için fotoğraf erişimi gerekir."
+          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription $CAM" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string $CAM" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription $LIB" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string $LIB" "$PLIST"
+
       - name: Google Sign-In URL scheme (reversed iOS client ID) enjekte et
         # GoogleSignIn-iOS, signIn(withPresenting:) cagrisinda Info.plist'te bu CUSTOM URL SCHEME'i ARAR;
         # YOKSA yakalanmamis exception firlatir -> uygulama butona basar basmaz COKER. Scheme = iOS OAuth
