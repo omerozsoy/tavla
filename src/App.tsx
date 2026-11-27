@@ -12031,29 +12031,30 @@ export default function App() {
   // İçerik sayfası dallarının ortak trailing katmanı (overlay/modal). Home + online lobi farklı verir.
   // Alt gezinme çubuğu (BottomNav): YALNIZ kurulu APK'da (IS_NATIVE_APP) + maç DIŞI (home). body'ye
   // portal'landığından TÜM lobi trailing'lerine koyulabilir (home/online/alt-sayfa). Oyun görünümünde
-  // home=false -> gizli. Profil = kendi profilim (onMyStats). TEK yerde tanımlanıp her trailing'de kullanılır.
+  // home=false -> gizli. Profil öğesi kaldırıldı (kullanıcı direktifi). TEK yerde tanımlanıp her trailing'de kullanılır.
   const bottomNavEl =
     MOBILE_UI && home ? (
       <BottomNav
         active={
           activeKey === 'match'
             ? 'oyna'
-            : activeKey === 'tournaments'
+            : photoAnalysisOpen
+              ? 'foto'
+              : activeKey === 'tournaments'
               ? 'turnuvalar'
               : activeKey === 'shop'
                 ? 'magaza'
-                : editProfile
-                  ? 'profil'
-                  : activeKey === ''
-                    ? 'ana'
-                    : undefined
+                : !editProfile && activeKey === ''
+                  ? 'ana'
+                  : undefined
         }
         items={[
           { key: 'ana', label: 'Ana Sayfa', icon: 'home', onClick: menuProps.onHome },
           { key: 'oyna', label: 'Oyna', icon: 'play', onClick: menuProps.onNewGame },
+          // Foto Analiz (/foto-analiz) — 3. sıra (kullanıcı direktifi).
+          { key: 'foto', label: 'Foto Analiz', icon: 'camera', onClick: menuProps.onPhotoAnalysis },
           { key: 'turnuvalar', label: 'Turnuvalar', icon: 'trophy', onClick: menuProps.onTournaments },
           { key: 'magaza', label: 'Mağaza', icon: 'shop', onClick: menuProps.onShop },
-          { key: 'profil', label: 'Profil', icon: 'user', onClick: menuProps.onMyStats },
           // Sağ üstteki hamburger menü alt çubuğun EN SAĞINDA da (kullanıcı direktifi) -> yan menüyü açar.
           { key: 'menu', label: 'Menü', icon: 'menu', onClick: () => setMenuOpen(true) },
         ]}

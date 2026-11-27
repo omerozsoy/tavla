@@ -25171,9 +25171,9 @@ body:has(.spectate-view) .app.lobby {
 }
 .bottom-nav__item:nth-child(1) { --bn: var(--accent); }            /* Ana Sayfa — terracotta */
 .bottom-nav__item:nth-child(2) { --bn: var(--tv-green, #3f9e6a); } /* Oyna — yeşil */
-.bottom-nav__item:nth-child(3) { --bn: var(--orange, #e08a2a); }   /* Turnuvalar — turuncu */
-.bottom-nav__item:nth-child(4) { --bn: #2f78c4; }                 /* Mağaza — mavi */
-.bottom-nav__item:nth-child(5) { --bn: #d8569a; }                 /* Profil — pembe */
+.bottom-nav__item:nth-child(3) { --bn: #d8569a; }                 /* Foto Analiz — pembe */
+.bottom-nav__item:nth-child(4) { --bn: var(--orange, #e08a2a); }   /* Turnuvalar — turuncu */
+.bottom-nav__item:nth-child(5) { --bn: #2f78c4; }                 /* Mağaza — mavi */
 .bottom-nav__item:nth-child(6) { --bn: #7c5cbf; }                  /* Menü — mor */
 /* İçerik çubuğun altında kalmasın: body'ye alt boşluk (çubuk yüksekliği + güvenli alan). */
 body.has-bottom-nav {
