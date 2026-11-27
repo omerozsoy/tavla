@@ -51,6 +51,20 @@ Foto upload → kuyruk → tanıma → gnubg zinciri `backend/`'de bağlı:
    database` YAZMA — dispatch varsayılana gider, database worker redis kuyruğunu görmez → işlenmez.)
    (Forge panel > Daemons; User=tavla, Directory=.../current/backend). Worker yoksa işler kuyrukta bekler.
 
+## Kendini geliştiren döngü — etiket/eval seti (Option A)
+Kullanıcı "Hatalı tarama bildir" → admin panelde (Filament, Oyun > Foto Analizleri) foto + görsel
+editörle doğru konumu işaretler (`ground_truth`). Bu etiketler tanımayı **ölçmek** için kullanılır
+(model EĞİTİMİ DEĞİL — tanıma 5 sabit GammonSnap TFLite + elle geometri; asıl hata kaynağı geometri):
+
+1. **Export (sunucuda):** `sudo -n -u tavla php artisan photo:export-labels`
+   → `ground_truth != null` kayıtların görseli + `labels.jsonl` (`{file,flip,ground_truth}`) `recognition/eval-data/`'ya (gitignore).
+2. **Skorla:** `python eval.py eval-data` → `N foto · M TAM doğru (%..) · nokta hata ort ..` + başarısız her fotonun sapması.
+   Birincil metrik `points[24]`+`bar`; `dice`/`turn` ikincil; `cube` kıyaslanmaz (model okumaz).
+3. **İyileştir:** geometri (`_fit_lattice`/yönelim/barcenter) değiştir → `eval.py`'ı tekrar koş: gerileme
+   yok + düzeldi mi bak. Böylece her düzeltilen foto bir regresyon testi olur.
+
+`compare_position()` saf (modelsiz) → `test_eval.py` birim-test eder (`python -m pytest test_eval.py`).
+
 ## ⚠ Açık uçlar (Faz 2 kalan)
 - **gnubg round-trip doğrulama:** yapısal konum → `gnubg-service` `structured_to_gnubgid` → hint.
   MUTLAK yönelim + `turn` + renk→oyuncu KONVANSİYONU burada kesinleşir (foto doğal yön belirsizliği).
