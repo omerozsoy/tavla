@@ -274,7 +274,14 @@ export interface PhotoAnalysisResult {
   status: 'pending' | 'done' | 'invalid' | 'failed'
   valid: boolean
   position: { points: number[]; bar: { white: number; black: number }; turn: string; dice: number[]; cube: { value: number; owner: string | null } } | null
-  hint: { gnubgid?: string; result?: { hint?: PhotoHintCandidate[] } } | null
+  /** zar varsa result.hint (hamle adaylari); zar YOKSA gnubg kup analizi doner (cube + evaluate) */
+  hint: {
+    gnubgid?: string
+    result?: { hint?: PhotoHintCandidate[] }
+    cube?: { proper?: string; equities?: { noDouble?: number; doubleTake?: number; doublePass?: number } }
+    /** [kazanma, gammon kazanma, bg kazanma, gammon kaybetme, bg kaybetme, equity] (sirasi gelen icin) */
+    evaluate?: number[]
+  } | null
   debug: {
     board_conf?: number
     checkers?: number

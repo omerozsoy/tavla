@@ -105,6 +105,16 @@ export function PositionBoard({
  */
 const HOME_KEY = 'photoHomeSide'
 
+// gnubg kup karari metni (or. "Double, pass", "No redouble, take", "Too good to double, pass") -> Turkce
+function cubeAction(proper: string, t: (k: string) => string): string {
+  const p = proper.toLowerCase()
+  if (p.startsWith('too good')) return t('photo.cubeTooGood')
+  if (p.startsWith('no double') || p.startsWith('no redouble')) return t('photo.cubeNoDouble')
+  if (p.includes('pass')) return t('photo.cubeDoublePass')
+  if (p.includes('take') || p.includes('beaver')) return t('photo.cubeDoubleTake')
+  return proper
+}
+
 export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () => void; titleOverride?: string }) {
   const { t } = useT()
   const notify = useToast()
@@ -189,7 +199,11 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   }
 
   const cands = result?.hint?.result?.hint?.slice(0, 3) ?? []
-  const done = result?.status === 'done' && result.valid && cands.length > 0
+  // Zar YOK (zar atilmadan once) -> gnubg hamle degil KUP KARARI doner. Eskiden bu "basarisiz"
+  // gorunuyordu (yalniz hamle listesi bekleniyordu).
+  const cube = cands.length === 0 ? result?.hint?.cube : undefined
+  const evalv = result?.hint?.evaluate
+  const done = result?.status === 'done' && result.valid && (cands.length > 0 || !!cube?.proper)
 
   return (
     <div className="photo-page">
@@ -299,9 +313,43 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                 {/* tanima kurali: zar bar'in saginda -> fotografi ceken, solunda -> rakip */}
                 <b>{result!.position?.turn === 'black' ? t('photo.turnOpp') : t('photo.turnMe')}</b>
               </div>
-              <div className="photo-best">
-                {t('photo.best')}: <b>{cands[0].move}</b>
-              </div>
+              {cube ? (
+                <div className="photo-cube">
+                  <div className="photo-best">
+                    {t('photo.cubeTitle')}: <b>{cubeAction(cube.proper || '', t)}</b>
+                  </div>
+                  {evalv && evalv.length >= 5 && (
+                    <div className="photo-cube-probs">
+                      {t('photo.winPct')}: <b>{(evalv[0] * 100).toFixed(1)}%</b>
+                      {' · '}
+                      {t('photo.gammonPct')}: <b>{(evalv[1] * 100).toFixed(1)}%</b>
+                    </div>
+                  )}
+                  {cube.equities && (
+                    <ul className="photo-cands">
+                      {(
+                        [
+                          ['noDouble', t('photo.cubeNoDouble')],
+                          ['doubleTake', t('photo.cubeDoubleTake')],
+                          ['doublePass', t('photo.cubeDoublePass')],
+                        ] as const
+                      ).map(([k, label]) =>
+                        typeof cube.equities?.[k] === 'number' ? (
+                          <li key={k}>
+                            <span className="photo-cand-move">{label}</span>
+                            <span className="photo-cand-eq">{cube.equities[k]!.toFixed(3)}</span>
+                          </li>
+                        ) : null,
+                      )}
+                    </ul>
+                  )}
+                  <div className="photo-cube-hint">{t('photo.cubeHint')}</div>
+                </div>
+              ) : (
+                <div className="photo-best">
+                  {t('photo.best')}: <b>{cands[0].move}</b>
+                </div>
+              )}
               {cands.length > 1 && (
                 <ul className="photo-cands">
                   {cands.map((c, i) => (

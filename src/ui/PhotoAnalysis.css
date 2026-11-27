@@ -271,6 +271,16 @@
   font-size: 1.25rem;
   margin-bottom: 10px;
 }
+.photo-cube-probs {
+  font-size: 0.92rem;
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
+.photo-cube-hint {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  opacity: 0.65;
+}
 .photo-cands {
   list-style: none;
   padding: 0;
