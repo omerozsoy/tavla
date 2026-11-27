@@ -273,7 +273,16 @@ export interface PhotoAnalysisResult {
   id: number
   status: 'pending' | 'done' | 'invalid' | 'failed'
   valid: boolean
-  position: { points: number[]; bar: { white: number; black: number }; turn: string; dice: number[]; cube: { value: number; owner: string | null } } | null
+  position: {
+    points: number[]
+    bar: { white: number; black: number }
+    turn: string
+    dice: number[]
+    cube: { value: number; owner: string | null }
+    matchLength?: number
+    score?: { white: number; black: number }
+    crawford?: boolean
+  } | null
   /** zar varsa result.hint (hamle adaylari); zar YOKSA gnubg kup analizi doner (cube + evaluate) */
   hint: {
     gnubgid?: string
@@ -292,8 +301,28 @@ export interface PhotoAnalysisResult {
     /** fotografi cekenin tas rengi; position.points'te POZITIF = fotografi ceken */
     photographer?: 'light' | 'dark'
     dice_side?: 'left' | 'right' | 'none'
+    /** kendi kup modelimizle bulunan kup (yoksa null); zone: sag=ceken katladi (rakipte), sol=cekende, bar=ortada */
+    cube?: {
+      zone: 'left' | 'right' | 'bar' | 'front_me' | 'front_opp'
+      owner: 'white' | 'black' | null
+      value: number
+    } | null
   } | null
   error: string | null
+}
+
+/** Kullanici ayarlari: kup (deger/sahip) + mac (uzunluk 0=para, skor, crawford). 'white' = fotografi
+ * ceken. Ayni taninan konum bu ayarlarla gnubg'ye yeniden -> guncel sonuc (foto/tanima tekrar yok). */
+export interface PhotoSettings {
+  cube_value: number
+  cube_owner: 'white' | 'black' | null
+  match_length: number
+  score_me: number
+  score_opp: number
+  crawford: boolean
+}
+export async function setPhotoAnalysisSettings(id: number, s: PhotoSettings): Promise<PhotoAnalysisResult> {
+  return req(`/photo-analysis/${id}/settings`, { method: 'POST', body: JSON.stringify(s) })
 }
 
 /** Tahta fotografini yukle -> kuyruk kaydi (id + pending). multipart -> req() DEGIL (json zorlar); dogrudan fetch. */

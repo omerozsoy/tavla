@@ -37,6 +37,21 @@ class AnalyzePhotoJob implements ShouldQueue
         $this->onQueue('photo');
     }
 
+    /**
+     * Taninan konumu gnubg analizine hazirla. Varsayilan PARA OYUNU (skor 0-0); konumda kullanicinin
+     * sectigi mac uzunlugu / skor / crawford varsa ONLAR gecerli (PhotoAnalysisController::settings).
+     * Zar + kup tanimadan ya da kullanicidan. 'white' = fotografi ceken, 'black' = rakip.
+     */
+    public static function gnubgPosition(array $position): array
+    {
+        return array_merge([
+            'off' => ['white' => 0, 'black' => 0],
+            'score' => ['white' => 0, 'black' => 0],
+            'matchLength' => 0,
+            'crawford' => false,
+        ], $position, ['plies' => 2]);
+    }
+
     public function handle(RecognitionClient $recog, GnuBgClient $gnubg): void
     {
         $pa = PhotoAnalysis::find($this->photoAnalysisId);
@@ -67,16 +82,7 @@ class AnalyzePhotoJob implements ShouldQueue
             return;
         }
 
-        // gnubg analizi icin konumu tamamla (para oyunu varsayimi; dice tanimadan geldi)
-        $gnubgPos = array_merge($position, [
-            'off' => $position['off'] ?? ['white' => 0, 'black' => 0],
-            'score' => ['white' => 0, 'black' => 0],
-            'matchLength' => 0,
-            'crawford' => false,
-            'plies' => 2,
-        ]);
-
-        $hint = $gnubg->analyze($gnubgPos);
+        $hint = $gnubg->analyze(self::gnubgPosition($position));
         if ($hint === null) {
             // gnubg down/degrade -> SAHTE sonuc yazma; retry/heal'e birak (alarm-muaf)
             throw new TransientAnalysisException('gnubg unavailable for photo analysis');

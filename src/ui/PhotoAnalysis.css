@@ -271,6 +271,83 @@
   font-size: 1.25rem;
   margin-bottom: 10px;
 }
+.photo-pips {
+  font-size: 0.92rem;
+  margin: 0 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+.photo-pips-diff {
+  opacity: 0.7;
+}
+.photo-matchctl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+}
+.photo-matchctl.busy {
+  opacity: 0.6;
+}
+.photo-matchctl select {
+  padding: 3px 6px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+}
+.photo-crawford {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.photo-cubectl {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 10px;
+}
+.photo-cubectl.busy {
+  opacity: 0.6;
+}
+.photo-cubectl-state {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.photo-cubectl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+.photo-cubectl-label {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin-right: 4px;
+}
+.photo-cubectl button {
+  min-width: 34px;
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.photo-cubectl button.on {
+  background: var(--color-primary, #2b5fd9);
+  border-color: var(--color-primary, #2b5fd9);
+  color: #fff;
+}
 .photo-cube-probs {
   font-size: 0.92rem;
   opacity: 0.85;

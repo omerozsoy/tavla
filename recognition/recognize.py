@@ -11,6 +11,7 @@ import os, threading
 import numpy as np
 import cv2
 from ai_edge_litert.interpreter import Interpreter
+import cube as _cube
 
 MODELS = os.environ.get("RECOG_MODELS_DIR", "tensor-models")
 Wd, Hd = 1000, 800
@@ -280,7 +281,7 @@ def _recognize_warp(warp, board_conf, flip):
     valid = (board_conf >= 0.5 and placed == len(checkers) and collisions == 0
              and 10 <= len(checkers) <= 30 and white <= 15 and black <= 15 and mixed == 0)
     return {
-        "points": points, "dice_boxes": dice,
+        "points": points, "dice_boxes": dice, "checker_boxes": checkers,
         "debug": {
             "board_conf": round(board_conf, 3),
             "checkers": len(checkers), "placed": placed, "white": white, "black": black,
@@ -305,11 +306,11 @@ def recognize(bgr, flip=False):
                 w = _warp_quad(bgr, q, rot)
                 r = _recognize_warp(w, board_conf, flip)
                 r["debug"]["rotated"] = rot; r["debug"]["warp"] = kind
-                cands.append((r, w))
-            if any(r["debug"]["valid"] for r, _ in cands):
+                cands.append((r, w, q))
+            if any(c[0]["debug"]["valid"] for c in cands):
                 break
         good = [c for c in cands if c[0]["debug"]["valid"]]
-        res, warp = min(good, key=lambda c: c[0]["debug"]["fit"]) if good else cands[0]
+        res, warp, quad = min(good, key=lambda c: c[0]["debug"]["fit"]) if good else cands[0]
 
         faces = []
         right = left = 0
@@ -323,17 +324,30 @@ def recognize(bgr, flip=False):
                 else:
                     left += 1
 
+        # KUP (kendi modellerimiz Cube_v2 + CubeClassify_v2): bulunursa sahip konumdan (bar'in sagi =
+        # ceken katladi -> rakipte, solu = cekende, bar = ortada), deger varsayilan (sahipli 2 / orta 1)
+        # -> kullanici sonuc ekraninda duzeltir.
+        cb = _cube.find_cube(_get, lambda crop: _run("CubeClassify_v2.tflite", crop, (96, 96), stretch=True)[0][0][0],
+                             warp, res["checker_boxes"], res["dice_boxes"], res["debug"]["barcenter"])
+        if cb is None and not res["debug"]["rotated"] and len(res["checker_boxes"]):
+            # tahtada kup yok -> bir oyuncunun ONUNDE (tahta disi, kabul edilmis) kup var mi?
+            # tas capini orijinal foto olcegine cevir (warp genisligi Wd <-> tahtanin fotodaki genisligi)
+            scale = float(quad[:, 0].max() - quad[:, 0].min()) / Wd
+            med = float(np.median([b[2] - b[0] for b in res["checker_boxes"]])) * scale
+            cb = _cube.find_front_cube(_get, bgr, quad, med)
+        cube_pos = {"value": cb["value"], "owner": cb["owner"]} if cb else {"value": 1, "owner": None}
+
         points, photographer, margin = _orient_to_photographer(res["points"])
         # SIRA (kullanici kurali): zar bar'in SAGINDA -> fotografi ceken atacak; SOLUNDA -> rakip.
         # Zar yok / esit -> fotografi ceken (en olasi: kendi hamlesini soruyor).
         turn = "black" if left > right else "white"
         dbg = res["debug"]
-        dbg.update({"photographer": photographer, "pip_margin": margin,
+        dbg.update({"photographer": photographer, "pip_margin": margin, "cube": cb,
                     "dice_side": "left" if left > right else ("right" if right else "none")})
         return {
             "ok": True,
             "position": {"points": points, "bar": {"white": 0, "black": 0},
-                         "turn": turn, "dice": faces, "cube": {"value": 1, "owner": None}},
+                         "turn": turn, "dice": faces, "cube": cube_pos},
             "debug": dbg,
         }
 
