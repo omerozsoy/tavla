@@ -11,9 +11,10 @@ varsayilir ve value_src='model_ge8' ile kullaniciya "tam degeri kontrol et" uyar
 Bar uzerindeki tespit YOK SAYILIR (ortadaki kup = varsayilan; menteseler orada kup sanilabiliyor).
 Siyah skor kartlari (koyu + renksiz govde) elenir.
 
-SAHIP (kullanici kurali, zar kuraliyla ayni eksen): kup bar'in SAGINDA -> fotografi ceken KATLADI,
-rakip aldi -> RAKIPTE ("black"); SOLUNDA -> cekene katlandi -> CEKENDE ("white"); bar uzeri -> ORTADA.
-Tahta DISINDA bir oyuncunun ONUNDE (kabul edilmis) kup: alt -> cekende, ust -> rakipte.
+KONUM KURALI (kullanici): bir oyuncunun TARAFINDA (kendi kenarina yakin; tahta icinde ya da dibinde)
+duran kup ONUNDUR (kabul edilmis). Tahtanin ORTASINDAKI kup KIMSENIN DEGILDIR: CEKILMIS (teklif edilmis)
+kuptur — sag yarida -> fotografi ceken ("white") cekti, rakip al/pas diyecek; sol yarida -> rakip
+("black") cekti, ceken al/pas diyecek. Bar uzeri = oyun basi kupu (yok sayilir = ortada, deger 1).
 """
 import numpy as np
 import cv2
@@ -22,6 +23,7 @@ CUBE_DET_MIN = 0.25  # saha: uzak/kucuk kirmizi kup 0.25'te bulunuyor (eskiden 0
 CUBE_CLS_MIN = 0.85  # 4-yon TTA'nin en emin yonu bu kadar emin olmali (bulanik/yanlis kirpinti elenir)
 SIZE_MAX = 1.35  # kup kenari / tas capi ust sinir (saha: buyuk kup 1.15x -> 1.1 siniri kaciriyordu)
 BAR_BAND = 0.06  # bar merkezine bu kadar (warp genisligi orani) yakin kup = bar uzerinde = ortada
+SIDE_BAND = 0.3  # warp yuksekliginin ust/alt %30'u = o oyuncunun TARAFI (kup onun); arasi = ORTA (cekilmis)
 FRONT_DET_MIN = 0.6
 
 
@@ -167,19 +169,24 @@ def find_cube(get_model, run_cls, warp, checker_boxes, die_boxes, barcenter, img
             # bar uzeri = ortadaki kup = zaten varsayilan (deger 1, sahipsiz). Bar'daki menteseler de
             # burada kup sanilabildigi icin (canli: soluk altin mentese) tespit YOK SAYILIR.
             continue
-        zone = "right" if cx > barcenter else "left"
-        # sag: ceken katladi -> rakip aldi (black); sol: cekene katlandi -> ceken aldi (white)
-        owner = {"right": "black", "left": "white"}.get(zone)
+        cy = (box[1] + box[3]) / 2 / warp.shape[0]
+        if cy < SIDE_BAND:
+            zone, owner, offer_by = "opp_side", "black", None      # rakibin tarafinda -> rakipte
+        elif cy > 1 - SIDE_BAND:
+            zone, owner, offer_by = "my_side", "white", None       # cekenin tarafinda -> cekende
+        else:  # ortada = cekilmis kup (kimsenin degil); sag yari -> ceken cekti, sol -> rakip cekti
+            zone, owner = "offer", None
+            offer_by = "white" if cx > barcenter else "black"
         hi = cw
         if img is not None and minv is not None:
             pts = np.array([[[box[0], box[1]], [box[2], box[1]], [box[2], box[3]], [box[0], box[3]]]], np.float32)
             op = cv2.perspectiveTransform(pts, minv)[0]
             (ox1, oy1), (ox2, oy2) = op.min(0), op.max(0)
             hi = _hi_crop(img, ox1, oy1, ox2, oy2)
-        value, src = _value(cls, hi, owner is None)
+        value, src = _value(cls, hi, False)
         best = {"box": [round(float(v)) for v in box], "det": round(s, 2),
                 "cls": [round(float(v), 2) for v in cls], "zone": zone,
-                "owner": owner if value > 1 else None, "value": value, "value_src": src}
+                "owner": owner, "offer_by": offer_by, "value": value, "value_src": src}
     return best
 
 
@@ -214,6 +221,6 @@ def find_front_cube(get_model, run_cls, img, quad, checker_px):
         if best is None or s > best["det"]:
             value, src = _value(cls, _hi_crop(img, x1, y1, x2, y2), False)
             best = {"box": [round(x1), round(y1), round(x2), round(y2)], "det": round(s, 2),
-                    "cls": [round(float(v), 2) for v in cls], "zone": zone, "owner": owner,
+                    "cls": [round(float(v), 2) for v in cls], "zone": zone, "owner": owner, "offer_by": None,
                     "value": value, "value_src": src}
     return best

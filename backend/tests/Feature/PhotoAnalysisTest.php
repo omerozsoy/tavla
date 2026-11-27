@@ -104,6 +104,31 @@ class PhotoAnalysisTest extends TestCase
         ])->assertOk()->assertJsonPath('position.matchLength', 7)->assertJsonPath('position.score.white', 6);
     }
 
+    public function test_settings_cube_offer_sends_pre_offer_cube_on_doublers_turn(): void
+    {
+        $user = User::factory()->create();
+        $pa = $this->donePhoto($user);
+        $pa->update(['position' => array_merge($pa->position, ['turn' => 'black', 'dice' => [3, 1]])]);
+
+        $gnubg = $this->mock(GnuBgClient::class);
+        // 4'e cekildi (rakip cekti): once kup 2 rakipte; sira rakipte, zar yok
+        $gnubg->shouldReceive('analyze')->once()
+            ->withArgs(fn (array $p) => $p['cube'] === ['value' => 2, 'owner' => 'black'] && $p['turn'] === 'black'
+                && $p['dice'] === [])
+            ->andReturn(['cube' => ['proper' => 'Redouble, take']]);
+        // teklif kaldirilinca sira/zar tanimaya doner
+        $gnubg->shouldReceive('analyze')->once()
+            ->withArgs(fn (array $p) => $p['turn'] === 'black' && $p['dice'] === [3, 1] && $p['cube_offer'] === null)
+            ->andReturn(['result' => ['hint' => [['move' => '8/5 6/5']]]]);
+
+        $url = "/api/photo-analysis/{$pa->id}/settings";
+        $this->actingAs($user)->postJson($url, ['cube_value' => 4, 'cube_offer' => 'black'])
+            ->assertOk()->assertJsonPath('position.cube_offer.by', 'black')->assertJsonPath('position.cube_offer.value', 4);
+        $this->actingAs($user)->postJson($url, ['cube_value' => 1])->assertOk();
+        // teklif degeri >= 2 olmali
+        $this->actingAs($user)->postJson($url, ['cube_value' => 1, 'cube_offer' => 'white'])->assertStatus(422);
+    }
+
     public function test_settings_rules_and_ownership(): void
     {
         $user = User::factory()->create();

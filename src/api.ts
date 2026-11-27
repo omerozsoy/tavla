@@ -282,6 +282,8 @@ export interface PhotoAnalysisResult {
     matchLength?: number
     score?: { white: number; black: number }
     crawford?: boolean
+    /** cekilmis (teklif edilmis) kup: by = ceken, value = teklif edilen deger. cube = cekilmeden onceki hal */
+    cube_offer?: { by: 'white' | 'black'; value: number } | null
   } | null
   /** zar varsa result.hint (hamle adaylari); zar YOKSA gnubg kup analizi doner (cube + evaluate) */
   hint: {
@@ -303,8 +305,9 @@ export interface PhotoAnalysisResult {
     dice_side?: 'left' | 'right' | 'none'
     /** kendi kup modelimizle bulunan kup (yoksa null); zone: sag=ceken katladi (rakipte), sol=cekende, bar=ortada */
     cube?: {
-      zone: 'left' | 'right' | 'bar' | 'front_me' | 'front_opp'
+      zone: 'offer' | 'offer_taken' | 'my_side' | 'opp_side' | 'front_me' | 'front_opp'
       owner: 'white' | 'black' | null
+      offer_by?: 'white' | 'black' | null
       value: number
       /** model = CubeClassify 2/4 kesin okudu; model_ge8 = "8 veya ustu" (tam deger tahmini) */
       value_src?: 'model' | 'model_ge8' | 'centered'
@@ -318,6 +321,8 @@ export interface PhotoAnalysisResult {
 export interface PhotoSettings {
   cube_value: number
   cube_owner: 'white' | 'black' | null
+  /** CEKILMIS kup (ortada, kimsenin degil): ceken oyuncu; cube_value = teklif edilen deger */
+  cube_offer: 'white' | 'black' | null
   match_length: number
   score_me: number
   score_opp: number

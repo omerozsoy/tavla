@@ -41,6 +41,9 @@ class PhotoAnalysisController extends Controller
      * yeni ayarlarla gnubg'ye yeniden gonderilir (foto yeniden yuklenmez, tanima yeniden calismaz).
      * Kurallar: ortadaki kup degeri 1 ve sahipsiz; sahipli kup >= 2. match_length 0 = para oyunu
      * (skor/crawford yok sayilir). Macta skor < uzunluk; crawford yalniz TAM BIR oyuncu maca 1 kalaysa.
+     * CEKILMIS kup (cube_offer = ceken: white/black; tahtanin ortasinda, kimsenin degil): cube_value =
+     * teklif edilen deger V (>= 2); gnubg'ye CEKENIN sirasi + kupun cekilmeden ONCEKI hali (V/2; 1 ise
+     * ortada) + zarsiz gider -> kup analizi al/pas kararini verir. Teklif yoksa sira/zar tanimaya doner.
      */
     public function settings(Request $request, PhotoAnalysis $photoAnalysis, GnuBgClient $gnubg)
     {
@@ -58,10 +61,16 @@ class PhotoAnalysisController extends Controller
             'score_me' => ['sometimes', 'integer', 'min:0', 'max:24'],
             'score_opp' => ['sometimes', 'integer', 'min:0', 'max:24'],
             'crawford' => ['sometimes', 'boolean'],
+            'cube_offer' => ['nullable', Rule::in(['white', 'black'])],
         ]);
         $value = (int) $data['cube_value'];
         $owner = $data['cube_owner'] ?? null;
-        if ($value === 1) {
+        $offerBy = $data['cube_offer'] ?? null;
+        if ($offerBy !== null) {
+            if ($value < 2) {
+                return response()->json(['message' => 'offer_value_required'], 422);
+            }
+        } elseif ($value === 1) {
             $owner = null; // ortadaki kup
         } elseif ($owner === null) {
             return response()->json(['message' => 'owner_required'], 422);
@@ -77,7 +86,21 @@ class PhotoAnalysisController extends Controller
         $crawford = $oneAway && (bool) ($data['crawford'] ?? false);
 
         $position = $photoAnalysis->position;
-        $position['cube'] = ['value' => $value, 'owner' => $owner];
+        // tanimanin buldugu sira/zar (eski kayitlarda 'recognized' yok -> mevcut deger)
+        $recognized = $position['recognized'] ?? ['turn' => $position['turn'] ?? 'white', 'dice' => $position['dice'] ?? []];
+        $position['recognized'] = $recognized;
+        if ($offerBy !== null) {
+            $pre = max(1, intdiv($value, 2));
+            $position['cube'] = ['value' => $pre, 'owner' => $pre === 1 ? null : $offerBy];
+            $position['cube_offer'] = ['by' => $offerBy, 'value' => $value];
+            $position['turn'] = $offerBy;
+            $position['dice'] = [];
+        } else {
+            $position['cube'] = ['value' => $value, 'owner' => $owner];
+            $position['cube_offer'] = null;
+            $position['turn'] = $recognized['turn'];
+            $position['dice'] = $recognized['dice'];
+        }
         $position['matchLength'] = $ml;
         $position['score'] = ['white' => $me, 'black' => $opp];
         $position['crawford'] = $crawford;

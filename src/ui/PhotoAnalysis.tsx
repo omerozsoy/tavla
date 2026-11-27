@@ -32,6 +32,7 @@ export function PositionBoard({
   diceRight,
   homeLeft = false,
   cube,
+  offer = null,
 }: {
   points: number[]
   mineDark: boolean
@@ -39,6 +40,8 @@ export function PositionBoard({
   diceRight: boolean
   /** kup: bar uzerinde, sahibinin tarafinda (rakip ust / ceken alt / orta); orta kup 64 gosterir */
   cube?: { value: number; owner: string | null } | null
+  /** cekilmis kup: sag (sen cektin) / sol (sana cekildi) yarinin ORTASINDA, teklif edilen degerle */
+  offer?: { by: string; value: number } | null
   /** evler solda: numaralama aynali -> cizim fotodaki gibi gorunsun diye kolonlar aynalanir */
   homeLeft?: boolean
 }) {
@@ -100,16 +103,18 @@ export function PositionBoard({
       {Array.from({ length: 12 }, (_, c) => stack(c, true, points[topPoint(c) - 1] || 0))}
       {Array.from({ length: 12 }, (_, c) => stack(c, false, points[botPoint(c) - 1] || 0))}
       {shown.map(die)}
-      {cube && (
+      {(cube || offer) && (
         <g>
           {(() => {
             const cs = 22
-            const cy = cube.owner === 'black' ? m + cs / 2 + 2 : cube.owner === 'white' ? H - m - cs / 2 - 2 : H / 2
+            const val = offer ? offer.value : cube!.owner ? cube!.value : 64
+            const cx = offer ? (offer.by === 'white' ? m + fieldW + barW + fieldW / 2 : m + fieldW / 2) : W / 2
+            const cy = offer ? H / 2 : cube!.owner === 'black' ? m + cs / 2 + 2 : cube!.owner === 'white' ? H - m - cs / 2 - 2 : H / 2
             return (
               <>
-                <rect x={W / 2 - cs / 2} y={cy - cs / 2} width={cs} height={cs} rx={3} fill="#fbf8f1" stroke="#c9a227" strokeWidth={1.5} />
-                <text x={W / 2} y={cy + 4} fontSize={cube.value >= 10 || !cube.owner ? 10 : 12} fontWeight="800" textAnchor="middle" fill="#1b2730">
-                  {cube.owner ? cube.value : 64}
+                <rect x={cx - cs / 2} y={cy - cs / 2} width={cs} height={cs} rx={3} fill="#fbf8f1" stroke="#c9a227" strokeWidth={1.5} />
+                <text x={cx} y={cy + 4} fontSize={val >= 10 ? 10 : 12} fontWeight="800" textAnchor="middle" fill="#1b2730">
+                  {val}
                 </text>
               </>
             )
@@ -166,23 +171,49 @@ function pips(points: number[], bar?: { white: number; black: number }): [number
   return [me, opp]
 }
 
-// Kupun durumu cumlesi: once mevcut (kullanici duzeltmis olabilir) sahip/deger; tanimanin buldugu
-// yer ayni sahipse "nerede bulundugu" da eklenir.
-function cubeState(
-  cube: { value: number; owner: string | null } | null,
-  found: { zone: string; owner: string | null } | null,
-  t: (k: string) => string,
-): string {
-  if (!cube || !cube.owner) return t('photo.cubeStateCenter')
-  const base = `${t('photo.cube')} ${cube.value} · ${cube.owner === 'black' ? t('photo.cubeStateOpp') : t('photo.cubeStateMine')}`
-  if (!found || found.owner !== cube.owner) return base
+// KUP MODU (kullanici kurali): bir oyuncunun TARAFINDAKI kup onundur; tahtanin ORTASINDAKI kup kimsenin
+// degildir = CEKILMIS kup (sag yari: sen cektin, sol yari: sana cekildi); bar/yok = ortada (deger 1).
+type CubeMode = 'center' | 'mine' | 'opp' | 'offer_me' | 'offer_opp'
+type PosCube = {
+  cube?: { value: number; owner: string | null }
+  cube_offer?: { by: 'white' | 'black'; value: number } | null
+} | null | undefined
+function cubeModeOf(p: PosCube): { mode: CubeMode; value: number } {
+  if (p?.cube_offer) return { mode: p.cube_offer.by === 'white' ? 'offer_me' : 'offer_opp', value: p.cube_offer.value }
+  const c = p?.cube
+  if (!c || !c.owner) return { mode: 'center', value: 1 }
+  return { mode: c.owner === 'white' ? 'mine' : 'opp', value: c.value }
+}
+
+// Kupun durumu cumlesi (mevcut — kullanici duzeltmis olabilir) + tanimanin buldugu yer.
+function cubeState(p: PosCube, found: { zone: string } | null, t: (k: string) => string): string {
+  const { mode, value } = cubeModeOf(p)
+  if (mode === 'center') return t('photo.cubeStateCenter')
+  const txt: Record<CubeMode, string> = {
+    center: '',
+    mine: t('photo.cubeStateMine'),
+    opp: t('photo.cubeStateOpp'),
+    offer_me: t('photo.cubeStateOfferMe'),
+    offer_opp: t('photo.cubeStateOfferOpp'),
+  }
+  const base = `${t('photo.cube')} ${value} · ${txt[mode]}`
   const where: Record<string, string> = {
-    right: t('photo.cubeWhereRight'),
-    left: t('photo.cubeWhereLeft'),
     front_opp: t('photo.cubeWhereFrontOpp'),
     front_me: t('photo.cubeWhereFrontMe'),
+    opp_side: t('photo.cubeWhereOppSide'),
+    my_side: t('photo.cubeWhereMySide'),
+    offer_taken: t('photo.cubeWhereTaken'),
   }
-  return where[found.zone] ? `${base} (${where[found.zone]})` : base
+  return found && where[found.zone] ? `${base} (${where[found.zone]})` : base
+}
+
+// Cekilmis kupte gnubg karari "<ceken eylemi>, <alan eylemi>" (or. "Double, pass", "No double, take",
+// "Too good to double, pass"). -> alan: al/pas; ceken: dogru/erken/fazla iyi.
+function offerVerdict(proper: string): { take: boolean | null; dbl: 'ok' | 'early' | 'toogood' | null } {
+  const p = proper.toLowerCase()
+  const take = p.includes('pass') ? false : p.includes('take') || p.includes('beaver') ? true : null
+  const dbl = p.startsWith('too good') ? 'toogood' : p.startsWith('no ') ? 'early' : p.includes('double') ? 'ok' : null
+  return { take, dbl }
 }
 
 // gnubg kup karari metni (or. "Double, pass", "No redouble, take", "Too good to double, pass") -> Turkce
@@ -254,21 +285,33 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     )
   }
 
-  // Ayarlari (kup + mac) sunucuya gonder -> ayni konum yeniden analiz. Kup: deger 1 = ortada (sahipsiz);
-  // >1 sahip ister (yoksa tespit edilen ya da ceken).
-  function settingsFor(r: PhotoAnalysisResult, m: MatchSet, value?: number, owner?: 'white' | 'black' | null) {
-    let v = value ?? r.position?.cube?.value ?? 1
-    let o = owner !== undefined ? owner : ((r.position?.cube?.owner as 'white' | 'black' | null) ?? null)
-    if (v === 1) o = null
-    else if (!o) o = (r.debug?.cube?.owner as 'white' | 'black' | null) ?? 'white'
-    if (!v) v = 1
+  // Ayarlari (kup + mac) sunucuya gonder -> ayni konum yeniden analiz. Kup modu: ortada (deger 1) /
+  // sende / rakipte (deger >= 2) / sen cektin / sana cekildi (teklif edilen deger >= 2).
+  function settingsFor(r: PhotoAnalysisResult, m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }) {
+    const cur = cubeModeOf(r.position)
+    const mode = cubeOver?.mode ?? cur.mode
+    let v = cubeOver?.value ?? cur.value
+    if (mode === 'center') v = 1
+    else if (v < 2) v = 2
+    if (mode === 'center' && cubeOver?.value && cubeOver.value > 1) {
+      // ortadaki kupe deger secildi -> sahibi tanimadan (yoksa cekene) gelsin
+      return settingsFor(r, m, { mode: r.debug?.cube?.owner === 'black' ? 'opp' : 'mine', value: cubeOver.value })
+    }
     const n = normMatch(m)
-    return { cube_value: v, cube_owner: o, match_length: n.ml, score_me: n.me, score_opp: n.opp, crawford: n.crawford }
+    return {
+      cube_value: v,
+      cube_owner: mode === 'mine' ? ('white' as const) : mode === 'opp' ? ('black' as const) : null,
+      cube_offer: mode === 'offer_me' ? ('white' as const) : mode === 'offer_opp' ? ('black' as const) : null,
+      match_length: n.ml,
+      score_me: n.me,
+      score_opp: n.opp,
+      crawford: n.crawford,
+    }
   }
 
-  async function applySettings(m: MatchSet, value?: number, owner?: 'white' | 'black' | null) {
+  async function applySettings(m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }) {
     if (!result || cubeBusy) return
-    const fromCube = value !== undefined
+    const fromCube = cubeOver !== undefined
     const n = normMatch(m)
     setMatch(n)
     if (!fromCube) {
@@ -280,7 +323,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     }
     setCubeBusy(true)
     try {
-      setResult(await setPhotoAnalysisSettings(result.id, settingsFor(result, n, value, owner)))
+      setResult(await setPhotoAnalysisSettings(result.id, settingsFor(result, n, cubeOver)))
       if (fromCube) setCubeChosen(true)
       else setMatchChosen(true)
     } catch (e) {
@@ -290,8 +333,8 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     }
   }
 
-  function changeCube(value: number, owner: 'white' | 'black' | null) {
-    void applySettings(match, value, owner)
+  function changeCube(over: { mode?: CubeMode; value?: number }) {
+    void applySettings(match, over)
   }
 
   function chooseHome(left: boolean) {
@@ -347,6 +390,11 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   // Kup RAKIPTEYKEN sira sende + zar yok -> katlayamazsin: gnubg karar vermez (proper null), yalniz
   // kazanma olasiliklari doner -> bu da gecerli sonuc.
   const cantDouble = !!cube && !cube.proper && !!evalv && evalv.length >= 5
+  const offer = result?.position?.cube_offer ?? null
+  // gnubg olasiliklari SIRASI GELENIN (cekilmis kupte cekenin) bakisindan -> fotografi cekene cevir
+  const myView = result?.position?.turn === 'black' && evalv && evalv.length >= 5
+  const myWin = evalv && evalv.length >= 5 ? (myView ? 1 - evalv[0] : evalv[0]) : null
+  const myGammon = evalv && evalv.length >= 5 ? (myView ? evalv[3] : evalv[1]) : null
   const done = result?.status === 'done' && result.valid && (cands.length > 0 || !!cube?.proper || cantDouble)
 
   return (
@@ -466,6 +514,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                         diceRight={result!.debug?.dice_side !== 'left'}
                         homeLeft={homeLeft}
                         cube={result!.position!.cube}
+                        offer={result!.position!.cube_offer ?? null}
                       />
                       {tag(t('photo.you'), pm, mineDark)}
                       <div className="photo-pips">
@@ -535,7 +584,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                 {/* kupun durumu (kullanici kurallari): sag = sen cektin -> rakip aldi; sol = sana cekildi ->
                     sen aldin; tahta disinda birinin ONUNDE = o kabul etti; bar = ortada */}
                 <div className="photo-cubectl-state">
-                  {cubeState(result!.position?.cube ?? null, result!.debug?.cube ?? null, t)}
+                  {cubeState(result!.position, result!.debug?.cube ?? null, t)}
                 </div>
                 <div className="photo-cubectl-row">
                   <span className="photo-cubectl-label">{t('photo.cube')}</span>
@@ -544,8 +593,8 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                       key={v}
                       type="button"
                       disabled={cubeBusy}
-                      className={(result!.position?.cube?.value ?? 1) === v ? 'on' : ''}
-                      onClick={() => changeCube(v, (result!.position?.cube?.owner as 'white' | 'black' | null) ?? null)}
+                      className={cubeModeOf(result!.position).value === v ? 'on' : ''}
+                      onClick={() => changeCube(v === 1 ? { mode: 'center' } : { value: v })}
                     >
                       {v}
                     </button>
@@ -554,21 +603,19 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                 <div className="photo-cubectl-row">
                   {(
                     [
-                      [null, t('photo.cubeCenter')],
-                      ['white', t('photo.cubeMine')],
-                      ['black', t('photo.cubeOpp')],
+                      ['center', t('photo.cubeCenter')],
+                      ['mine', t('photo.cubeMine')],
+                      ['opp', t('photo.cubeOpp')],
+                      ['offer_me', t('photo.cubeOfferMe')],
+                      ['offer_opp', t('photo.cubeOfferOpp')],
                     ] as const
-                  ).map(([o, label]) => (
+                  ).map(([mode, label]) => (
                     <button
-                      key={label}
+                      key={mode}
                       type="button"
                       disabled={cubeBusy}
-                      className={(result!.position?.cube?.owner ?? null) === o ? 'on' : ''}
-                      onClick={() =>
-                        o === null
-                          ? changeCube(1, null)
-                          : changeCube(Math.max(2, result!.position?.cube?.value ?? 2), o)
-                      }
+                      className={cubeModeOf(result!.position).mode === mode ? 'on' : ''}
+                      onClick={() => changeCube({ mode })}
                     >
                       {label}
                     </button>
@@ -579,16 +626,21 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                 {t('photo.dice')}: <b>{result!.position?.dice?.join('-') || '—'}</b>
                 {' · '}
                 {/* tanima kurali: zar bar'in saginda -> fotografi ceken, solunda -> rakip */}
-                <b>{result!.position?.turn === 'black' ? t('photo.turnOpp') : t('photo.turnMe')}</b>
+                <b>
+                  {offer
+                    ? offer.by === 'white'
+                      ? t('photo.decideOpp')
+                      : t('photo.decideMe')
+                    : result!.position?.turn === 'black'
+                      ? t('photo.turnOpp')
+                      : t('photo.turnMe')}
+                </b>
               </div>
               {/* ANALIZ NEYE GORE YAPILDI: kup degeri + skor okunamiyor -> varsayim acikca gosterilir */}
               {(() => {
-                const pc = result!.position?.cube
                 const ml = result!.position?.matchLength ?? 0
                 const sc = result!.position?.score
-                const cubeTxt = !pc?.owner
-                  ? t('photo.cubeStateCenter')
-                  : `${pc.value} · ${pc.owner === 'black' ? t('photo.cubeStateOpp') : t('photo.cubeStateMine')}`
+                const cubeTxt = cubeState(result!.position, null, t)
                 const matchTxt = !ml
                   ? t('photo.money')
                   : `${ml} ${t('photo.points')} · ${t('photo.you')} ${sc?.white ?? 0} – ${t('photo.opp')} ${sc?.black ?? 0}${result!.position?.crawford ? ' · Crawford' : ''}`
@@ -624,7 +676,33 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
               {cube ? (
                 <div className="photo-cube">
                   <div className="photo-best">
-                    {cube.proper ? (
+                    {offer && cube.proper ? (
+                      (() => {
+                        const v = offerVerdict(cube.proper)
+                        const head =
+                          offer.by === 'white'
+                            ? v.take === false
+                              ? t('photo.offerOppPass')
+                              : t('photo.offerOppTake')
+                            : v.take === false
+                              ? t('photo.offerMePass')
+                              : t('photo.offerMeTake')
+                        const sub =
+                          v.dbl === 'ok'
+                            ? t(offer.by === 'white' ? 'photo.dblMineOk' : 'photo.dblOppOk')
+                            : v.dbl === 'early'
+                              ? t(offer.by === 'white' ? 'photo.dblMineEarly' : 'photo.dblOppEarly')
+                              : v.dbl === 'toogood'
+                                ? t(offer.by === 'white' ? 'photo.dblMineTooGood' : 'photo.dblOppTooGood')
+                                : ''
+                        return (
+                          <>
+                            <b>{head}</b>
+                            {sub && <div className="photo-offer-sub">{sub}</div>}
+                          </>
+                        )
+                      })()
+                    ) : cube.proper ? (
                       <>
                         {t('photo.cubeTitle')}: <b>{cubeAction(cube.proper, t)}</b>
                       </>
@@ -641,9 +719,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   </div>
                   {evalv && evalv.length >= 5 && (
                     <div className="photo-cube-probs">
-                      {t('photo.winPct')}: <b>{(evalv[0] * 100).toFixed(1)}%</b>
+                      {t('photo.winPct')}: <b>{((myWin ?? 0) * 100).toFixed(1)}%</b>
                       {' · '}
-                      {t('photo.gammonPct')}: <b>{(evalv[1] * 100).toFixed(1)}%</b>
+                      {t('photo.gammonPct')}: <b>{((myGammon ?? 0) * 100).toFixed(1)}%</b>
                     </div>
                   )}
                   {cube.equities && !Array.isArray(cube.equities) && (
@@ -664,7 +742,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                       )}
                     </ul>
                   )}
-                  <div className="photo-cube-hint">{t('photo.cubeHint')}</div>
+                  {!offer && <div className="photo-cube-hint">{t('photo.cubeHint')}</div>}
                 </div>
               ) : (
                 <div className="photo-best">

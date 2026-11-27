@@ -338,19 +338,39 @@ def recognize(bgr, flip=False):
             scale = float(quad[:, 0].max() - quad[:, 0].min()) / Wd
             med = float(np.median([b[2] - b[0] for b in res["checker_boxes"]])) * scale
             cb = _cube.find_front_cube(_get, run_cls, bgr, quad, med)
-        cube_pos = {"value": cb["value"], "owner": cb["owner"]} if cb else {"value": 1, "owner": None}
+        offer = None
+        if cb and cb.get("offer_by") and len(faces) > 0:
+            # ortada kup AMA zar atilmis -> bekleyen cekme olamaz (kup zar atmadan once cekilir): cekme
+            # KABUL edilmis, kup kenara itilmemis -> kup KABUL EDENDE (cekenin rakibi), gosterilen degerle.
+            cb["zone"] = "offer_taken"
+            cb["owner"] = "black" if cb["offer_by"] == "white" else "white"
+            cube_pos = {"value": cb["value"], "owner": cb["owner"]}
+        elif cb and cb.get("offer_by"):
+            # CEKILMIS kup (ortada, kimsenin degil): gnubg'ye "ceken oyuncunun sirasi, kup CEKILMEDEN onceki
+            # hali" gider -> kup analizi al/pas kararini verir. Gosterilen deger V -> oncesi V/2 (1 = ortada).
+            pre = max(1, cb["value"] // 2)
+            cube_pos = {"value": pre, "owner": None if pre == 1 else cb["offer_by"]}
+            offer = {"by": cb["offer_by"], "value": cb["value"]}
+        elif cb:
+            cube_pos = {"value": cb["value"], "owner": cb["owner"]}
+        else:
+            cube_pos = {"value": 1, "owner": None}
 
         points, photographer, margin = _orient_to_photographer(res["points"])
         # SIRA (kullanici kurali): zar bar'in SAGINDA -> fotografi ceken atacak; SOLUNDA -> rakip.
         # Zar yok / esit -> fotografi ceken (en olasi: kendi hamlesini soruyor).
         turn = "black" if left > right else "white"
+        recognized = {"turn": turn, "dice": faces}  # kullanici kup duzeltmesinde geri donulecek tanima
+        if offer:  # cekilmis kupte zar atilmamistir; karar sirasi CEKENDE (al/pas analizi)
+            turn, faces = offer["by"], []
         dbg = res["debug"]
         dbg.update({"photographer": photographer, "pip_margin": margin, "cube": cb,
                     "dice_side": "left" if left > right else ("right" if right else "none")})
         return {
             "ok": True,
             "position": {"points": points, "bar": {"white": 0, "black": 0},
-                         "turn": turn, "dice": faces, "cube": cube_pos},
+                         "turn": turn, "dice": faces, "cube": cube_pos, "cube_offer": offer,
+                         "recognized": recognized},
             "debug": dbg,
         }
 
