@@ -4197,6 +4197,31 @@ class RoomController extends Controller
         return true;
     }
 
+    /**
+     * ADİL ZAR v2: PvP'de maçın ilk açılışı rakibin tohumunu beklemeli mi? (satır KİLİTLİYKEN)
+     * Yalnız: bot değil, tohum henüz donmamış (dice_rolls boş), v2, RAKİP slotun parçası boş ve
+     * bu odada ilk açılış isteğinden beri game.fair_dice_seed_wait_ms dolmamış. Çağıranın kendi parçası boşsa
+     * (tohum yollamadı) onu beklemek anlamsız -> yalnız rakibe bakılır.
+     */
+    private function awaitingOpponentSeed(Room $room, string $slot): bool
+    {
+        $cs = (string) $room->dice_client_seed;
+        if ($room->bot || ! empty($room->dice_rolls) || FairDiceService::versionOf($cs) !== 2) {
+            return false;
+        }
+        [$p1, $p2] = explode('.', $cs, 2);
+        $waitMs = (int) config('game.fair_dice_seed_wait_ms', 5000);
+        if ($waitMs <= 0 || ($slot === 'p1' ? $p2 : $p1) !== '') {
+            return false;
+        }
+        $nowMs = now()->getTimestampMs();
+        $key = 'fair-dice:seed-wait:'.$room->id;
+        Cache::add($key, $nowMs, 600); // ilk açılış isteğinin anı (sonrakiler üzerine yazmaz)
+        $since = (int) Cache::get($key, $nowMs);
+
+        return $nowMs - $since < $waitMs;
+    }
+
     /** contributeClientSeed'in kilitsiz (poll) eşi: koşullu UPDATE ile yarışsız. */
     private function contributeClientSeedAtomic(Room $room, string $slot, mixed $seed): void
     {
@@ -4316,6 +4341,24 @@ class RoomController extends Controller
             // başlar (asla çift, asla berabere). SUNUCUDA deterministik (seed + gameNo). Başlayan
             // belli olmadığı için SIRA KONTROLÜ YOK (ilk çağıran tetikler; diğerine poll ile gelir).
             $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+            // ADİL ZAR v2: maçın İLK açılışı tohumu dondurur. PvP'de ilk çağıran açılışı hemen
+            // atarsa rakibin tohumu çoğu zaman henüz gelmemiş olur (canlı ölçüm: ~%34 maçta bir
+            // taraf boş). Rakibin tohumu yoksa kısa süre bekle: çağıranın tohumu KAYDEDİLİR,
+            // rakibin /roll'u (kendi tohumunu taşır) gelince açılış birleşik tohumla atılır.
+            // Süre dolarsa eksik parça boş kalarak açılış yapılır (kopuk rakip maçı kilitlemez).
+            if (empty($sm['opened']) && $this->awaitingOpponentSeed($room, $slot)) {
+                $room->save(); // çağıranın tohum katkısı (contributeClientSeed) + live=null
+
+                // reused=true: eski istemciler de bu yanıtı sessizce geçer; açılış effect'i
+                // 2.5sn'de yeniden dener (poll da açılışı getirir).
+                return response()->json([
+                    'dice' => [],
+                    'commit' => $room->dice_commit,
+                    'version' => (int) $room->server_version,
+                    'reused' => true,
+                    'waiting_seed' => true,
+                ]);
+            }
             if (empty($sm['opened'])) {
                 $gameNo = (int) ($sm['gameNo'] ?? 1);
                 // 'single' HMAC alanı (normal 'roll' alanından ayrı). v2: (oyun, deneme) ayrı alan ->

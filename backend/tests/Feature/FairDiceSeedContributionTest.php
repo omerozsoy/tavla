@@ -27,6 +27,12 @@ class FairDiceSeedContributionTest extends TestCase
 
     private User $u2;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['game.fair_dice_seed_wait_ms' => 5000]); // phpunit.xml'de 0; burada gerçek bekleme
+    }
+
     private function room(): Room
     {
         $this->u1 = User::factory()->create(['coins' => 1000]);
@@ -58,12 +64,12 @@ class FairDiceSeedContributionTest extends TestCase
             ->assertOk();
     }
 
-    private function openingRoll(Room $room, ?string $seed): TestResponse
+    private function openingRoll(Room $room, ?string $seed, string $token = 'p1-token'): TestResponse
     {
-        Sanctum::actingAs($this->u1);
+        Sanctum::actingAs($token === 'p1-token' ? $this->u1 : $this->u2);
 
         return $this->postJson("/api/rooms/{$room->code}/roll", [
-            'token' => 'p1-token',
+            'token' => $token,
             'command_id' => (string) Str::uuid(),
             'expected_version' => 0,
             'client_seed' => $seed,
@@ -116,8 +122,54 @@ class FairDiceSeedContributionTest extends TestCase
         $this->poll($room, 'p2-token', 'x:single');
         $this->assertSame('.', $room->fresh()->dice_client_seed);
 
-        // Tohumsuz açılış da çalışır (eksik katkı boş kalır, doğrulamada görünür).
+        // Tohumsuz açılış da çalışır (eksik katkı boş kalır, doğrulamada görünür): rakip tohumu
+        // için bekleme süresi dolunca açılış boş parçalarla atılır.
+        $this->openingRoll($room, null)->assertOk()->assertJsonPath('waiting_seed', true);
+        $this->travel(6)->seconds();
         $this->openingRoll($room, null)->assertOk()->assertJsonPath('opening', true);
         $this->assertSame('.', $room->fresh()->dice_client_seed);
+    }
+
+    public function test_opening_waits_for_opponent_seed_then_uses_both(): void
+    {
+        $room = $this->room();
+
+        // p1 önce gelir: rakibin tohumu yok -> açılış BEKLER, p1'in tohumu kaydedilir.
+        $wait = $this->openingRoll($room, self::P1_SEED)->assertOk();
+        $wait->assertJsonPath('waiting_seed', true)->assertJsonPath('reused', true);
+        $fresh = $room->fresh();
+        $this->assertSame(self::P1_SEED.'.', $fresh->dice_client_seed);
+        $this->assertEmpty($fresh->dice_rolls);
+        $this->assertEmpty($fresh->server_match['opened'] ?? false);
+
+        // p2'nin roll'u kendi tohumunu taşır -> iki tohum hazır, açılış hemen atılır.
+        $this->openingRoll($room, self::P2_SEED, 'p2-token')->assertOk()->assertJsonPath('opening', true);
+        $cs = self::P1_SEED.'.'.self::P2_SEED;
+        $fresh = $room->fresh();
+        $this->assertSame($cs, $fresh->dice_client_seed);
+        $this->assertSame((new FairDiceService)->openingDie($fresh->dice_seed, $cs, 1, 0), $fresh->dice_rolls[0]['white']);
+
+        // p1'in tekrar denemesi aynı açılışı görür (yeni zar yok).
+        $this->openingRoll($room, self::P1_SEED)->assertOk()->assertJsonPath('opening', true)->assertJsonPath('reused', true);
+    }
+
+    public function test_opening_proceeds_after_wait_when_opponent_seed_never_arrives(): void
+    {
+        $room = $this->room();
+
+        $this->openingRoll($room, self::P1_SEED)->assertOk()->assertJsonPath('waiting_seed', true);
+        $this->travel(3)->seconds();
+        $this->openingRoll($room, self::P1_SEED)->assertOk()->assertJsonPath('waiting_seed', true);
+        $this->travel(3)->seconds(); // ilk istekten 6sn > 5sn bekleme
+        $this->openingRoll($room, self::P1_SEED)->assertOk()->assertJsonPath('opening', true);
+        $this->assertSame(self::P1_SEED.'.', $room->fresh()->dice_client_seed);
+    }
+
+    public function test_no_wait_when_opponent_already_contributed(): void
+    {
+        $room = $this->room();
+        $this->poll($room, 'p2-token', self::P2_SEED);
+
+        $this->openingRoll($room, self::P1_SEED)->assertOk()->assertJsonPath('opening', true);
     }
 }

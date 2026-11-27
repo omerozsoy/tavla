@@ -1624,7 +1624,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'fairp.s1.p1':
     'The moment a room is created, before any dice are rolled, the server generates a secret "server seed" with a strong random number generator (CSPRNG) and immediately shows you its fingerprint (a SHA-256 commitment).',
   'fairp.s1.p2':
-    "Then each player's browser adds its own random seed. Because the server seals its seed before the player seeds arrive, it cannot look at them and change its own seed.",
+    "Then each player's browser adds its own random seed (the bot has none). Because the server seals its seed before the player seeds arrive, it cannot look at them and change its own seed. The opening roll waits briefly for both players' seeds. If a player's seed does not arrive before the first roll, their part stays empty, and this is shown on the Dice Check screen after the match.",
   'fairp.s1.p3':
     'Every roll in the match is computed in order from these seeds. So the dice sequence is fixed at the start of the match: it cannot be changed later, and it can be verified end to end once the match is over.',
   'fairp.s2.title': 'Is It Possible to Know the Next Roll?',
@@ -1649,12 +1649,12 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'fairp.s4.title': 'You Can Check It Yourself',
   'fairp.s4.p1': 'We don’t just say “trust us.”',
   'fairp.s4.p2':
-    'The actual server code that generates our dice (PHP · commit-reveal) is open source — identical to what runs on the site. Anyone who understands code can inspect it and verify how the dice are generated.',
+    'The server code that generates our dice (PHP · commit-reveal) is public. It is synced with the file running on the site; the date of the last sync is written at the top of the page. Next to it is a verifier (verify.php) that recomputes every roll of a finished match on your own computer.',
   'fairp.s4.cta': 'View Our Dice Code',
   'fairp.tech.toggle': 'Show Technical Details',
   'fairp.tech.toggleHide': 'Hide Technical Details',
   'fairp.tech.body':
-    'The server seed is a 32-byte random value (64 hex characters). The commitment is the SHA-256 hash of the hex text of the server seed and is published when the room is created. The client seed has the form "<player 1 seed>.<player 2 seed>"; no new seed is accepted after the first roll. Each roll is generated with HMAC-SHA256. The key is the hex text of the server seed; the message is "v2:roll:<client seed>:<roll index>:<round>", or "v2:single:<client seed>:<game no>:<attempt>:<round>" for the opening roll. Bytes of 252 and above are skipped, and from the rest die = (byte mod 6) + 1. So faces 1–6 come up with exactly equal probability and there is no "modulo bias". The test and verification example below use exactly the same algorithm as the server.',
+    'The server seed is a 32-byte random value (64 hex characters). The commitment is the SHA-256 hash of the hex text of the server seed and is published when the room is created. The client seed has the form "<player 1 seed>.<player 2 seed>" (in bot matches the second part is empty); no new seed is accepted after the first roll. Each roll is generated with HMAC-SHA256. The key is the hex text of the server seed; the message is "v2:roll:<client seed>:<roll index>:<round>", or "v2:single:<client seed>:<game no>:<attempt>:<round>" for the opening roll. Bytes of 252 and above are skipped, and from the rest die = (byte mod 6) + 1. So faces 1–6 come up with exactly equal probability and there is no "modulo bias". The test and verification example below use exactly the same algorithm as the server.',
   'fairp.test.title': 'Test the Dice Yourself',
   'fairp.test.sub':
     'Try the system yourself. Roll thousands of dice with the same algorithm used in real matches and see how the results are distributed.',
@@ -1700,7 +1700,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'fairp.verify.badDesc':
     'The values were changed, so they no longer match the original commitment. In a real match this would mean the dice were tampered with.',
   'fairp.verify.note':
-    'These seeds are an example generated in your browser; the dice are computed with exactly the same algorithm as the server. In real matches, the "Dice Check" screen reveals the server seed, the client seed and every roll of the match once it is over. You can verify all of them the same way and see that your own seed was included.',
+    'These seeds are an example generated in your browser; the dice are computed with exactly the same algorithm as the server. In real matches, the "Dice Check" screen reveals the server seed, the client seed and every roll of the match once it is over. You can verify all of them the same way and check whether your own seed was included.',
   'stats.title': 'My Stats',
   'stats.rank': 'Points Ranking: {r} / {n} players',
   'stats.games': 'Games',

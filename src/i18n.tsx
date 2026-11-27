@@ -1676,7 +1676,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'fairp.s1.p1':
     'Oda kurulduğu anda, daha hiçbir zar atılmadan, sunucu güçlü bir rastgele sayı üreteciyle (CSPRNG) gizli bir "sunucu tohumu" oluşturur ve bu tohumun parmak izini (SHA-256 taahhüdü) sana hemen gösterir.',
   'fairp.s1.p2':
-    'Ardından her oyuncunun tarayıcısı kendi rastgele tohumunu ekler. Sunucu kendi tohumunu oyuncu tohumları gelmeden önce mühürlediği için onları görüp kendi tohumunu değiştiremez.',
+    'Ardından her oyuncunun tarayıcısı kendi rastgele tohumunu ekler (botun tohumu yoktur). Sunucu kendi tohumunu oyuncu tohumları gelmeden önce mühürlediği için onları görüp kendi tohumunu değiştiremez. Açılış zarı iki oyuncunun tohumu için kısa bir süre bekler. Bir oyuncunun tohumu ilk zardan önce ulaşmazsa onun payı boş kalır ve bu, maç sonundaki Zar Kontrol ekranında görünür.',
   'fairp.s1.p3':
     'Maçtaki bütün zarlar bu tohumlardan sırayla hesaplanır. Yani zar dizisi maç başında sabitlenir: sonradan değiştirilemez ve maç bitince baştan sona doğrulanabilir.',
   'fairp.s2.title': 'Bir Sonraki Zarı Bilmek Mümkün mü?',
@@ -1701,12 +1701,12 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'fairp.s4.title': 'Kendin Kontrol Edebilirsin',
   'fairp.s4.p1': 'Sadece "Bize güvenin" demiyoruz.',
   'fairp.s4.p2':
-    'Zarları üreten gerçek sunucu kodumuz (PHP · commit-reveal) açık kaynaktır — sitede çalışanın birebir aynısı. Yazılımdan anlayan herkes kodu inceleyip zarların nasıl üretildiğini kontrol edebilir.',
+    'Zarları üreten sunucu kodumuz (PHP · commit-reveal) herkese açıktır. Kod sitede çalışan dosyayla eşitlenir; son eşitleme tarihi sayfanın başında yazar. Yanında, biten bir maçın bütün zarlarını kendi bilgisayarında yeniden hesaplayan bir doğrulama aracı (verify.php) da var.',
   'fairp.s4.cta': 'Zar Kodumuzu Gör',
   'fairp.tech.toggle': 'Teknik Detayları Gör',
   'fairp.tech.toggleHide': 'Teknik Detayları Gizle',
   'fairp.tech.body':
-    'Sunucu tohumu 32 baytlık rastgele bir değerdir (64 haneli hex). Taahhüt, sunucu tohumunun hex metninin SHA-256 özetidir ve oda kurulurken yayınlanır. İstemci tohumu "<1. oyuncunun tohumu>.<2. oyuncunun tohumu>" biçimindedir; ilk zar atıldıktan sonra yeni tohum kabul edilmez. Her zar HMAC-SHA256 ile üretilir. Anahtar sunucu tohumunun hex metnidir; mesaj "v2:roll:<istemci tohumu>:<zar sırası>:<tur>", açılış zarında ise "v2:single:<istemci tohumu>:<oyun no>:<deneme>:<tur>" olur. Çıkan baytlardan 252 ve üzeri olanlar atlanır, kalanlardan zar = (bayt mod 6) + 1 alınır. Böylece 1–6 tam olarak eşit olasılıkla çıkar ve "modulo yanlılığı" oluşmaz. Aşağıdaki test ve doğrulama örneği sunucudaki algoritmanın birebir aynısını kullanır.',
+    'Sunucu tohumu 32 baytlık rastgele bir değerdir (64 haneli hex). Taahhüt, sunucu tohumunun hex metninin SHA-256 özetidir ve oda kurulurken yayınlanır. İstemci tohumu "<1. oyuncunun tohumu>.<2. oyuncunun tohumu>" biçimindedir (bot maçlarında ikinci parça boştur); ilk zar atıldıktan sonra yeni tohum kabul edilmez. Her zar HMAC-SHA256 ile üretilir. Anahtar sunucu tohumunun hex metnidir; mesaj "v2:roll:<istemci tohumu>:<zar sırası>:<tur>", açılış zarında ise "v2:single:<istemci tohumu>:<oyun no>:<deneme>:<tur>" olur. Çıkan baytlardan 252 ve üzeri olanlar atlanır, kalanlardan zar = (bayt mod 6) + 1 alınır. Böylece 1–6 tam olarak eşit olasılıkla çıkar ve "modulo yanlılığı" oluşmaz. Aşağıdaki test ve doğrulama örneği sunucudaki algoritmanın birebir aynısını kullanır.',
   'fairp.test.title': 'Zarları Kendin Test Et',
   'fairp.test.sub':
     'İstersen sistemi kendin dene. Gerçek maçlardaki zar algoritmasıyla binlerce zar attır ve sonuçların dağılımını gör.',
@@ -1752,7 +1752,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'fairp.verify.badDesc':
     'Değerler değiştirildi; artık baştaki taahhütle eşleşmiyor. Gerçek bir maçta bu, zarlara dokunulduğu anlamına gelir.',
   'fairp.verify.note':
-    'Bu tohumlar tarayıcında oluşturulmuş bir örnektir; zarlar sunucudaki algoritmanın birebir aynısıyla hesaplanır. Gerçek maçlarda maç bitince "Zar Kontrol" ekranında sunucu tohumu, istemci tohumu ve maçın bütün zarları açılır. Hepsini aynı yöntemle doğrulayabilir, kendi tohumunun da hesaba katıldığını görebilirsin.',
+    'Bu tohumlar tarayıcında oluşturulmuş bir örnektir; zarlar sunucudaki algoritmanın birebir aynısıyla hesaplanır. Gerçek maçlarda maç bitince "Zar Kontrol" ekranında sunucu tohumu, istemci tohumu ve maçın bütün zarları açılır. Hepsini aynı yöntemle doğrulayabilir, kendi tohumunun hesaba katılıp katılmadığını görebilirsin.',
   'stats.title': 'İstatistiklerim',
   'stats.rank': 'Puan Sıralaması: {r}. / {n} oyuncu',
   'stats.games': 'Maç',

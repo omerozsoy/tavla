@@ -32,6 +32,10 @@ return [
     // ile ezilebilir). 0 = bedava. Oda kurulurken peşin kesilir (iade yok); misafir oynayamaz.
     'bot_match_cost' => max(0, (int) env('BOT_MATCH_COST', 10)),
 
+    // ADİL ZAR v2: PvP'de maçın ilk açılışı rakibin tohumu için en fazla bu kadar bekler (ms).
+    // 0 = beklemez (testler varsayılan olarak 0 kullanır; bekleme testleri kendisi açar).
+    'fair_dice_seed_wait_ms' => max(0, (int) env('FAIR_DICE_SEED_WAIT_MS', 5000)),
+
     // HOŞGELDİN coin'i: yeni üye (e-posta + Google) bu kadar coin ile başlar. 0 = yok.
     // NOT: bu coin bahse yatırılabilir (bedava değer) -> WELCOME_COINS env ile ayarla.
     'welcome_coins' => max(0, (int) env('WELCOME_COINS', 100)),
