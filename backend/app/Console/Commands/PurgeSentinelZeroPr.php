@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\Schema;
  * "0.00 + Super Grandmaster" (divisionOfPR(0)=en ust seviye) gorunur. AnalyzeMatchPrJob
  * artik yalniz evaluated>0 iken yazar; bu komut ise ONCEDEN yazilmis satirlari duzeltir.
  *
- * Bir insan tam bir macta 0.00 PR (kusursuz oyun) yapamaz -> gnubg_pr / gnubg_opponent_pr
+ * (GUNCEL: Snowie'nin yazdigi 0.00 = gercek kusursuz oyun -> pr_shield_at dolu satirlar ATLANIR.)
+ * Eski per-pozisyon yolda 0.00 sentinel'dir -> gnubg_pr / gnubg_opponent_pr
  * / opponent_pr tam olarak 0.00 ise sentinel'dir; NULL yapiyoruz (gnubg tekrar kosarsa
  * gercek deger dolar). Kup PR 0.00 tek basina mesru olabilir -> yalniz ilgili genel PR de
  * 0.00 iken (o taraf komple sentinel) temizlenir.
@@ -43,7 +44,15 @@ class PurgeSentinelZeroPr extends Command
         $user = $this->option('user');
 
         // Ortak filtre: opsiyonel room_code / user_id kisitlari.
-        $scope = function ($q) use ($room, $user) {
+        // KUSURSUZ OYUN İSTİSNASI (2026-11-27): Snowie (AnalyzeMatchSnowieJob) artık GERÇEK 0 hatalı oyunu
+        // 0.00 yazar (GnubgSnowieService: gnubg overall hata tam 0 + serbest karar > 0). Snowie'nin işlediği
+        // odalar pr_shield_at taşır -> o satırlardaki 0.00 meşrudur, SİLME. Sentinel'ler eski per-pozisyon
+        // yoldan (pr_shield_at NULL) gelir.
+        $hasShield = Schema::hasColumn('match_results', 'pr_shield_at');
+        $scope = function ($q) use ($room, $user, $hasShield) {
+            if ($hasShield) {
+                $q->whereNull('pr_shield_at');
+            }
             if ($room !== null) {
                 $q->where('room_code', $room);
             }

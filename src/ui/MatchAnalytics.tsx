@@ -453,11 +453,11 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                           <span className="mh-nm">{oppName}</span>
                           <span className="mh-tags">
                             {/* SADECE GNUBG (direktif): rakip PR'ı yalnız otoriter opponent_gnubg_pr;
-                                log türevi opponent_pr fallback KALDIRILDI. SAHTE-0 KALKANI:
-                                tam 0 => "hesaplanamadı" sentinel'i -> gösterme. */}
+                                log türevi opponent_pr fallback KALDIRILDI. 0.00 = KUSURSUZ OYUN (gerçek
+                                değer; Snowie yalnız gnubg overall hatası tam 0 iken yazar) -> GÖSTER. */}
                             {(() => {
                               const oppPr = m.opponent_gnubg_pr ?? null
-                              return oppPr != null && oppPr !== 0 ? (
+                              return oppPr != null ? (
                                 <span className={`mh-prc ${prCls(oppPr)}`}>PR {oppPr.toFixed(1)}</span>
                               ) : null
                             })()}

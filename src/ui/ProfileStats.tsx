@@ -560,7 +560,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                               return (
                                 <span className="psm-pr">
                                   PR {selfPr.toFixed(1)}
-                                  {o != null && o !== 0 ? ` · ${o.toFixed(1)}` : ''}
+                                  {o != null ?` · ${o.toFixed(1)}` : ''}
                                 </span>
                               )
                             })()}

@@ -143,12 +143,31 @@ class GnubgSnowieService
             //  (2) Snowie = gnubg'nin kendi oranı (geniş payda, tüm hamle). gnubg 2-ply BÜYÜK küp
             //      hatalarını XG'ye göre ABARTIR -> EMG fırlar (59C8M ahselbah EMG 21.9 vs XG 13.3);
             //      Snowie (14.7) tavan görevi görür. min() = normalde EMG, aşırı küp sapmasında Snowie tavanı.
-            // Biri yoksa/çöpse diğeri; ikisi de yoksa null ("—", eski değere DOKUNMA). pr<=0 -> null
-            // (gerçek maçta 0 hata imkansız = degrade/boş taraf; sahte-0 "Super GM" yazma).
+            // Biri yoksa/çöpse diğeri; ikisi de yoksa null ("—", eski değere DOKUNMA).
             $snowieRaw = $snowieTxt[$i] ?? abs((float) ($players[$i]['snowieErrorRate'] ?? 0));
             $snowiePr = ($snowieRaw > 0 && $snowieRaw <= 1000) ? min($snowieRaw, 100.0) : null;
             $ov = $ovErr[$i];
             $emgDec = $unforced[$i] + $cubeDec[$i];
+            // KUSURSUZ OYUN = PR 0.00 (kullanıcı kuralı, 2026-11-27 maç #7AH7X DorlionBG: 22 serbest hamle,
+            // gnubg "Error total EMG -0.000", Snowie -0.0, "Supernatural"). Eskiden pr<=0 KOŞULSUZ null'a
+            // düşüyordu -> kusursuz oyuncu "—" görüyordu. ARTIK: gnubg ham metninde overall hata GERÇEKTEN
+            // okunduysa (null DEĞİL = analiz çıktısı var) + tam 0 ise + değerlendirilecek gerçek karar varsa
+            // (serbest hamle/yakın küp > 0) -> 0.00 yaz. Sahte-0 koruması korunur: overall satırı parse
+            // EDİLEMEYEN (boş/degrade çıktı) ya da hiç serbest kararı olmayan (tamamı zorunlu) taraf null kalır.
+            if ($ov !== null && round($ov, 3) == 0.0 && $emgDec > 0 && ($snowieTxt[$i] === null || $snowieTxt[$i] == 0.0)) {
+                $out[$i] = [
+                    'pr' => 0.0,
+                    'checker_pr' => $chkErr[$i] !== null ? 0.0 : null,
+                    'cube_pr' => ($cubErr[$i] !== null && $cubeDec[$i] >= $minCubeDecisions) ? 0.0 : null,
+                    'cube_decisions' => $cubeDec[$i],
+                    'cube_equity_lost' => $cubErr[$i] !== null ? 0.0 : null,
+                    'equity_lost' => 0.0,
+                    // Kariyer ağırlığı Snowie paydasında (tüm hamle+küp); 0 Snowie'den geri-türetilemez.
+                    'decisions' => $parsedDec[$i] > 0 ? $parsedDec[$i] : $emgDec,
+                ];
+
+                continue;
+            }
             $emgPr = ($ov !== null && $emgDec > 0) ? $ov / $emgDec * 500 : null;
             $emgOk = $emgPr !== null && $emgPr > 0 && $emgPr <= 1000; // çöp (NaN/milyon) + sıfır hariç
             if (! $emgOk && $snowiePr === null) {

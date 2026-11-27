@@ -90,6 +90,53 @@ TXT;
         $this->assertNotNull($g[1]); // 190.9 -> 100'e CAP (null değil)
     }
 
+    public function test_perfect_play_is_pr_zero_not_null(): void
+    {
+        // Maç #7AH7X (1 puan) gerçek gnubg çıktısı: DorlionBG 22 serbest hamlede 0 hata -> PR 0.00
+        // (eskiden pr<=0 -> null -> ekranda PR yok). Rakip 3.8 normal.
+        $raw = <<<'TXT'
+Player                                   DorlionBG               UgurOnaran
+
+Checkerplay statistics
+
+Total moves                               25                      24
+Unforced moves                            22                      23
+Error total EMG (MWC)                         -0.000 ( -0.000%)       -0.188 ( -9.392%)
+Error rate mEMG (MWC)                         -0.0   ( -0.000%)       -8.2   ( -0.408%)
+
+Cube statistics
+
+Total cube decisions                       0                       0
+Close or actual cube decisions             0                       0
+Error total EMG (MWC)                         -0.000 ( -0.000%)       -0.000 ( -0.000%)
+Error rate mEMG (MWC)                         -0.0   ( -0.000%)       -0.0   ( -0.000%)
+
+Overall statistics
+
+Error total EMG (MWC)                         -0.000 ( -0.000%)       -0.188 ( -9.392%)
+Error rate mEMG (MWC)                         -0.0   ( -0.000%)       -8.2   ( -0.408%)
+Snowie error rate                             -0.0   ( +0.000%)       -3.8   ( +0.000%)
+TXT;
+        $svc = new GnubgSnowieService;
+        $out = $svc->snowieFromAnalyze([
+            'ok' => true,
+            'players' => [['snowieErrorRate' => -0.0], ['snowieErrorRate' => 0]],
+            'statistics_match' => $raw,
+        ], 1);
+        $this->assertIsArray($out);
+        $this->assertNotNull($out[0], 'kusursuz oyun null DEĞİL, 0.00 olmalı');
+        $this->assertSame(0.0, $out[0]['pr']);
+        $this->assertSame(0.0, $out[0]['checker_pr']);
+        $this->assertNull($out[0]['cube_pr']); // 0 küp kararı -> küp PR yok
+        $this->assertSame(25, $out[0]['decisions']);
+        $this->assertEqualsWithDelta(3.8, $out[1]['pr'], 0.01);
+
+        // Sahte-0 koruması: hiç serbest karar yoksa (tamamı zorunlu) 0 YAZILMAZ -> null.
+        $forced = str_replace('Unforced moves                            22', 'Unforced moves                             0', $raw);
+        $o2 = $svc->snowieFromAnalyze(['ok' => true, 'players' => [[], []], 'statistics_match' => $forced], 1);
+        $this->assertNull($o2[0]);
+    }
+
     public function test_cube_pr_shown_with_few_decisions_xg(): void
     {
         $svc = new GnubgSnowieService;
