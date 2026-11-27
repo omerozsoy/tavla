@@ -428,28 +428,40 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
         <div className="photo-result">
           {done ? (
             <>
-              {result!.position?.points && (
-                <PositionBoard
-                  points={result!.position.points}
-                  mineDark={result!.debug?.photographer === 'dark'}
-                  dice={result!.position.dice ?? []}
-                  diceRight={result!.debug?.dice_side !== 'left'}
-                  homeLeft={homeLeft}
-                  cube={result!.position.cube}
-                />
-              )}
               {result!.position?.points &&
                 (() => {
+                  // Pip'ler tahtanin KENDI taraflarinda: rakip ustte, fotografi ceken altta (+ tas rengi)
                   const [pm, po] = pips(result!.position!.points, result!.position!.bar)
                   const d = pm - po
-                  return (
-                    <div className="photo-pips">
-                      {t('photo.pip')}: {t('photo.you')} <b>{pm}</b> · {t('photo.opp')} <b>{po}</b>
-                      <span className="photo-pips-diff">
-                        {' '}
-                        ({d === 0 ? t('photo.pipEven') : d < 0 ? `${t('photo.pipAhead')} ${-d}` : `${t('photo.pipBehind')} ${d}`})
-                      </span>
+                  const mineDark = result!.debug?.photographer === 'dark'
+                  const tag = (who: string, n: number, dark: boolean) => (
+                    <div className="photo-pip-tag">
+                      <span className={`photo-pip-dot${dark ? ' dark' : ''}`} />
+                      {who}: <b>{n}</b> {t('photo.pipUnit')}
                     </div>
+                  )
+                  return (
+                    <>
+                      {tag(t('photo.opp'), po, !mineDark)}
+                      <PositionBoard
+                        points={result!.position!.points}
+                        mineDark={mineDark}
+                        dice={result!.position!.dice ?? []}
+                        diceRight={result!.debug?.dice_side !== 'left'}
+                        homeLeft={homeLeft}
+                        cube={result!.position!.cube}
+                      />
+                      {tag(t('photo.you'), pm, mineDark)}
+                      <div className="photo-pips">
+                        {d === 0 ? (
+                          <b>{t('photo.pipEven')}</b>
+                        ) : (
+                          <>
+                            {t('photo.pipDiff')}: <b>{Math.abs(d)}</b> ({d < 0 ? t('photo.pipAhead') : t('photo.pipBehind')})
+                          </>
+                        )}
+                      </div>
+                    </>
                   )
                 })()}
               <div className={`photo-matchctl${cubeBusy ? ' busy' : ''}`}>

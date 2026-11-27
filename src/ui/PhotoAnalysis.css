@@ -271,6 +271,28 @@
   font-size: 1.25rem;
   margin-bottom: 10px;
 }
+.photo-pip-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 1rem;
+  margin: 4px 0;
+  font-variant-numeric: tabular-nums;
+}
+.photo-pip-tag b {
+  font-size: 1.15rem;
+}
+.photo-pip-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f3eee1;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+.photo-pip-dot.dark {
+  background: #b5423a;
+}
 .photo-pips {
   font-size: 0.92rem;
   margin: 0 0 8px;
