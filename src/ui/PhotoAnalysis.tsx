@@ -286,10 +286,12 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
             pick(f)
             void analyze(f) // kamerayla cekildi -> beklemeden analiz (galeri secimi elle "Analiz Et")
           }}
-          onError={() => {
+          onError={(reason) => {
             setCamOpen(false)
             setCamFailed(true)
-            notify.error(t('photo.camErr'))
+            // Hata adi (NotAllowedError / NotReadableError ...) teshis icin mesajda gorunsun (APK'da
+            // kilavuzlu kamera acilmiyordu; nedeni uzaktan gorulemiyor).
+            notify.error(t('photo.camErr') + (reason ? ` (${reason})` : ''))
           }}
         />
       )}

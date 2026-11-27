@@ -40,7 +40,7 @@ export default function PhotoCamera({
 }: {
   onCapture: (f: File) => void
   onClose: () => void
-  onError: () => void
+  onError: (reason?: string) => void
 }) {
   const { t } = useT()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -65,20 +65,41 @@ export default function PhotoCamera({
     let cancelled = false
     const md = navigator.mediaDevices
     if (!md?.getUserMedia) {
-      onError()
+      onError('no-mediaDevices')
       return
     }
-    md.getUserMedia({
-      audio: false,
-      // 4:3 = telefon sensorunun dogal orani. 16:9 sensoru kirpar (~%25 gorus alani kaybi) ->
-      // kullanici telefonu cok yuksege kaldirmak zorunda kaliyordu. Tahta orani ~1.3 ~ 4:3.
-      video: {
-        facingMode: { ideal: 'environment' },
-        aspectRatio: { ideal: 4 / 3 },
-        width: { ideal: 1920 },
-        height: { ideal: 1440 },
+    // Kademeli kisitlar: Android WebView'da (APK) bazi cihazlar ilk (cozunurluk/oranli) istegi
+    // reddediyordu -> kilavuzlu kamera yerine telefonun kamerasi aciliyordu. Izin reddi DISINDAKI
+    // hatalarda daha gevsek kisitla tekrar dene.
+    const tries: MediaStreamConstraints[] = [
+      {
+        audio: false,
+        // 4:3 = telefon sensorunun dogal orani. 16:9 sensoru kirpar (~%25 gorus alani kaybi) ->
+        // kullanici telefonu cok yuksege kaldirmak zorunda kaliyordu. Tahta orani ~1.3 ~ 4:3.
+        video: {
+          facingMode: { ideal: 'environment' },
+          aspectRatio: { ideal: 4 / 3 },
+          width: { ideal: 1920 },
+          height: { ideal: 1440 },
+        },
       },
-    })
+      { audio: false, video: { facingMode: { ideal: 'environment' } } },
+      { audio: false, video: true },
+    ]
+    const open = async (): Promise<MediaStream> => {
+      let last: unknown
+      for (const c of tries) {
+        try {
+          return await md.getUserMedia(c)
+        } catch (e) {
+          last = e
+          const name = (e as { name?: string })?.name
+          if (name === 'NotAllowedError' || name === 'SecurityError') break
+        }
+      }
+      throw last
+    }
+    open()
       .then((s) => {
         if (cancelled) {
           s.getTracks().forEach((tr) => tr.stop())
@@ -91,8 +112,8 @@ export default function PhotoCamera({
           v.play().catch(() => {})
         }
       })
-      .catch(() => {
-        if (!cancelled) onError()
+      .catch((e: unknown) => {
+        if (!cancelled) onError((e as { name?: string })?.name || String(e))
       })
     return () => {
       cancelled = true
