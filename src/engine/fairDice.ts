@@ -209,6 +209,24 @@ export function fairVersionOf(clientSeed: string): 1 | 2 {
   return clientSeed.includes('.') ? 2 : 1
 }
 
+// ADİL ZAR v2: açılışta sunucunun yayınladığı DONMUŞ clientSeed'de bu oyuncunun parçası var mı?
+// 'missing' = slotun parçası boş (tohum "zamanında gelmedi" sayıldı) -> tarayıcı maç başında uyarır.
+// 'other' = parça dolu ama bu cihazın tohumu değil (başka cihaz/sekme ya da sunucu değiştirmiş olabilir).
+// null = kontrol edilemez (v1 oda, izleyici, tohum henüz donmadı).
+export type OwnSeedStatus = 'ok' | 'missing' | 'other'
+export function ownSeedStatus(
+  frozen: string | null | undefined,
+  slot: 'p1' | 'p2' | null | undefined,
+  mySeed: string | null | undefined,
+): OwnSeedStatus | null {
+  if (!frozen || (slot !== 'p1' && slot !== 'p2') || fairVersionOf(frozen) !== 2) return null
+  const dot = frozen.indexOf('.')
+  const part = slot === 'p1' ? frozen.slice(0, dot) : frozen.slice(dot + 1)
+  if (part === '') return 'missing'
+  if (mySeed && part !== mySeed) return 'other'
+  return 'ok'
+}
+
 // Sunucu `roll(serverSeed, clientSeed, index)` portu -> [d1, d2] (1..6).
 // v2 mesaj "v2:roll:<cs>:<index>", v1 "<cs>:<index>" (+ ":<round>" uniformBytes'ta).
 export function serverRoll(serverSeed: string, clientSeed: string, index: number): [number, number] {

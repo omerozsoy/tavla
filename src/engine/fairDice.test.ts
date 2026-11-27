@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  ownSeedStatus,
   sha256Hex,
   FairDice,
   verifyRoll,
@@ -138,5 +139,21 @@ describe('fairDice', () => {
       const p = counts[f] / total
       expect(Math.abs(p - 1 / 6)).toBeLessThan(0.03)
     }
+  })
+})
+
+describe('ownSeedStatus (donmuş tohumda kendi parçan)', () => {
+  it('parça boşsa missing, eşleşirse ok, farklıysa other', () => {
+    expect(ownSeedStatus('aaaa1111.bbbb2222', 'p1', 'aaaa1111')).toBe('ok')
+    expect(ownSeedStatus('aaaa1111.bbbb2222', 'p2', 'bbbb2222')).toBe('ok')
+    expect(ownSeedStatus('aaaa1111.', 'p2', 'bbbb2222')).toBe('missing')
+    expect(ownSeedStatus('.bbbb2222', 'p1', null)).toBe('missing')
+    expect(ownSeedStatus('aaaa1111.bbbb2222', 'p1', 'cccc3333')).toBe('other')
+    expect(ownSeedStatus('aaaa1111.bbbb2222', 'p1', null)).toBe('ok')
+  })
+  it('kontrol edilemeyen durumlarda null', () => {
+    expect(ownSeedStatus(null, 'p1', 'x')).toBeNull()
+    expect(ownSeedStatus('v1seedwithoutdot', 'p1', 'x')).toBeNull()
+    expect(ownSeedStatus('aaaa1111.bbbb2222', null, 'x')).toBeNull()
   })
 })

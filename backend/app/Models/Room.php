@@ -394,6 +394,17 @@ class Room extends Model
             && $this->server_match === null && $this->server_state === null;
     }
 
+    /** v2 odada ilk zar atıldıysa (tohum dondu) clientSeed'i, aksi halde null. */
+    public function frozenClientSeed(): ?string
+    {
+        $cs = (string) $this->dice_client_seed;
+        if (empty($this->dice_rolls) || ! str_contains($cs, '.')) {
+            return null;
+        }
+
+        return $cs;
+    }
+
     public function hasVerifiedServerResult(): bool
     {
         $match = $this->server_match;
@@ -492,6 +503,11 @@ class Room extends Model
             // yeniden üretip birebir doğrulayabilsin (maç sürerken gizli tutmaya gerek yok ama
             // tutarlılık için aynı kapıdan).
             'dice_client_seed' => $this->hasVerifiedServerResult() ? (string) $this->dice_client_seed : null,
+            // ADİL ZAR v2: DONMUŞ clientSeed ("<p1>.<p2>") ilk zardan (açılış) itibaren HER İKİ tarayıcıya
+            // gider. Gizli bir şey yok (serverSeed hâlâ gizli); amaç: sunucu "tohum zamanında gelmedi"
+            // diye bir oyuncunun parçasını dışarıda bırakırsa o tarayıcı bunu MAÇ BİTMEDEN, açılışta görür
+            // ve uyarır. Böylece sunucu parçalı/parçasız diziler arasında sessizce seçim yapamaz.
+            'dice_client_seed_frozen' => $this->frozenClientSeed(),
             // Oda modu (ranked/friendly): rovans sonrasi istemci puanli/puansiz ayrimini korur.
             'mode' => $this->mode,
             // RÖVANŞ durumu: p1/p2 cevaplari (null|yes|no) + anlasma saglandiysa YENI oda kodu.

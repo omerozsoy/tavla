@@ -4389,6 +4389,7 @@ class RoomController extends Controller
                     'starter' => $starter,
                     'opening' => true,
                     'commit' => $room->dice_commit,
+                    'client_seed' => $room->frozenClientSeed(), // donmuş tohum: tarayıcı kendi parçasını hemen kontrol eder
                     'version' => (int) $room->server_version,
                     'reused' => false,
                 ]);
@@ -4410,6 +4411,7 @@ class RoomController extends Controller
                     'starter' => $state['turn'] ?? 'white',
                     'opening' => true,
                     'commit' => $room->dice_commit,
+                    'client_seed' => $room->frozenClientSeed(), // donmuş tohum: tarayıcı kendi parçasını hemen kontrol eder
                     'version' => (int) $room->server_version,
                     'reused' => true,
                 ]);

@@ -2643,6 +2643,7 @@ export interface RoomView {
   dice_authority?: boolean
   dice_seed?: string | null // REVEAL: yalniz mac bitince dolu (provably-fair dogrulama)
   dice_client_seed?: string | null // REVEAL: istemci tohum katkisi (dogrulamada gerekir)
+  dice_client_seed_frozen?: string | null // ADİL ZAR v2: açılıştan itibaren donmuş clientSeed (iki tarafa da)
   // REVEAL: her el/acilis kaydi. Normal el {index,slot,dice}; acilis {opening,white,black,starter}.
   dice_rolls?: Array<
     | { index: number; slot: string; dice: number[] }
@@ -3402,6 +3403,13 @@ export function storedDiceSeed(code: string): string | null {
   return hit && hit[2] === 1 ? hit[1] : null
 }
 
+// Bu cihazın bu oda için ürettiği tohum (oyuncu bayrağına bakmadan); yoksa null — yeni ÜRETMEZ.
+// Açılış uyarısı (donmuş tohumda kendi parçan) bunu kullanır: poll ile gitmiş tohum da sayılır.
+export function peekDiceSeed(code: string): string | null {
+  const hit = readDiceSeeds().find(([c]) => c === code.toUpperCase())
+  return hit && /^[0-9a-f]{16}$/.test(hit[1]) ? hit[1] : null
+}
+
 // Poll: since verilirse degismemisse null doner
 export async function showRoom(code: string, since?: number): Promise<RoomView | null> {
   const token = getToken()
@@ -3562,7 +3570,7 @@ export async function serverRoll(
   code: string,
   clientSeed?: string,
   expectedVersion?: number,
-): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus; not_turn?: boolean; state?: GameState; match?: ServerMatch }> {
+): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; client_seed?: string | null; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus; not_turn?: boolean; state?: GameState; match?: ServerMatch }> {
   // İkinci-ekran sinyali: oyuncunun turu (karar penceresi) başladı → birikmiş blur'u sıfırla.
   turnStarted()
   return roomCommand(code, 'roll', { client_seed: clientSeed ?? null, expected_version: expectedVersion ?? null })

@@ -38,7 +38,7 @@ import {
   secureDie,
 } from './engine/game'
 import { HeuristicBot } from './engine/engine'
-import { FairDice, type ServerDiceEntry } from './engine/fairDice'
+import { FairDice, ownSeedStatus, type ServerDiceEntry } from './engine/fairDice'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
@@ -122,6 +122,7 @@ import {
   botNudge,
   serverRoll,
   myDiceSeed,
+  peekDiceSeed,
   serverMove,
   serverCubeOffer,
   serverCubeRespond,
@@ -815,6 +816,7 @@ interface RoomState {
   dice_commit?: string | null
   dice_seed?: string | null
   dice_client_seed?: string | null
+  dice_client_seed_frozen?: string | null // ADİL ZAR v2: açılışta donan clientSeed (canlı, iki tarafa)
   dice_rolls?: ServerDiceEntry[] | null
 }
 const BOT_PLAYER: Player = 'black'
@@ -1133,6 +1135,18 @@ export default function App() {
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [chatNotice, setChatNotice] = useState<string | null>(null) // küfür uyarısı/konuşma yasağı (kırmızı)
+  // ADİL ZAR v2: donmuş clientSeed'de bu oyuncunun parçası yoksa/farklıysa maç başında uyarı (oda başına bir kez).
+  const [seedWarn, setSeedWarn] = useState<{ code: string; kind: 'missing' | 'other' } | null>(null)
+  const seedWarnCheckedRef = useRef<string | null>(null)
+  const frozenSeed = room?.dice_client_seed_frozen ?? null
+  const roomCodeForSeed = room?.code ?? null
+  const roomSlotForSeed = room?.slot ?? null
+  useEffect(() => {
+    if (!frozenSeed || !roomCodeForSeed || seedWarnCheckedRef.current === roomCodeForSeed) return
+    seedWarnCheckedRef.current = roomCodeForSeed
+    const st = ownSeedStatus(frozenSeed, roomSlotForSeed, peekDiceSeed(roomCodeForSeed))
+    setSeedWarn(st === 'missing' || st === 'other' ? { code: roomCodeForSeed, kind: st } : null)
+  }, [frozenSeed, roomCodeForSeed, roomSlotForSeed])
   // Sohbeti kapatan slot ('p1'/'p2') — biri kapatinca iki taraf da yazamaz; null = acik. Odadan gelir.
   const [chatOffBy, setChatOffBy] = useState<Slot | null>(null)
   // Yeni odaya girince sifirla (ilk poll dogru degeri getirene kadar onceki macin durumu kalmasin).
@@ -4443,6 +4457,9 @@ export default function App() {
       // AÇILIŞ (Faz 2): sunucu adil açılışı yaptı -> başlayan + iki zar geldi. Taze tahta kur.
       if (r.opening && (r.starter === 'white' || r.starter === 'black')) {
         const starter = r.starter
+        // ADİL ZAR v2: açılış yanıtı donmuş clientSeed'i taşır -> kendi parçan kontrolü poll beklemeden.
+        const frozen = r.client_seed
+        if (frozen) setRoom((rm) => (rm && rm.code === code ? { ...rm, dice_client_seed_frozen: frozen } : rm))
         const s = freshBoard(starter)
         s.dice = r.dice
         s.diceUsed = [false, false]
@@ -6725,6 +6742,7 @@ export default function App() {
                 dice_commit: rv.dice_commit ?? r.dice_commit,
                 dice_seed: rv.dice_seed ?? r.dice_seed,
                 dice_client_seed: rv.dice_client_seed ?? r.dice_client_seed,
+                dice_client_seed_frozen: rv.dice_client_seed_frozen ?? r.dice_client_seed_frozen,
                 dice_rolls: (rv.dice_rolls as ServerDiceEntry[] | null) ?? r.dice_rolls,
               }
             : r,
@@ -12799,6 +12817,14 @@ export default function App() {
 
       <main className="main game-scene">
       <div className={`game-area${mobilePortrait ? ' gb-redesign' : ''}`}>
+        {seedWarn && room && seedWarn.code === room.code && (
+          <div className="fair-seed-warn" role="alert">
+            <span>{t(seedWarn.kind === 'missing' ? 'fair.seedWarnMissing' : 'fair.seedWarnOther')}</span>
+            <button type="button" className="fair-seed-warn-x" aria-label={t('common.close')} onClick={() => setSeedWarn(null)}>
+              ×
+            </button>
+          </div>
+        )}
         {isTournWaiting && (
           <div className="tourn-wait-banner" role="status" aria-live="polite">
             <span className="tourn-wait-spin" aria-hidden="true" />

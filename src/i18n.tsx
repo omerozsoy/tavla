@@ -1651,6 +1651,10 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'dc.flashVerified': 'Zarlar doğrulandı — sonuçlar aşağıda.',
   'dc.ownSeedOk': 'Senin tohumun ({s}) istemci tohumunda yer alıyor: zarlara senin katkın da girdi.',
   'dc.ownSeedMissing': 'Bu cihazın gönderdiği tohum ({s}) istemci tohumunda yok. Tohum ilk zardan önce sunucuya ulaşmamış olabilir; zarlar yine de taahhütle doğrulanır.',
+  'fair.seedWarnMissing':
+    "Adil Zar: tohumun bu maçın zarlarına katılmadı (ilk zardan önce sunucuya ulaşmadı sayıldı). Zarlar yine taahhütle doğrulanır; maç sonunda Zar Kontrol'de görebilirsin.",
+  'fair.seedWarnOther':
+    "Adil Zar: bu maçta senin yerine kayıtlı tohum bu cihazın gönderdiği tohum değil (başka cihaz/sekmeden girdiysen normaldir). Maç sonunda Zar Kontrol'den doğrulayabilirsin.",
   'dc.commitOk': 'Tohum, maç başında verilen mühürle uyumlu.',
   'dc.commitBad': 'Tohum, mühürle UYUŞMUYOR!',
   'dc.allOk': 'Tüm {n} el doğrulandı — zarlar tohumla birebir eşleşiyor.',
@@ -1706,7 +1710,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'fairp.tech.toggle': 'Teknik Detayları Gör',
   'fairp.tech.toggleHide': 'Teknik Detayları Gizle',
   'fairp.tech.body':
-    'Sunucu tohumu 32 baytlık rastgele bir değerdir (64 haneli hex). Taahhüt, sunucu tohumunun hex metninin SHA-256 özetidir ve oda kurulurken yayınlanır. İstemci tohumu "<1. oyuncunun tohumu>.<2. oyuncunun tohumu>" biçimindedir (bot maçlarında ikinci parça boştur); ilk zar atıldıktan sonra yeni tohum kabul edilmez. Her zar HMAC-SHA256 ile üretilir. Anahtar sunucu tohumunun hex metnidir; mesaj "v2:roll:<istemci tohumu>:<zar sırası>:<tur>", açılış zarında ise "v2:single:<istemci tohumu>:<oyun no>:<deneme>:<tur>" olur. Çıkan baytlardan 252 ve üzeri olanlar atlanır, kalanlardan zar = (bayt mod 6) + 1 alınır. Böylece 1–6 tam olarak eşit olasılıkla çıkar ve "modulo yanlılığı" oluşmaz. Aşağıdaki test ve doğrulama örneği sunucudaki algoritmanın birebir aynısını kullanır.',
+    'Sunucu tohumu 32 baytlık rastgele bir değerdir (64 haneli hex). Taahhüt, sunucu tohumunun hex metninin SHA-256 özetidir ve oda kurulurken yayınlanır. İstemci tohumu "<1. oyuncunun tohumu>.<2. oyuncunun tohumu>" biçimindedir (bot maçlarında ikinci parça boştur); ilk zar atıldıktan sonra yeni tohum kabul edilmez. Donan istemci tohumu açılış zarıyla birlikte iki oyuncunun tarayıcısına da gönderilir; tarayıcın kendi parçanı içinde bulamazsa maç başında seni uyarır. Her zar HMAC-SHA256 ile üretilir. Anahtar sunucu tohumunun hex metnidir; mesaj "v2:roll:<istemci tohumu>:<zar sırası>:<tur>", açılış zarında ise "v2:single:<istemci tohumu>:<oyun no>:<deneme>:<tur>" olur. Çıkan baytlardan 252 ve üzeri olanlar atlanır, kalanlardan zar = (bayt mod 6) + 1 alınır. Böylece 1–6 tam olarak eşit olasılıkla çıkar ve "modulo yanlılığı" oluşmaz. Aşağıdaki test ve doğrulama örneği sunucudaki algoritmanın birebir aynısını kullanır.',
   'fairp.test.title': 'Zarları Kendin Test Et',
   'fairp.test.sub':
     'İstersen sistemi kendin dene. Gerçek maçlardaki zar algoritmasıyla binlerce zar attır ve sonuçların dağılımını gör.',

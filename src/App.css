@@ -38843,3 +38843,35 @@ body:has(.register-overlay) .chat-panel.closed {
   pointer-events: auto;
   top: 52%;
 }
+
+/* ADİL ZAR v2: donmuş clientSeed'de kendi parçan yok/farklı uyarısı (maç başı, kapatılabilir) */
+.fair-seed-warn {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 46;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: max-content;
+  max-width: min(92%, 520px);
+  padding: 10px 12px 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #fff;
+  background: color-mix(in srgb, #7a3b12 88%, transparent);
+  border: 1px solid #e0a14a;
+  backdrop-filter: blur(6px);
+}
+.fair-seed-warn-x {
+  flex: none;
+  background: none;
+  border: 0;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}

@@ -172,4 +172,40 @@ class FairDiceSeedContributionTest extends TestCase
 
         $this->openingRoll($room, self::P1_SEED)->assertOk()->assertJsonPath('opening', true);
     }
+
+    public function test_frozen_client_seed_is_published_to_both_players_at_opening(): void
+    {
+        $room = $this->room();
+
+        // Açılıştan önce donmuş tohum YOK (henüz katkı penceresi açık).
+        $this->assertNull($room->toClient()['dice_client_seed_frozen']);
+
+        $this->poll($room, 'p2-token', self::P2_SEED);
+        $cs = self::P1_SEED.'.'.self::P2_SEED;
+        // Açılış yanıtı donmuş tohumu taşır -> atan tarayıcı kendi parçasını hemen kontrol eder.
+        $this->openingRoll($room, self::P1_SEED)->assertOk()
+            ->assertJsonPath('opening', true)
+            ->assertJsonPath('client_seed', $cs);
+        // Diğer tarayıcı poll ile görür; maç sürerken reveal alanları hâlâ gizli.
+        Sanctum::actingAs($this->u2);
+        $this->withHeader('X-Room-Token', 'p2-token')->getJson("/api/rooms/{$room->code}")
+            ->assertOk()
+            ->assertJsonPath('room.dice_client_seed_frozen', $cs)
+            ->assertJsonPath('room.dice_seed', null);
+        // İkinci çağıranın (reused açılış) yanıtı da aynı tohumu taşır.
+        $this->openingRoll($room, self::P2_SEED, 'p2-token')->assertOk()
+            ->assertJsonPath('reused', true)
+            ->assertJsonPath('client_seed', $cs);
+    }
+
+    public function test_frozen_client_seed_shows_missing_part_after_wait_timeout(): void
+    {
+        $room = $this->room();
+
+        $this->openingRoll($room, self::P1_SEED)->assertOk()->assertJsonPath('waiting_seed', true);
+        $this->travel(6)->seconds();
+        // p2'nin tohumu gelmedi: donmuş tohum p2 parçası BOŞ -> p2 tarayıcısı açılışta uyarır.
+        $this->openingRoll($room, self::P1_SEED)->assertOk()->assertJsonPath('client_seed', self::P1_SEED.'.');
+        $this->assertSame(self::P1_SEED.'.', $room->fresh()->toClient()['dice_client_seed_frozen']);
+    }
 }

@@ -1654,7 +1654,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'fairp.tech.toggle': 'Show Technical Details',
   'fairp.tech.toggleHide': 'Hide Technical Details',
   'fairp.tech.body':
-    'The server seed is a 32-byte random value (64 hex characters). The commitment is the SHA-256 hash of the hex text of the server seed and is published when the room is created. The client seed has the form "<player 1 seed>.<player 2 seed>" (in bot matches the second part is empty); no new seed is accepted after the first roll. Each roll is generated with HMAC-SHA256. The key is the hex text of the server seed; the message is "v2:roll:<client seed>:<roll index>:<round>", or "v2:single:<client seed>:<game no>:<attempt>:<round>" for the opening roll. Bytes of 252 and above are skipped, and from the rest die = (byte mod 6) + 1. So faces 1–6 come up with exactly equal probability and there is no "modulo bias". The test and verification example below use exactly the same algorithm as the server.',
+    'The server seed is a 32-byte random value (64 hex characters). The commitment is the SHA-256 hash of the hex text of the server seed and is published when the room is created. The client seed has the form "<player 1 seed>.<player 2 seed>" (in bot matches the second part is empty); no new seed is accepted after the first roll. The frozen client seed is sent to both players’ browsers together with the opening roll; if your browser cannot find your part in it, it warns you at the start of the match. Each roll is generated with HMAC-SHA256. The key is the hex text of the server seed; the message is "v2:roll:<client seed>:<roll index>:<round>", or "v2:single:<client seed>:<game no>:<attempt>:<round>" for the opening roll. Bytes of 252 and above are skipped, and from the rest die = (byte mod 6) + 1. So faces 1–6 come up with exactly equal probability and there is no "modulo bias". The test and verification example below use exactly the same algorithm as the server.',
   'fairp.test.title': 'Test the Dice Yourself',
   'fairp.test.sub':
     'Try the system yourself. Roll thousands of dice with the same algorithm used in real matches and see how the results are distributed.',
@@ -2597,6 +2597,10 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'dc.flashVerified': "Rolls verified — results are shown below.",
   'dc.ownSeedOk': 'Your seed ({s}) is part of the client seed: your contribution went into the dice.',
   'dc.ownSeedMissing': 'The seed this device sent ({s}) is not in the client seed. It may not have reached the server before the first roll; the dice are still verified against the commitment.',
+  'fair.seedWarnMissing':
+    "Fair Dice: your seed was not included in this match's dice (it was treated as not reaching the server before the first roll). The dice are still verified against the commitment; check Dice Check after the match.",
+  'fair.seedWarnOther':
+    "Fair Dice: the seed recorded for you in this match is not the one this device sent (normal if you joined from another device/tab). You can verify it in Dice Check after the match.",
   'dc.commitOk': "The seed matches the commitment published at the start of the match.",
   'dc.commitBad': "The seed DOES NOT match the commitment!",
   'dc.allOk': "All {n} rolls verified — the dice match the seed exactly.",
