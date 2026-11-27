@@ -24,7 +24,8 @@ class RecognitionClient
     }
 
     /**
-     * Ham foto byte'larini tanima servisine gonderir. $flip=true -> tahta 180 cevrilmis okunur
+     * Ham foto byte'larini tanima servisine gonderir. $flip=true -> EVLER SOLDA (sol-sag ayna numaralama;
+     * kullanicinin "Evim: Solda" secimi)
      * (yonelim belirsizligi icin toggle). Basarili yanitta tam JSON, aksi halde null.
      */
     public function recognize(string $imageBytes, bool $flip = false): ?array

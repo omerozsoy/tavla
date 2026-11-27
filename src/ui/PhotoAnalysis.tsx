@@ -25,19 +25,23 @@ export function PositionBoard({
   mineDark,
   dice,
   diceRight,
+  homeLeft = false,
 }: {
   points: number[]
   mineDark: boolean
   dice: number[]
   diceRight: boolean
+  /** evler solda: numaralama aynali -> cizim fotodaki gibi gorunsun diye kolonlar aynalanir */
+  homeLeft?: boolean
 }) {
   const W = 360, H = 240, m = 6, barW = 20
   const fieldW = (W - 2 * m - barW) / 2
   const pw = fieldW / 6
   const r = Math.min(pw / 2 - 1.5, 12)
   const colX = (c: number) => (c < 6 ? m + (c + 0.5) * pw : m + fieldW + barW + (c - 6 + 0.5) * pw)
-  const topPoint = (c: number) => (c < 6 ? 13 + c : 19 + (c - 6))
-  const botPoint = (c: number) => (c < 6 ? 12 - c : 6 - (c - 6))
+  // c = fotodaki kolon (soldan saga 0..11). Evler sagda: ust 13..24, alt 12..1; solda: ayna.
+  const topPoint = (c: number) => (homeLeft ? 24 - c : 13 + c)
+  const botPoint = (c: number) => (homeLeft ? 1 + c : 12 - c)
 
   const tri = (c: number, top: boolean, dark: boolean) => {
     const x = colX(c), hw = pw / 2 - 1
@@ -99,6 +103,8 @@ export function PositionBoard({
  * cizgide). getUserMedia yok/izin reddi -> eski yol: <input capture="environment"> (telefonun kamerasi).
  * Galeriden secim ayrica (capture'siz input).
  */
+const HOME_KEY = 'photoHomeSide'
+
 export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () => void; titleOverride?: string }) {
   const { t } = useT()
   const notify = useToast()
@@ -110,6 +116,15 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   const [preview, setPreview] = useState('')
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<PhotoAnalysisResult | null>(null)
+  // Evler hangi tarafta (tek fotodan guvenilir cikarilamiyor: iki yorumun pip toplami ~esit).
+  // Oyuncu genelde hep ayni duzende oynar -> secim hatirlanir. Sunucuya flip=1 olarak gider.
+  const [homeLeft, setHomeLeft] = useState(() => {
+    try {
+      return localStorage.getItem(HOME_KEY) === 'left'
+    } catch {
+      return false
+    }
+  })
 
   function pick(f: File) {
     setFile(f)
@@ -137,14 +152,26 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     )
   }
 
+  function chooseHome(left: boolean) {
+    if (left === homeLeft) return
+    setHomeLeft(left)
+    try {
+      localStorage.setItem(HOME_KEY, left ? 'left' : 'right')
+    } catch {
+      /* gizli mod */
+    }
+    // ayni fotoyu yeni yorumla tekrar analiz et (yeniden cekmeye gerek yok)
+    if (file && result) void analyze(file, left)
+  }
+
   // f: kameradan yeni cekilen dosya (state henuz guncellenmemis olabilir) -> dogrudan analiz
-  async function analyze(f: File | null = file) {
+  async function analyze(f: File | null = file, left: boolean = homeLeft) {
     if (!f || busy) return
     setBusy(true)
     setResult(null)
     try {
       const blob = await downscale(f)
-      const { id } = await uploadPhotoAnalysis(blob)
+      const { id } = await uploadPhotoAnalysis(blob, left)
       // poll: pending -> done/invalid/failed (~0.7sn aralik, <=60sn; tanima+gnubg tipik 1-2sn)
       for (let i = 0; i < 85; i++) {
         await new Promise((r) => setTimeout(r, 700))
@@ -220,6 +247,17 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
           </Button>
         </div>
 
+        <div className="photo-home" role="group" aria-label={t('photo.home')}>
+          {/* Kullanici istegi: u-turn-left 90 derece SOLA = saga toplaniyor (varsayilan);
+              u-turn-right 90 derece SAGA = sola toplaniyor */}
+          <button type="button" className={!homeLeft ? 'on' : ''} aria-pressed={!homeLeft} onClick={() => chooseHome(false)} disabled={busy}>
+            <Icon name="u-turn-left" size={18} className="photo-home-ico rot-l" /> {t('photo.homeRight')}
+          </button>
+          <button type="button" className={homeLeft ? 'on' : ''} aria-pressed={homeLeft} onClick={() => chooseHome(true)} disabled={busy}>
+            <Icon name="u-turn-right" size={18} className="photo-home-ico rot-r" /> {t('photo.homeLeft')}
+          </button>
+        </div>
+
         <Button className="photo-analyze-btn" onClick={() => analyze()} disabled={busy || !file}>
           {busy ? <span className="btn-spinner" aria-hidden="true" /> : <Icon name="search" size={16} />}
           {busy ? t('photo.analyzing') : t('photo.analyze')}
@@ -251,7 +289,8 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   points={result!.position.points}
                   mineDark={result!.debug?.photographer === 'dark'}
                   dice={result!.position.dice ?? []}
-                  diceRight={result!.position.turn !== 'black'}
+                  diceRight={result!.debug?.dice_side !== 'left'}
+                  homeLeft={homeLeft}
                 />
               )}
               <div className="photo-dice">

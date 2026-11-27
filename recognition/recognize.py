@@ -265,7 +265,9 @@ def _recognize_warp(warp, board_conf, flip):
     for p, sl in zip(pts, slots):
         n = _slot_number(*sl)
         if flip:
-            n = 25 - n
+            # flip = EVLER SOLDA (kullanici secimi): sol-sag ayna. Fotonun sol-alt kosesi ceken icin
+            # hane 1. (Eski 25-n ust/alt siralari takas ediyordu = yanlis anlam; hic kullanilmamisti.)
+            n = 13 - n if n <= 12 else 37 - n
         points[n - 1] += (1 if p["color"] == WHITE_COLOR else -1) * p["count"]
 
     white = sum(v for v in points if v > 0); black = -sum(v for v in points if v < 0)

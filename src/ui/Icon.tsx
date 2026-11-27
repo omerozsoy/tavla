@@ -84,6 +84,8 @@ import {
   IconLockAccess,
   IconLockOpen,
   IconCamera,
+  IconUTurnLeft,
+  IconUTurnRight,
   IconMenu2,
   IconMaximize,
   IconMinimize,
@@ -206,6 +208,8 @@ export type IconName =
   | 'ban'
   | 'lock'
   | 'camera'
+  | 'u-turn-left'
+  | 'u-turn-right'
   | 'menu'
   | 'maximize'
   | 'minimize'
@@ -326,6 +330,8 @@ const MAP: Record<IconName, TablerIcon> = {
   ban: IconBan,
   lock: IconLock,
   camera: IconCamera,
+  'u-turn-left': IconUTurnLeft,
+  'u-turn-right': IconUTurnRight,
   menu: IconMenu2,
   maximize: IconMaximize,
   minimize: IconMinimize,

@@ -9,6 +9,7 @@ PORT NOTU: gnubg havuzu 8090-8109'u KULLANIR -> cakismamak icin 8120 varsayilan 
 Uclar:
   GET  /health                 -> {"ok":true}            (secret'siz)
   POST /recognize [?flip=1]     ham foto byte'lari (jpeg/png) -> recognize() JSON (secret sart)
+                                flip=1: evler SOLDA (sol-sag ayna numaralama)
 """
 import os, sys, json, hmac, threading
 import numpy as np

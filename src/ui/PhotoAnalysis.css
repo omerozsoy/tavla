@@ -200,6 +200,49 @@
   }
 }
 
+.photo-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  font-size: 0.85rem;
+}
+.photo-home-label {
+  padding: 0 8px 0 10px;
+  opacity: 0.75;
+}
+.photo-home button {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.photo-home button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.photo-home-ico.rot-l {
+  transform: rotate(-90deg);
+}
+.photo-home-ico.rot-r {
+  transform: rotate(90deg);
+}
+.photo-home button.on {
+  background: var(--color-primary, #2b5fd9);
+  color: #fff;
+}
+.photo-home button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
 .photo-analyze-btn {
   min-width: 190px;
   gap: 8px;
