@@ -5923,6 +5923,12 @@ button[aria-disabled='true'],
 .register-overlay.page.report-page > .report-card .modal-close {
   display: flex;
 }
+/* Aynı sorun GÖMÜLÜ detayda (Maç Analizleri içindeki .report-embed, /mac-analizleri-detay/<id>):
+   page-host .modal-close gizleme kuralı bu X'i de yutuyordu -> detaydan listeye GERİ dönüş yoktu
+   (üst .report-page istisnası embedded'ı kapsamaz). Göster -> X listeye döndürür. */
+.page-host .register-overlay.page > *:not(.register-overlay) .report-embed .modal-close {
+  display: flex;
+}
 /* Mobil / dar ekran: sol menu drawer'a doner -> sayfa tam ekran */
 @media (max-width: 1080px) {
   .register-overlay.page {
