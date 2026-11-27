@@ -3,8 +3,9 @@
  *
  * Amac: adil zar sistemini 10 yasindaki bir cocugun bile anlayacagi sade, guven veren
  * bir dille anlatmak. Teknik kavramlar (CSPRNG, reddetme ornekleme) "Teknik Detaylar"
- * accordion'una saklanir. En altta ETKILESIMLI test alani: GERCEK oyun zar fonksiyonu
- * secureDie() ile binlerce atis yapip dagilimi + Ki-Kare (dagilim) testini gosterir.
+ * accordion'una saklanir. En altta ETKILESIMLI test alani: GERCEK online zar algoritmasi
+ * (sunucu FairDiceService'in byte-ayni portu serverRoll, v2 HMAC) ile binlerce atis yapip
+ * dagilimi + Ki-Kare (dagilim) testini gosterir. Dogrulama ornegi de ayni algoritmayi kullanir.
  *
  * Tasarim: mevcut tasarim sistemi (token/kart/Outfit), dark-tema uyumlu, Phosphor ikon.
  */
@@ -13,9 +14,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Icon, type IconName } from './Icon'
 import { useT } from '../i18n'
-import { secureDie } from '../engine/game'
 import { summarize, type DiceTestResult } from '../engine/diceStats'
-import { FairDice, sha256Hex, verifyRoll } from '../engine/fairDice'
+import { sha256Hex, serverRoll } from '../engine/fairDice'
 
 const PRESETS = [100, 1000, 10000, 100000]
 const MAX_ROLLS = 1_000_000
@@ -32,6 +32,24 @@ const LOCALE: Record<string, string> = {
   el: 'el-GR',
   ru: 'ru-RU',
   fa: 'fa-IR',
+}
+
+function randomHex(bytes: number): string {
+  const b = new Uint8Array(bytes)
+  crypto.getRandomValues(b)
+  return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
+}
+
+// Gercek maçtaki gibi ornek: sunucu tohumu (32 bayt) + iki oyuncu tohumu "<p1>.<p2>" (v2).
+function sampleSeeds() {
+  const serverSeed = randomHex(32)
+  return { serverSeed, clientSeed: `${randomHex(8)}.${randomHex(8)}`, commitment: sha256Hex(serverSeed), rolls: 8 }
+}
+
+// Sunucu el sonucu -> oyundaki zar dizisi (cift = 4 zar).
+function playedDice(serverSeed: string, clientSeed: string, index: number): number[] {
+  const [a, b] = serverRoll(serverSeed, clientSeed, index)
+  return a === b ? [a, a, a, a] : [a, b]
 }
 
 function dieIcon(v: number): IconName {
@@ -59,25 +77,22 @@ export default function FairDiceInfo() {
 
   // ---- Tohumla dogrulama (provably-fair) state ----
   // Ornek bir mac: tarayicida serverSeed/clientSeed uretilir, commitment=SHA256(serverSeed).
-  // Kullanici bir zar sirasini (nonce) dogrulayip taahhut<->tohum eslesmesini gorebilir;
-  // degeri kurcalayinca eslesme bozulur (adilligin somut kaniti). Canli mac gerektirmez.
-  const [seed, setSeed] = useState(() => {
-    const fd = new FairDice()
-    return { serverSeed: fd.serverSeed, clientSeed: fd.clientSeed, commitment: fd.commitment, rolls: 8 }
-  })
+  // Zar SUNUCU algoritmasiyla (serverRoll, v2 HMAC) hesaplanir — gercek maçla ayni formul.
+  // Degeri kurcalayinca eslesme bozulur (adilligin somut kaniti). Canli mac gerektirmez.
+  const [seed, setSeed] = useState(sampleSeeds)
   const [vServer, setVServer] = useState(seed.serverSeed)
   const [vClient, setVClient] = useState(seed.clientSeed)
   const [vNonce, setVNonce] = useState(0)
   const [vResult, setVResult] = useState<{ dice: number[]; match: boolean } | null>(null)
 
   function verifySeed() {
-    const dice = verifyRoll(vServer.trim(), vClient.trim(), vNonce)
+    const dice = playedDice(vServer.trim(), vClient.trim(), vNonce)
     const match = sha256Hex(vServer.trim()) === seed.commitment
     setVResult({ dice, match })
   }
   function regenSeed() {
-    const fd = new FairDice()
-    setSeed({ serverSeed: fd.serverSeed, clientSeed: fd.clientSeed, commitment: fd.commitment, rolls: 8 })
+    const fd = sampleSeeds()
+    setSeed(fd)
     setVServer(fd.serverSeed)
     setVClient(fd.clientSeed)
     setVNonce(0)
@@ -105,10 +120,17 @@ export default function FairDiceInfo() {
     setProgress(0)
     const counts = [0, 0, 0, 0, 0, 0]
     let done = 0
+    // GERCEK online zar algoritmasi: her test icin taze tohumlar, el sirasi 0,1,2… (her el 2 zar).
+    const ts = sampleSeeds()
+    let index = 0
+    let pending: number[] = []
     const step = () => {
       if (runIdRef.current !== myId) return // iptal / yeniden baslatildi
       const chunk = Math.min(BATCH, n - done)
-      for (let i = 0; i < chunk; i++) counts[secureDie() - 1]++ // GERCEK oyun zari
+      for (let i = 0; i < chunk; i++) {
+        if (pending.length === 0) pending = serverRoll(ts.serverSeed, ts.clientSeed, index++)
+        counts[(pending.pop() as number) - 1]++
+      }
       done += chunk
       setProgress(Math.round((done / n) * 100))
       if (done < n) {
@@ -163,6 +185,7 @@ export default function FairDiceInfo() {
         <p className="fairp-answer">{t('fairp.s2.no')}</p>
         <p>{t('fairp.s2.p1')}</p>
         <p>{t('fairp.s2.p2')}</p>
+        <p>{t('fairp.s2.p3')}</p>
       </section>
 
       {/* ==================== 3 · Kayirma yok ==================== */}

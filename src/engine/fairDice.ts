@@ -203,29 +203,46 @@ function serverUniformBytes(serverSeed: string, message: string, count: number):
   return accepted
 }
 
+// Algoritma sürümü clientSeed biçiminden: v2 = "<p1Tohumu>.<p2Tohumu>" (oda kurulurken sunucu
+// commit'i ÖNCE yayınlar, oyuncular sonra tohum ekler); '.' yoksa v1 (eski odalar). PHP versionOf aynı.
+export function fairVersionOf(clientSeed: string): 1 | 2 {
+  return clientSeed.includes('.') ? 2 : 1
+}
+
 // Sunucu `roll(serverSeed, clientSeed, index)` portu -> [d1, d2] (1..6).
+// v2 mesaj "v2:roll:<cs>:<index>", v1 "<cs>:<index>" (+ ":<round>" uniformBytes'ta).
 export function serverRoll(serverSeed: string, clientSeed: string, index: number): [number, number] {
-  const b = serverUniformBytes(serverSeed, `${clientSeed}:${index}`, 2)
+  const msg = fairVersionOf(clientSeed) === 2 ? `v2:roll:${clientSeed}:${index}` : `${clientSeed}:${index}`
+  const b = serverUniformBytes(serverSeed, msg, 2)
   return [(b[0] % 6) + 1, (b[1] % 6) + 1]
 }
 
-// Sunucu `single(serverSeed, clientSeed, index)` portu -> tek zar (açılış).
+// Sunucu v1 `single(serverSeed, clientSeed, index)` portu -> tek zar (eski odaların açılışı).
 export function serverSingle(serverSeed: string, clientSeed: string, index: number): number {
   const b = serverUniformBytes(serverSeed, `${clientSeed}:single:${index}`, 1)
   return (b[0] % 6) + 1
 }
 
-// Açılış eli: base = gameNo*4; white=single(base), black=single(base+1); eşitse
-// farklı çıkana dek ilerle (RoomController ile aynı). Başlayan = yüksek zar.
+// Sunucu `openingDie(serverSeed, clientSeed, gameNo, attempt)` portu. v2: oyun ve deneme ayrı
+// alan ("v2:single:<cs>:<gameNo>:<attempt>"); v1: single(gameNo*4 + attempt).
+export function serverOpeningDie(serverSeed: string, clientSeed: string, gameNo: number, attempt: number): number {
+  if (fairVersionOf(clientSeed) === 2) {
+    const b = serverUniformBytes(serverSeed, `v2:single:${clientSeed}:${gameNo}:${attempt}`, 1)
+    return (b[0] % 6) + 1
+  }
+  return serverSingle(serverSeed, clientSeed, gameNo * 4 + attempt)
+}
+
+// Açılış eli: white = deneme 0, black = deneme 1; eşitse siyah 2,3,… denemeleriyle farklı
+// çıkana dek yeniden atar (RoomController ile aynı). Başlayan = yüksek zar.
 export function reproduceOpening(
   serverSeed: string,
   clientSeed: string,
   gameNo: number,
 ): { white: number; black: number; starter: 'white' | 'black' } {
-  const base = gameNo * 4
-  const white = serverSingle(serverSeed, clientSeed, base)
-  let black = serverSingle(serverSeed, clientSeed, base + 1)
-  for (let k = 2; white === black; k++) black = serverSingle(serverSeed, clientSeed, base + k)
+  const white = serverOpeningDie(serverSeed, clientSeed, gameNo, 0)
+  let black = serverOpeningDie(serverSeed, clientSeed, gameNo, 1)
+  for (let k = 2; white === black; k++) black = serverOpeningDie(serverSeed, clientSeed, gameNo, k)
   return { white, black, starter: white > black ? 'white' : 'black' }
 }
 

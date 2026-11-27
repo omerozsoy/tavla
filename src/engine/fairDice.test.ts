@@ -6,6 +6,9 @@ import {
   rollFromSeed,
   serverRoll,
   serverSingle,
+  serverOpeningDie,
+  reproduceOpening,
+  fairVersionOf,
   verifyServerRolls,
   futureServerRolls,
   nextRollIndex,
@@ -54,6 +57,37 @@ describe('fairDice sunucu HMAC portu (PHP FairDiceService ile birebir)', () => {
     expect(fut.map((f) => f.index)).toEqual([2, 3, 4])
     expect(fut[0].dice).toEqual([3, 2]) // serverRoll index 2 = 3,2 (PHP vektörü)
     expect(fut.length).toBe(3)
+  })
+})
+
+// v2 (oda kurulurken commit, oyuncu tohumları "<p1>.<p2>", roll/single önekli, açılış oyun-anahtarlı).
+// Ground-truth: güncel PHP FairDiceService (php -r) çıktısı.
+describe('fairDice sunucu HMAC portu v2 (PHP ile birebir)', () => {
+  const SEED = 'a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00'
+  const CS = '0123456789abcdef.fedcba9876543210'
+  it('sürüm clientSeed biçiminden', () => {
+    expect(fairVersionOf(CS)).toBe(2)
+    expect(fairVersionOf('.')).toBe(2)
+    expect(fairVersionOf('clientX')).toBe(1)
+  })
+  it('serverRoll v2 PHP vektörleri', () => {
+    expect(serverRoll(SEED, CS, 0)).toEqual([6, 2])
+    expect(serverRoll(SEED, CS, 1)).toEqual([6, 1])
+    expect(serverRoll(SEED, CS, 2)).toEqual([1, 1])
+    expect(serverRoll(SEED, CS, 3)).toEqual([4, 1])
+    expect(serverRoll(SEED, CS, 7)).toEqual([1, 4])
+    expect(serverRoll(SEED, '.', 0)).toEqual([4, 1])
+  })
+  it('açılış v2: oyun-anahtarlı, beraberlikte siyah yeniden atar', () => {
+    expect(serverOpeningDie(SEED, CS, 1, 0)).toBe(2)
+    expect(serverOpeningDie(SEED, CS, 1, 1)).toBe(2)
+    expect(serverOpeningDie(SEED, CS, 1, 2)).toBe(6)
+    expect(serverOpeningDie(SEED, CS, 2, 0)).toBe(3)
+    expect(serverOpeningDie(SEED, CS, 2, 1)).toBe(4)
+    expect(reproduceOpening(SEED, CS, 1)).toEqual({ white: 2, black: 6, starter: 'black' })
+  })
+  it('v1 açılışı eski formülle aynı kalır (eski maçlar doğrulanır)', () => {
+    expect(reproduceOpening(SEED, 'clientX', 1)).toEqual({ white: 5, black: 4, starter: 'white' })
   })
 })
 

@@ -92,4 +92,66 @@ class FairDiceServiceTest extends TestCase
         $this->assertSame(64, strlen($s1)); // 32 bayt = 64 hex
         $this->assertNotSame($s1, $s2);
     }
+
+    // ---- v2 (oda kurulurken commit, "<p1>.<p2>" oyuncu tohumları, önekli mesajlar) ----
+    // Vektörler src/engine/fairDice.test.ts ile ORTAK (JS portu birebir aynı sonucu vermeli).
+    private const SEED = 'a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00';
+
+    private const CS2 = '0123456789abcdef.fedcba9876543210';
+
+    public function test_version_is_derived_from_client_seed_format(): void
+    {
+        $this->assertSame(2, FairDiceService::versionOf(self::CS2));
+        $this->assertSame(2, FairDiceService::versionOf(FairDiceService::emptyV2ClientSeed()));
+        $this->assertSame(1, FairDiceService::versionOf('clientX'));
+        $this->assertSame(1, FairDiceService::versionOf(''));
+    }
+
+    public function test_v2_roll_and_opening_vectors(): void
+    {
+        $this->assertSame([6, 2], $this->dice->roll(self::SEED, self::CS2, 0));
+        $this->assertSame([6, 1], $this->dice->roll(self::SEED, self::CS2, 1));
+        $this->assertSame([1, 1], $this->dice->roll(self::SEED, self::CS2, 2));
+        $this->assertSame([4, 1], $this->dice->roll(self::SEED, '.', 0));
+        $this->assertSame(2, $this->dice->openingDie(self::SEED, self::CS2, 1, 0));
+        $this->assertSame(2, $this->dice->openingDie(self::SEED, self::CS2, 1, 1));
+        $this->assertSame(6, $this->dice->openingDie(self::SEED, self::CS2, 1, 2));
+        $this->assertSame(3, $this->dice->openingDie(self::SEED, self::CS2, 2, 0));
+    }
+
+    public function test_v1_vectors_unchanged_for_old_rooms(): void
+    {
+        $this->assertSame([5, 5], $this->dice->roll(self::SEED, 'clientX', 0));
+        $this->assertSame(5, $this->dice->openingDie(self::SEED, 'clientX', 1, 0)); // = single(4)
+        $this->assertSame(4, $this->dice->openingDie(self::SEED, 'clientX', 1, 1)); // = single(5)
+        $this->assertSame($this->dice->single(self::SEED, 'clientX', 8), $this->dice->openingDie(self::SEED, 'clientX', 2, 0));
+    }
+
+    public function test_v2_opening_retries_never_reach_next_game(): void
+    {
+        // v1'de oyun g'nin 4. denemesi (base+4) = oyun g+1'in beyaz zarıydı; v2'de alanlar ayrı.
+        $seen = [];
+        foreach ([1, 2] as $g) {
+            foreach (range(0, 6) as $k) {
+                $seen[$g][$k] = $this->dice->openingDie(self::SEED, self::CS2, $g, $k);
+            }
+        }
+        // Aynı oyun/deneme -> aynı değer (deterministik); farklı (g,k) çiftleri farklı mesaj kullanır.
+        $this->assertSame($seen[1][4], $this->dice->openingDie(self::SEED, self::CS2, 1, 4));
+        $this->assertSame(6, $seen[1][2]);
+    }
+
+    public function test_player_seed_contribution_rules(): void
+    {
+        $this->assertSame('.abcdef0123', FairDiceService::withPlayerSeed('.', 'p2', 'ABCDEF0123'));
+        $this->assertSame('aa11bb22.ccdd1122', FairDiceService::withPlayerSeed('aa11bb22.', 'p2', 'ccdd1122'));
+        $this->assertNull(FairDiceService::withPlayerSeed('aa11bb22.', 'p1', 'ccdd1122')); // p1 zaten verdi
+        $this->assertNull(FairDiceService::withPlayerSeed('clientX', 'p1', 'ccdd1122')); // v1 oda
+        $this->assertNull(FairDiceService::withPlayerSeed('.', 'p1', 'x:single')); // hex değil
+        $this->assertNull(FairDiceService::withPlayerSeed('.', 'p1', 'abc')); // çok kısa
+        $this->assertNull(FairDiceService::withPlayerSeed('.', 'p1', str_repeat('a', 32))); // çok uzun
+        $this->assertNull(FairDiceService::withPlayerSeed('.', 'spectator', 'ccdd1122'));
+        $this->assertNull(FairDiceService::withPlayerSeed('.', 'p1', null));
+        $this->assertLessThanOrEqual(64, strlen(str_repeat('a', 31).'.'.str_repeat('b', 31)));
+    }
 }

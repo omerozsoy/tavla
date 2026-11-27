@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\FairDiceService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
@@ -342,6 +343,24 @@ class Room extends Model
         } while ($n === $limit);
 
         return $deleted;
+    }
+
+    /**
+     * ADİL ZAR v2: sunucu tohumu + taahhüt (commit) oda OLUŞTURULURKEN üretilir — hiçbir oyuncu
+     * tohumu gelmeden ÖNCE. Böylece sunucu kendi tohumunu oyuncu tohumlarına göre seçemez.
+     * clientSeed "." (iki oyuncu parçası boş) başlar; oyuncular commit'i gördükten sonra katkı verir
+     * (RoomController::contributeClientSeed). Tek paylaşılan nokta: tüm oda kurma yolları buradan geçer.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Room $room) {
+            if (empty($room->dice_seed)) {
+                $dice = new FairDiceService;
+                $room->dice_seed = $dice->newSeed();
+                $room->dice_commit = $dice->commit($room->dice_seed);
+                $room->dice_client_seed = FairDiceService::emptyV2ClientSeed();
+            }
+        });
     }
 
     protected function casts(): array

@@ -1649,6 +1649,8 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'dc.clientSeed': 'İstemci tohumu (clientSeed)',
   'dc.verify': 'Tüm Zarları Doğrula',
   'dc.flashVerified': 'Zarlar doğrulandı — sonuçlar aşağıda.',
+  'dc.ownSeedOk': 'Senin tohumun ({s}) istemci tohumunda yer alıyor: zarlara senin katkın da girdi.',
+  'dc.ownSeedMissing': 'Bu cihazın gönderdiği tohum ({s}) istemci tohumunda yok. Tohum ilk zardan önce sunucuya ulaşmamış olabilir; zarlar yine de taahhütle doğrulanır.',
   'dc.commitOk': 'Tohum, maç başında verilen mühürle uyumlu.',
   'dc.commitBad': 'Tohum, mühürle UYUŞMUYOR!',
   'dc.allOk': 'Tüm {n} el doğrulandı — zarlar tohumla birebir eşleşiyor.',
@@ -1671,14 +1673,20 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
     'Hiçbir oyuncuya özel zar verilmez. Sistem kimin kazandığını, kimin kaybettiğini veya kimin oynadığını dikkate almaz.',
   'fairp.hero.quote': 'Zar seni tanımaz. Rakibini de tanımaz. Her atış rastgeledir.',
   'fairp.s1.title': 'Zarlar Nasıl Atılıyor?',
-  'fairp.s1.p1': 'Her zar atışında bilgisayar 1 ile 6 arasında rastgele bir sayı oluşturur.',
-  'fairp.s1.p2': 'Bunun için güvenlik amacıyla geliştirilmiş güçlü bir rastgele sayı sistemi (CSPRNG) kullanılır.',
-  'fairp.s1.p3': 'Yani zarlar önceden hazırlanıp sıraya konmaz. Her atış tam o anda oluşturulur.',
+  'fairp.s1.p1':
+    'Oda kurulduğu anda, daha hiçbir zar atılmadan, sunucu güçlü bir rastgele sayı üreteciyle (CSPRNG) gizli bir "sunucu tohumu" oluşturur ve bu tohumun parmak izini (SHA-256 taahhüdü) sana hemen gösterir.',
+  'fairp.s1.p2':
+    'Ardından her oyuncunun tarayıcısı kendi rastgele tohumunu ekler. Sunucu kendi tohumunu oyuncu tohumları gelmeden önce mühürlediği için onları görüp kendi tohumunu değiştiremez.',
+  'fairp.s1.p3':
+    'Maçtaki bütün zarlar bu tohumlardan sırayla hesaplanır. Yani zar dizisi maç başında sabitlenir: sonradan değiştirilemez ve maç bitince baştan sona doğrulanabilir.',
   'fairp.s2.title': 'Bir Sonraki Zarı Bilmek Mümkün mü?',
-  'fairp.s2.no': 'Hayır.',
+  'fairp.s2.no':
+    'Oyuncular için hayır.',
   'fairp.s2.p1': 'Örneğin arka arkaya üç kez 6 gelmesi, sonraki zarın ne olacağını söylemez.',
   'fairp.s2.p2':
-    'Oyuncular, botlar ve sistemi geliştiren kişiler bile bir sonraki zarın ne geleceğini önceden bilemez.',
+    'Sunucu tohumu maç bitene kadar gizli kalır ve o olmadan sıradaki zar hesaplanamaz. Ne sen bilebilirsin ne de rakibin.',
+  'fairp.s2.p3':
+    'Açık olalım: tohum maç boyunca sunucuda saklanır. Sunucuya ve veritabanına erişimi olan sistem yöneticileri, teknik olarak maç sürerken sıradaki zarları hesaplayabilir. Bot da sunucuda çalışır. Botun gelecek zarlara bakmadığını kodla sağlıyoruz, ama bu kriptografik olarak kanıtlanabilen bir şey değil, sunucuya duyulan güvene dayanıyor. Kriptografik olarak kanıtlanan şu: zarlar maç başında sabitlenir ve maç sırasında kimse için değiştirilemez.',
   'fairp.s3.title': 'Sistem Bir Oyuncuyu Kayırabilir mi?',
   'fairp.s3.no': 'Hayır.',
   'fairp.s3.lead': 'Zar sistemi oyuncunun şunlara bakmaz:',
@@ -1698,9 +1706,10 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'fairp.tech.toggle': 'Teknik Detayları Gör',
   'fairp.tech.toggleHide': 'Teknik Detayları Gizle',
   'fairp.tech.body':
-    'Zarlar, kriptografik olarak güvenli bir rastgele sayı üreteci (CSPRNG) ile üretilir. Her bayt 0–251 aralığına indirgenir (reddetme örneklemesi), böylece 1–6 yüzleri tam olarak eşit olasılıkla çıkar; "modulo yanlılığı" oluşmaz. Aşağıdaki test de gerçek oyundaki zar atış fonksiyonunun tıpkısını kullanır.',
+    'Sunucu tohumu 32 baytlık rastgele bir değerdir (64 haneli hex). Taahhüt, sunucu tohumunun hex metninin SHA-256 özetidir ve oda kurulurken yayınlanır. İstemci tohumu "<1. oyuncunun tohumu>.<2. oyuncunun tohumu>" biçimindedir; ilk zar atıldıktan sonra yeni tohum kabul edilmez. Her zar HMAC-SHA256 ile üretilir. Anahtar sunucu tohumunun hex metnidir; mesaj "v2:roll:<istemci tohumu>:<zar sırası>:<tur>", açılış zarında ise "v2:single:<istemci tohumu>:<oyun no>:<deneme>:<tur>" olur. Çıkan baytlardan 252 ve üzeri olanlar atlanır, kalanlardan zar = (bayt mod 6) + 1 alınır. Böylece 1–6 tam olarak eşit olasılıkla çıkar ve "modulo yanlılığı" oluşmaz. Aşağıdaki test ve doğrulama örneği sunucudaki algoritmanın birebir aynısını kullanır.',
   'fairp.test.title': 'Zarları Kendin Test Et',
-  'fairp.test.sub': 'İstersen sistemi kendin dene. Binlerce zar attır ve sonuçların dağılımını gör.',
+  'fairp.test.sub':
+    'İstersen sistemi kendin dene. Gerçek maçlardaki zar algoritmasıyla binlerce zar attır ve sonuçların dağılımını gör.',
   'fairp.test.countLabel': 'Kaç zar atılsın?',
   'fairp.test.custom': 'Özel sayı',
   'fairp.test.start': 'Testi Başlat',
@@ -1743,7 +1752,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'fairp.verify.badDesc':
     'Değerler değiştirildi; artık baştaki taahhütle eşleşmiyor. Gerçek bir maçta bu, zarlara dokunulduğu anlamına gelir.',
   'fairp.verify.note':
-    'Bu tohumlar tarayıcında oluşturulan bir örnektir. Gerçek maçlarda, maç bittiğinde kendi tohumlarını görüp aynı yöntemle doğrulayabilirsin.',
+    'Bu tohumlar tarayıcında oluşturulmuş bir örnektir; zarlar sunucudaki algoritmanın birebir aynısıyla hesaplanır. Gerçek maçlarda maç bitince "Zar Kontrol" ekranında sunucu tohumu, istemci tohumu ve maçın bütün zarları açılır. Hepsini aynı yöntemle doğrulayabilir, kendi tohumunun da hesaba katıldığını görebilirsin.',
   'stats.title': 'İstatistiklerim',
   'stats.rank': 'Puan Sıralaması: {r}. / {n} oyuncu',
   'stats.games': 'Maç',

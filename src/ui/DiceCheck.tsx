@@ -11,7 +11,7 @@ import {
   nextRollIndex,
   type ServerDiceEntry,
 } from '../engine/fairDice'
-import { showRoom } from '../api'
+import { showRoom, storedDiceSeed } from '../api'
 
 // Zar Kontrol: online puanlı/paralı/bot maçlarının SUNUCU zarını (commit-reveal) doğrular.
 // Maç sırasında yalnız `commit` (mühür) gösterilir + kopyalanır; maç bitince backend
@@ -100,9 +100,12 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, code,
     const verified = verifyServerRolls(seed, cs, entries)
     // Oyun bittiği yerden SONRAKİ 20 el (oynanmadı) — tohumdan deterministik üretilir.
     const future = entries.length > 0 ? futureServerRolls(seed, cs, nextRollIndex(entries), 20) : []
-    return { commitOk, verified, future, bad: verified.filter((r) => !r.ok).length }
+    // ADİL ZAR v2: bu cihazın bu odaya gönderdiği tohum, açılan clientSeed'de ("<p1>.<p2>") var mı?
+    const own = code ? storedDiceSeed(code) : null
+    const ownSeed = own && cs.includes('.') ? { seed: own, included: cs.split('.').includes(own) } : null
+    return { commitOk, verified, future, bad: verified.filter((r) => !r.ok).length, ownSeed }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checked, vServer, vClient, commit, rolls, fetched])
+  }, [checked, vServer, vClient, commit, rolls, fetched, code])
 
   function copyCommit() {
     if (!commit) return
@@ -185,6 +188,14 @@ export default function DiceCheck({ commit, serverSeed, clientSeed, rolls, code,
                   <div className={`dc-vbanner ${result.commitOk ? 'ok' : 'bad'}`}>
                     <Icon name={result.commitOk ? 'shield-check' : 'warning-circle'} size={18} />
                     {result.commitOk ? t('dc.commitOk') : t('dc.commitBad')}
+                  </div>
+                )}
+                {result.ownSeed && (
+                  <div className={`dc-vbanner ${result.ownSeed.included ? 'ok' : ''}`}>
+                    <Icon name={result.ownSeed.included ? 'check' : 'info'} size={18} />
+                    {result.ownSeed.included
+                      ? t('dc.ownSeedOk', { s: result.ownSeed.seed })
+                      : t('dc.ownSeedMissing', { s: result.ownSeed.seed })}
                   </div>
                 )}
                 {entries.length > 0 && (

@@ -3307,6 +3307,53 @@ export async function roomSummary(code: string): Promise<RoomSummary> {
   return req<RoomSummary>(`/rooms/${encodeURIComponent(code)}/summary`)
 }
 
+// ---- ADİL ZAR v2: oyuncu tohumu ----
+// Sunucu tohumu + commit oda KURULURKEN üretilir. Oyuncu kendi rastgele tohumunu ancak commit'i
+// GÖRDÜKTEN sonra yollar (poll ?cs= veya roll client_seed) -> sunucu kendi tohumunu oyuncununkine
+// göre seçemez. Tohum oda başına localStorage'da tutulur: yenilemede aynı kalır ve maç sonunda
+// Zar Kontrol "kendi tohumun hesaba katıldı mı" kontrolünü gösterebilir. Sunucu ilk zardan sonra
+// yeni katkı kabul etmez (gönderim idempotent).
+const DICE_SEED_KEY = 'tavla.diceSeeds'
+const commitSeen = new Set<string>()
+
+// [oda, tohum, oyuncu?] — oyuncu=1: bu cihaz bu odada zar attı (izleyici değil).
+function readDiceSeeds(): Array<[string, string, number?]> {
+  try {
+    const v = JSON.parse(localStorage.getItem(DICE_SEED_KEY) || '[]')
+    return Array.isArray(v) ? v : []
+  } catch {
+    return []
+  }
+}
+
+// Bu cihazın bu odadaki zar tohumu (16 hex). Yoksa üretir; son 40 oda saklanır.
+// asPlayer: zar atan oyuncu çağırır -> Zar Kontrol "kendi tohumun" kontrolünü yalnız ona gösterir.
+export function myDiceSeed(code: string, asPlayer = false): string {
+  const key = code.toUpperCase()
+  const list = readDiceSeeds()
+  const hit = list.find(([c]) => c === key)
+  if (hit && /^[0-9a-f]{16}$/.test(hit[1]) && (!asPlayer || hit[2] === 1)) return hit[1]
+  let seed = hit && /^[0-9a-f]{16}$/.test(hit[1]) ? hit[1] : ''
+  if (!seed) {
+    const b = new Uint8Array(8)
+    crypto.getRandomValues(b)
+    seed = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('')
+  }
+  const entry: [string, string, number?] = asPlayer || hit?.[2] === 1 ? [key, seed, 1] : [key, seed]
+  try {
+    localStorage.setItem(DICE_SEED_KEY, JSON.stringify([...list.filter(([c]) => c !== key), entry].slice(-40)))
+  } catch {
+    /* depolama yoksa yalnız bu oturum */
+  }
+  return seed
+}
+
+// Bu cihazın OYUNCU olarak kullandığı tohum (Zar Kontrol için); yoksa null — yeni ÜRETMEZ.
+export function storedDiceSeed(code: string): string | null {
+  const hit = readDiceSeeds().find(([c]) => c === code.toUpperCase())
+  return hit && hit[2] === 1 ? hit[1] : null
+}
+
 // Poll: since verilirse degismemisse null doner
 export async function showRoom(code: string, since?: number): Promise<RoomView | null> {
   const token = getToken()
@@ -3315,6 +3362,8 @@ export async function showRoom(code: string, since?: number): Promise<RoomView |
   // terk (poll'u kesme) tespiti calisir; sira sahibi haksiz AFK'dan korunur.
   const params = new URLSearchParams()
   if (since !== undefined) params.set('since', String(since))
+  // Commit bu odada görüldüyse (önceki poll) tohumu ekle; izleyiciyse sunucu yok sayar.
+  if (commitSeen.has(code.toUpperCase())) params.set('cs', myDiceSeed(code))
   const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(code)}?${params.toString()}`, {
     headers: {
       Accept: 'application/json',
@@ -3326,7 +3375,10 @@ export async function showRoom(code: string, since?: number): Promise<RoomView |
   if (res.status === 204) return null
   if (!res.ok) throw new ApiError(res.status, 'Oda hatası')
   const data = await res.json()
-  return data.room as RoomView
+  const room = data.room as RoomView
+  // Yalnız henüz zar ATILMAMIŞ odada (gönderim penceresi) commit'i "görüldü" işaretle.
+  if (room?.dice_commit && room.dice_client_seed == null) commitSeen.add(code.toUpperCase())
+  return room
 }
 
 // Maci ACIKCA TERK ET (kullanici "cikis/terk" der) -> terk eden kaybeder, rakip kazanir.

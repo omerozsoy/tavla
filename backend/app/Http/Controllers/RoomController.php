@@ -2199,6 +2199,11 @@ class RoomController extends Controller
         if ($room->bot && $slot === null) {
             return $this->fail('Bot maçları izlenemez.', 403);
         }
+        // ADİL ZAR v2: oyuncu commit'i gördükten sonra kendi tohumunu poll ile yollar (?cs=hex).
+        // Kilitsiz okuma -> koşullu (atomik) UPDATE: zar atılmışsa / araya başka yazım girdiyse no-op.
+        if ($slot !== null && $request->query('cs') !== null) {
+            $this->contributeClientSeedAtomic($room, $slot, $request->query('cs'));
+        }
         $this->tickClock($room, $slot);
 
         // MM_WAITING HEARTBEAT: arayanin kendi poll'u (slot p1) odayi "canli" tutar. cleanupStale +
@@ -2480,7 +2485,7 @@ class RoomController extends Controller
             if ($pctSnapshot !== null) {
                 $fields['server_match'] = ['pct_stake_snapshot' => $pctSnapshot];
             }
-            $newRoom = Room::create($fields); // yeni tohum/commit ilk zarda uretilir (provably-fair taze)
+            $newRoom = Room::create($fields); // yeni tohum/commit Room::creating ile kurulurken uretilir (provably-fair taze)
             if (RoomAccess::requiresAccount($locked)) {
                 foreach ($participantIds as $uid) {
                     if (! Room::claimActiveMoneySlot($uid, (int) $newRoom->id)) {
@@ -4173,6 +4178,47 @@ class RoomController extends Controller
      * üretilir; istemci SEÇEMEZ. RE-ROLL ENGELİ: zar ancak server_state.dice BOŞKEN verilir;
      * bir kez verilince geçerli bir hamle tüketene kadar yeni zar VERİLMEZ (aynısı döner).
      */
+    /**
+     * ADİL ZAR v2: `slot` oyuncusunun tohumunu clientSeed'e ekler (satır KİLİTLİYKEN çağrılır).
+     * Yalnız ilk zar atılmadan (dice_rolls boş) ve o slot henüz katkı vermemişse; aksi halde no-op.
+     * Bot slotu (sunucu) katkı vermez — HTTP'den p2 zaten reddedilir.
+     */
+    private function contributeClientSeed(Room $room, string $slot, mixed $seed): bool
+    {
+        if (! empty($room->dice_rolls) || ($room->bot && $slot === 'p2')) {
+            return false;
+        }
+        $next = FairDiceService::withPlayerSeed((string) $room->dice_client_seed, $slot, $seed);
+        if ($next === null) {
+            return false;
+        }
+        $room->dice_client_seed = $next;
+
+        return true;
+    }
+
+    /** contributeClientSeed'in kilitsiz (poll) eşi: koşullu UPDATE ile yarışsız. */
+    private function contributeClientSeedAtomic(Room $room, string $slot, mixed $seed): void
+    {
+        $old = (string) $room->dice_client_seed;
+        if (! $this->contributeClientSeed($room, $slot, $seed)) {
+            return;
+        }
+        // Okuduğumuzdan beri clientSeed değiştiyse veya herhangi bir zar verildiyse (açılış
+        // server_version'ı, bağımsız zar dice_roll_index'i artırır) yazma -> donmuş tohum bozulmaz.
+        $ok = Room::where('id', $room->id)
+            ->where('dice_client_seed', $old)
+            ->where('server_version', (int) $room->server_version)
+            ->where('dice_roll_index', (int) $room->dice_roll_index)
+            ->update(['dice_client_seed' => $room->dice_client_seed]);
+        if ($ok) {
+            $room->syncOriginalAttribute('dice_client_seed');
+        } else {
+            $room->dice_client_seed = $old; // yarışı kaybetti: sonraki poll tekrar dener
+            $room->syncOriginalAttribute('dice_client_seed');
+        }
+    }
+
     public function roll(Request $request, string $code, FairDiceService $dice)
     {
         $data = $request->validate([
@@ -4233,6 +4279,10 @@ class RoomController extends Controller
                 return $command;
             }
 
+            // ADİL ZAR v2: çağıranın tohumu (henüz vermediyse) açılıştan ÖNCE eklenir. Satır kilitli
+            // (lockForUpdate) -> doğrudan atama; açılış/zar dalı kaydeder. Donmuşsa (zar atılmış) no-op.
+            $this->contributeClientSeed($room, $slot, $data['client_seed'] ?? null);
+
             // ---- BAĞIMSIZ Faz 1: yalnız ZAR sunucudan (hamle/tahta/küp LEGACY kalır) ----
             // authoritative TAM yol DEĞİL: sunucu server_state tutmaz; sadece commit-reveal zarı
             // verir, update() eşleşmeyi zorlar. Tek açık el (idempotent + peek-ahead engeli).
@@ -4268,12 +4318,13 @@ class RoomController extends Controller
             $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
             if (empty($sm['opened'])) {
                 $gameNo = (int) ($sm['gameNo'] ?? 1);
-                $base = $gameNo * 4; // 'single' HMAC alanı (normal 'roll' alanından bağımsız)
+                // 'single' HMAC alanı (normal 'roll' alanından ayrı). v2: (oyun, deneme) ayrı alan ->
+                // üst üste beraberlikler bir sonraki oyunun açılışına taşmaz (bkz FairDiceService).
                 $cs = (string) $room->dice_client_seed;
-                $wDie = $dice->single($room->dice_seed, $cs, $base);
-                $bDie = $dice->single($room->dice_seed, $cs, $base + 1);
+                $wDie = $dice->openingDie($room->dice_seed, $cs, $gameNo, 0);
+                $bDie = $dice->openingDie($room->dice_seed, $cs, $gameNo, 1);
                 for ($k = 2; $wDie === $bDie; $k++) { // berabere olamaz -> farklı çıkana kadar
-                    $bDie = $dice->single($room->dice_seed, $cs, $base + $k);
+                    $bDie = $dice->openingDie($room->dice_seed, $cs, $gameNo, $k);
                 }
                 $starter = $wDie > $bDie ? 'white' : 'black';
                 $state['turn'] = $starter;
@@ -5065,7 +5116,10 @@ class RoomController extends Controller
         // Otoriter maç + tahta (AÇILIŞ eli oynanmadı: opened=false). Açılış, istemcinin ilk
         // serverRoll'unda roll() içinde atılır (online açılış yolu AYNEN kullanılır); açılış botu
         // başlatıcı yaparsa roll()'daki maybeDriveBot botu oynar. Böylece tek bir açılış kod yolu var.
-        if ($data['client_seed'] ?? null) {
+        // ADİL ZAR v2: oda kurulurken gelen tohum KABUL EDİLMEZ — sunucu tohumu aynı istekte
+        // üretildiği için sunucu ona göre seçebilirdi. İnsanın tohumu commit'i gördükten sonra
+        // ilk serverRoll ile gelir (roll() -> contributeClientSeed). Yalnız eski (v1) odaya uyum:
+        if (($data['client_seed'] ?? null) && FairDiceService::versionOf((string) $room->dice_client_seed) === 1) {
             $room->dice_client_seed = substr((string) $data['client_seed'], 0, 40);
         }
         $room->server_match = $this->initServerMatch($room);

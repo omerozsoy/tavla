@@ -1621,13 +1621,20 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
     'No player is ever given special dice. The system does not take into account who is winning, who is losing, or who is playing.',
   'fairp.hero.quote': 'The dice don’t know you. They don’t know your opponent. Every roll is random.',
   'fairp.s1.title': 'How Are the Dice Rolled?',
-  'fairp.s1.p1': 'On every roll the computer generates a random number between 1 and 6.',
-  'fairp.s1.p2': 'It uses a strong random number system built for security (a CSPRNG) to do this.',
-  'fairp.s1.p3': 'So the dice are not prepared and lined up in advance. Each roll is created right at that moment.',
+  'fairp.s1.p1':
+    'The moment a room is created, before any dice are rolled, the server generates a secret "server seed" with a strong random number generator (CSPRNG) and immediately shows you its fingerprint (a SHA-256 commitment).',
+  'fairp.s1.p2':
+    "Then each player's browser adds its own random seed. Because the server seals its seed before the player seeds arrive, it cannot look at them and change its own seed.",
+  'fairp.s1.p3':
+    'Every roll in the match is computed in order from these seeds. So the dice sequence is fixed at the start of the match: it cannot be changed later, and it can be verified end to end once the match is over.',
   'fairp.s2.title': 'Is It Possible to Know the Next Roll?',
-  'fairp.s2.no': 'No.',
+  'fairp.s2.no':
+    'Not for players.',
   'fairp.s2.p1': 'For example, getting three 6s in a row tells you nothing about what the next roll will be.',
-  'fairp.s2.p2': 'Players, bots, and even the people who build the system cannot know the next roll in advance.',
+  'fairp.s2.p2':
+    'The server seed stays secret until the match ends, and without it the next roll cannot be computed. Neither you nor your opponent can know it.',
+  'fairp.s2.p3':
+    'To be clear: the seed is stored on the server during the match. System administrators with access to the server and database could technically compute upcoming rolls while a match is in progress. The bot also runs on the server. We make sure in code that the bot never looks at future rolls, but this cannot be proven cryptographically; it relies on trust in the server. What is cryptographically proven is that the dice are fixed at the start of the match and cannot be changed for anyone during it.',
   'fairp.s3.title': 'Can the System Favor a Player?',
   'fairp.s3.no': 'No.',
   'fairp.s3.lead': 'The dice system does not look at the player’s:',
@@ -1647,9 +1654,10 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'fairp.tech.toggle': 'Show Technical Details',
   'fairp.tech.toggleHide': 'Hide Technical Details',
   'fairp.tech.body':
-    'The dice are generated with a cryptographically secure random number generator (CSPRNG). Each byte is reduced to the range 0–251 (rejection sampling), so faces 1–6 come up with exactly equal probability — there is no “modulo bias.” The test below uses the very same roll function used in real games.',
+    'The server seed is a 32-byte random value (64 hex characters). The commitment is the SHA-256 hash of the hex text of the server seed and is published when the room is created. The client seed has the form "<player 1 seed>.<player 2 seed>"; no new seed is accepted after the first roll. Each roll is generated with HMAC-SHA256. The key is the hex text of the server seed; the message is "v2:roll:<client seed>:<roll index>:<round>", or "v2:single:<client seed>:<game no>:<attempt>:<round>" for the opening roll. Bytes of 252 and above are skipped, and from the rest die = (byte mod 6) + 1. So faces 1–6 come up with exactly equal probability and there is no "modulo bias". The test and verification example below use exactly the same algorithm as the server.',
   'fairp.test.title': 'Test the Dice Yourself',
-  'fairp.test.sub': 'Try the system yourself. Roll thousands of dice and see how the results are distributed.',
+  'fairp.test.sub':
+    'Try the system yourself. Roll thousands of dice with the same algorithm used in real matches and see how the results are distributed.',
   'fairp.test.countLabel': 'How many dice?',
   'fairp.test.custom': 'Custom',
   'fairp.test.start': 'Start Test',
@@ -1692,7 +1700,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'fairp.verify.badDesc':
     'The values were changed, so they no longer match the original commitment. In a real match this would mean the dice were tampered with.',
   'fairp.verify.note':
-    'These seeds are an example generated in your browser. In real matches, when the match ends you can see your own seeds and verify them the same way.',
+    'These seeds are an example generated in your browser; the dice are computed with exactly the same algorithm as the server. In real matches, the "Dice Check" screen reveals the server seed, the client seed and every roll of the match once it is over. You can verify all of them the same way and see that your own seed was included.',
   'stats.title': 'My Stats',
   'stats.rank': 'Points Ranking: {r} / {n} players',
   'stats.games': 'Games',
@@ -2539,6 +2547,8 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'dc.clientSeed': "Client seed",
   'dc.verify': "Verify All Rolls",
   'dc.flashVerified': "Rolls verified — results are shown below.",
+  'dc.ownSeedOk': 'Your seed ({s}) is part of the client seed: your contribution went into the dice.',
+  'dc.ownSeedMissing': 'The seed this device sent ({s}) is not in the client seed. It may not have reached the server before the first roll; the dice are still verified against the commitment.',
   'dc.commitOk': "The seed matches the commitment published at the start of the match.",
   'dc.commitBad': "The seed DOES NOT match the commitment!",
   'dc.allOk': "All {n} rolls verified — the dice match the seed exactly.",
