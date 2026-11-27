@@ -32,6 +32,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\OpeningPositionController;
 use App\Http\Controllers\OrganizerController;
+use App\Http\Controllers\PhotoAnalysisController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\ProductController;
@@ -273,6 +274,10 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     Route::get('/me', [AuthController::class, 'me']);
     // Cihazdan-bağımsız tercihler (tahta/tema/ses/dil...) -> hesaba bağlı (web↔app senkron).
     Route::post('/me/prefs', [AuthController::class, 'savePrefs']);
+    // Fotograftan Pozisyon Analizi: tahta fotografi yukle -> kuyruk (AnalyzePhotoJob) -> poll.
+    Route::post('/photo-analysis', [PhotoAnalysisController::class, 'store'])
+        ->middleware('throttle:10,1,photo-analysis');
+    Route::get('/photo-analysis/{photoAnalysis}', [PhotoAnalysisController::class, 'show']);
     // Arkadaş davet (referral): durum (kod/link/kalan hak) + davet maili gönder (günlük sınır).
     Route::get('/me/referral', [ReferralController::class, 'status']);
     Route::post('/me/referral/invite', [ReferralController::class, 'invite'])

@@ -32,6 +32,21 @@ curl -s -H "x-recog-secret: test" --data-binary @foto.jpeg http://127.0.0.1:8095
    backend `.env`'teki `RECOG_SECRET` ile AYNI yap.
 4. **Doğrula:** `curl 127.0.0.1:8095/health` + bir test fotoğrafı POST.
 
+## Backend bağlama (Faz 3 — Laravel)
+Foto upload → kuyruk → tanıma → gnubg zinciri `backend/`'de bağlı:
+- `config/recognition.php` + `RecognitionClient` (bu servise HTTP; GnuBgClient deseni)
+- `AnalyzePhotoJob` (**ayrı `photo` kuyruğu** — canlı kuyruğu aç bırakma, bkz backend/CLAUDE.md)
+- `PhotoAnalysisController` + routes: `POST /api/photo-analysis` (upload) + `GET /api/photo-analysis/{id}` (poll)
+- Filament `Foto Analizleri` paneli (Oyun grubu) — kalibrasyon incelemesi
+- `PhotoAnalysisTest` (3 test ✓)
+
+**Deploy (KULLANICI):**
+1. `php artisan migrate --force` (photo_analyses tablosu — deploy.sh zaten çalıştırır)
+2. backend `.env`: `RECOG_URL=http://127.0.0.1:8095` + `RECOG_SECRET=<servis ile AYNI>`
+3. **`photo` kuyruğu worker'ı** (Forge Daemon; CLAUDE.md: her kuyruk ayrı worker, starvation):
+   `php artisan queue:work database --queue=photo --sleep=3 --tries=3 --timeout=120 --max-time=3600`
+   (Forge panel > Daemons; User=tavla, Directory=.../current/backend). Worker yoksa işler kuyrukta bekler.
+
 ## ⚠ Açık uçlar (Faz 2 kalan)
 - **gnubg round-trip doğrulama:** yapısal konum → `gnubg-service` `structured_to_gnubgid` → hint.
   MUTLAK yönelim + `turn` + renk→oyuncu KONVANSİYONU burada kesinleşir (foto doğal yön belirsizliği).
