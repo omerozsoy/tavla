@@ -99,12 +99,13 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     )
   }
 
-  async function analyze() {
-    if (!file || busy) return
+  // f: kameradan yeni cekilen dosya (state henuz guncellenmemis olabilir) -> dogrudan analiz
+  async function analyze(f: File | null = file) {
+    if (!f || busy) return
     setBusy(true)
     setResult(null)
     try {
-      const blob = await downscale(file)
+      const blob = await downscale(f)
       const { id } = await uploadPhotoAnalysis(blob)
       // poll: pending -> done/invalid/failed (~1.5sn aralik, <=60sn)
       for (let i = 0; i < 40; i++) {
@@ -181,7 +182,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
           </Button>
         </div>
 
-        <Button className="photo-analyze-btn" onClick={analyze} disabled={busy || !file}>
+        <Button className="photo-analyze-btn" onClick={() => analyze()} disabled={busy || !file}>
           {busy ? <span className="btn-spinner" aria-hidden="true" /> : <Icon name="search" size={16} />}
           {busy ? t('photo.analyzing') : t('photo.analyze')}
         </Button>
@@ -193,6 +194,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
           onCapture={(f) => {
             setCamOpen(false)
             pick(f)
+            void analyze(f) // kamerayla cekildi -> beklemeden analiz (galeri secimi elle "Analiz Et")
           }}
           onError={() => {
             setCamOpen(false)
