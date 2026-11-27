@@ -139,3 +139,6 @@ android/app/*.png
 android/app/*.pdf
 android/app/*.xls
 android/app/*.xlsx
+
+# Android release paketi (Play Console el ile yuklenir, repoya girmez)
+*.aab
