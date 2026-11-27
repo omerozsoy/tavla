@@ -18,8 +18,9 @@ Tahta DISINDA bir oyuncunun ONUNDE (kabul edilmis) kup: alt -> cekende, ust -> r
 import numpy as np
 import cv2
 
-CUBE_DET_MIN = 0.4
-CUBE_CLS_MIN = 0.9  # siniflandirici bir degerden EMIN olmali (bulanik/yanlis kirpinti elenir)
+CUBE_DET_MIN = 0.25  # saha: uzak/kucuk kirmizi kup 0.25'te bulunuyor (eskiden 0.4 -> kaciyordu)
+CUBE_CLS_MIN = 0.85  # 4-yon TTA'nin en emin yonu bu kadar emin olmali (bulanik/yanlis kirpinti elenir)
+SIZE_MAX = 1.35  # kup kenari / tas capi ust sinir (saha: buyuk kup 1.15x -> 1.1 siniri kaciriyordu)
 BAR_BAND = 0.06  # bar merkezine bu kadar (warp genisligi orani) yakin kup = bar uzerinde = ortada
 FRONT_DET_MIN = 0.6
 
@@ -107,6 +108,18 @@ def digit_count(crop):
     return best[0] if best else None
 
 
+def classify_tta(run_cls, crop):
+    """CubeClassify'i kirpintinin 0/90/180/270 donmus halleriyle calistir, EN EMIN yonun ciktisini don.
+    Saha: rakam TERS (180) ya da yan duran kupte tek yonde guven 0.6-0.83'e dusup esigi geciyordu
+    (ters "16" kup hic bulunamiyordu); okunabildigi yonde 0.88-0.98."""
+    best = None
+    for rc in (None, cv2.ROTATE_90_CLOCKWISE, cv2.ROTATE_180, cv2.ROTATE_90_COUNTERCLOCKWISE):
+        out = run_cls(np.ascontiguousarray(crop if rc is None else cv2.rotate(crop, rc)))
+        if best is None or float(out.max()) > float(best.max()):
+            best = out
+    return best
+
+
 def _value(cls, hi_crop, centered):
     """CubeClassify cikisi -> (deger, value_src). centered: kup bar uzerinde (oyun basi kupu)."""
     c = int(cls.argmax())
@@ -127,8 +140,8 @@ def _hi_crop(img, x1, y1, x2, y2, pad=0.25):
 
 def find_cube(get_model, run_cls, warp, checker_boxes, die_boxes, barcenter, img=None, minv=None):
     """Warp'ta kupu bul + oku -> {'box','det','cls','zone','owner','value','value_src'} | None.
-    Dogrulama: Cube_v2 >= 0.4 + CubeClassify bir degerden >= 0.9 emin + altin degil (mentese) + tas/zar
-    kutusuyla cakismaz + kenar uzunlugu tas capinin 0.4-1.1 kati. Birden cok aday -> en yuksek tespit.
+    Dogrulama: Cube_v2 >= 0.25 + CubeClassify (4-yon TTA) bir degerden >= 0.85 emin + altin/skor-karti
+    degil + tas/zar kutusuyla cakismaz + kenar uzunlugu tas capinin 0.4-1.35 kati. Coklu aday -> en yuksek tespit.
     img/minv verilirse hane sayaci icin ORIJINAL fotodan (daha yuksek cozunurluk) kirpilir."""
     med = float(np.median([b[2] - b[0] for b in checker_boxes])) if len(checker_boxes) else 60.0
     best = None
@@ -138,13 +151,13 @@ def find_cube(get_model, run_cls, warp, checker_boxes, die_boxes, barcenter, img
         if cw.size == 0:
             continue
         side = max(x2 - x1, y2 - y1)
-        if not (0.4 * med <= side <= 1.1 * med):
+        if not (0.4 * med <= side <= SIZE_MAX * med):
             continue
         if any(_iou(box, b) > 0.25 for b in list(checker_boxes) + list(die_boxes)):
             continue
         if is_gold(cw) or is_dark_neutral(cw):
             continue
-        cls = run_cls(np.ascontiguousarray(cw))
+        cls = classify_tta(run_cls, cw)
         if float(cls.max()) < CUBE_CLS_MIN:
             continue
         if best is not None and s <= best["det"]:
@@ -195,7 +208,7 @@ def find_front_cube(get_model, run_cls, img, quad, checker_px):
         crop = img[max(0, int(y1)):int(y2), max(0, int(x1)):int(x2)]
         if crop.size == 0 or is_gold(crop) or is_dark_neutral(crop):
             continue
-        cls = run_cls(np.ascontiguousarray(crop))
+        cls = classify_tta(run_cls, crop)
         if float(cls.max()) < CUBE_CLS_MIN:
             continue
         if best is None or s > best["det"]:
