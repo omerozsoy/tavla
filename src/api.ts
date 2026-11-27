@@ -263,6 +263,51 @@ export async function getOpeningPage(
   return req(`/opening-positions?band=${encodeURIComponent(band)}&page=${page}&per=${per}`)
 }
 
+// --- Fotograftan Pozisyon Analizi -------------------------------------------------
+export interface PhotoHintCandidate {
+  move: string
+  equity?: number
+  eqdiff?: number
+}
+export interface PhotoAnalysisResult {
+  id: number
+  status: 'pending' | 'done' | 'invalid' | 'failed'
+  valid: boolean
+  position: { points: number[]; bar: { white: number; black: number }; turn: string; dice: number[]; cube: { value: number; owner: string | null } } | null
+  hint: { gnubgid?: string; result?: { hint?: PhotoHintCandidate[] } } | null
+  debug: { board_conf?: number; checkers?: number; white?: number; black?: number; dice_detected?: number; valid?: boolean } | null
+  error: string | null
+}
+
+/** Tahta fotografini yukle -> kuyruk kaydi (id + pending). multipart -> req() DEGIL (json zorlar); dogrudan fetch. */
+export async function uploadPhotoAnalysis(file: Blob, flip = false): Promise<{ id: number; status: string }> {
+  const token = getToken()
+  const gate = getGate()
+  const fd = new FormData()
+  fd.append('image', file, 'board.jpg')
+  if (flip) fd.append('flip', '1')
+  const res = await fetch(`${API_URL}/photo-analysis`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(gate ? { 'X-Site-Gate': gate } : {}),
+    },
+    body: fd, // Content-Type (multipart boundary) tarayici tarafindan set edilir
+  })
+  const text = await res.text()
+  const data = text ? JSON.parse(text) : {}
+  if (!res.ok) {
+    throw new ApiError(res.status, (data as { message?: string }).message || 'Yükleme başarısız', (data as { errors?: Record<string, string[]> }).errors)
+  }
+  return data
+}
+
+/** Analiz kaydini poll et (pending -> done/invalid/failed). */
+export async function getPhotoAnalysis(id: number): Promise<PhotoAnalysisResult> {
+  return req(`/photo-analysis/${id}`)
+}
+
 export async function register(
   input: Profile & { password: string },
 ): Promise<ServerUser> {

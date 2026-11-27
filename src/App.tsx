@@ -164,6 +164,7 @@ const Board3D = lazy(() => import('./ui/Board3D')) // admin 3D testi (SADE): haz
 // Bayrak: hazır 3D tavla modülünü (Board3D) admin 3D toggle açıkken göster. false -> eski tahta aynen.
 const USE_3D_BOARD = true
 import MatAnalyzer from './ui/MatAnalyzer'
+import PhotoAnalysis from './ui/PhotoAnalysis'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import BottomNav from './ui/BottomNav'
 import { IS_NATIVE_APP, MOBILE_UI, APP_UI } from './appEnv'
@@ -1162,6 +1163,7 @@ export default function App() {
   const [shopProduct, setShopProduct] = useState<string | null>(null) // Magaza secili urun slug'i -> /magaza/<kat>/<slug>
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [matAnalyzerOpen, setMatAnalyzerOpen] = useState(false) // Mat Analiz: .mat yukle + gnubg tam analiz
+  const [photoAnalysisOpen, setPhotoAnalysisOpen] = useState(false) // Fotograftan analiz: foto yukle + tanima + gnubg
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [duelOpen, setDuelOpen] = useState(false) // Bireysel Düello sayfası
   // Çevrimiçi Oyuncular'dan düelloya davet edilen oyuncu -> /duello sayfasında ÖN-SEÇİLİ gelir.
@@ -1734,6 +1736,7 @@ export default function App() {
     if (blunderOpen) { setBlunderOpen(false); redirect = true }
     if (analyzerOpen) { setAnalyzerOpen(false); redirect = true }
     if (matAnalyzerOpen) { setMatAnalyzerOpen(false); redirect = true }
+    if (photoAnalysisOpen) { setPhotoAnalysisOpen(false); redirect = true }
     if (matchHistOpen) { setMatchHistOpen(false); redirect = true }
     if (redirect) setMemOpen(true)
   }, [authChecked, blunderOpen, analyzerOpen, matAnalyzerOpen, matchHistOpen, user])
@@ -2123,6 +2126,10 @@ export default function App() {
         case 'mat-analiz':
           if (!getToken()) { requireLogin(); break } // premium arac: once giris (premium kontrolu effect'te)
           setMatAnalyzerOpen(true)
+          break
+        case 'foto-analiz':
+          if (!getToken()) { requireLogin(); break } // giris gerekli (API auth-only)
+          setPhotoAnalysisOpen(true)
           break
         case 'basarimlar':
           setAchOpen(true)
@@ -10452,6 +10459,7 @@ export default function App() {
     setRulesOpen(false)
     setAnalyzerOpen(false)
     setMatAnalyzerOpen(false)
+    setPhotoAnalysisOpen(false)
     setEditProfile(false)
     setSpectate(null) // /izle URL sayfasi: menu/logo navigasyonu izlemeyi de kapatir
   }
@@ -10588,6 +10596,7 @@ export default function App() {
     // Premium araclar: ONCE login (misafir), SONRA uyelik (giris yapmis ama premium degil).
     onAnalyzer: () => (!user ? requireLogin() : !premium ? requireMembership() : goPage(() => setAnalyzerOpen(true))),
     onMatAnalyzer: () => (!user ? requireLogin() : !premium ? requireMembership() : goPage(() => setMatAnalyzerOpen(true))),
+    onPhotoAnalysis: () => (!user ? requireLogin() : goPage(() => setPhotoAnalysisOpen(true))),
     onBlunders: () => (!user ? requireLogin() : !premium ? requireMembership() : goPage(() => setBlunderOpen(true))),
     onMatchHistory: () => (!user ? requireLogin() : !premium ? requireMembership() : goPage(() => { setMatchHistReset((n) => n + 1); setMatchHistInitialId(null); setMatchHistOpen(true) })),
     onLessons: () => goPage(() => setLessonsOpen(true)),
@@ -10667,6 +10676,7 @@ export default function App() {
     lessons: menuProps.onLessons,
     analyzer: menuProps.onAnalyzer,
     matAnalyzer: menuProps.onMatAnalyzer,
+    photoAnalysis: menuProps.onPhotoAnalysis,
     blunders: menuProps.onBlunders,
     matchHistory: menuProps.onMatchHistory,
     info: menuProps.onInfo,
@@ -11801,6 +11811,11 @@ export default function App() {
       {matAnalyzerOpen && premium && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <MatAnalyzer titleOverride={menuTitle('matAnalyzer')} onClose={() => setMatAnalyzerOpen(false)} currentName={profile.nickname} />
+        </div>
+      )}
+      {photoAnalysisOpen && (
+        <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <PhotoAnalysis titleOverride={menuTitle('photoAnalysis')} onClose={() => setPhotoAnalysisOpen(false)} />
         </div>
       )}
     </>
