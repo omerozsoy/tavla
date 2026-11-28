@@ -11785,7 +11785,12 @@ export default function App() {
       {/* PositionAnalyzer / MatAnalyzer / PhotoAnalysis artik GERCEK SAYFA (page-host conditional
           return, yukarida) — portal degil. */}
       {fotoDuzeltId !== null && (
-        <FotoDuzelt id={fotoDuzeltId} onClose={() => { setFotoDuzeltId(null); window.history.length > 1 ? window.history.back() : (window.location.href = '/') }} />
+        <FotoDuzelt id={fotoDuzeltId} onClose={() => {
+          // Filament admin panel iframe'inde açıldıysak (admin "Düzelt"), kapat/kaydet sonrası ön yüzü
+          // (public ana sayfa) GÖSTERME — top pencereyi doğrudan admin listesine döndür.
+          if (window.top && window.top !== window.self) { try { window.top.location.href = '/admin/photo-analyses' } catch { window.location.href = '/admin/photo-analyses' }; return }
+          setFotoDuzeltId(null); window.history.length > 1 ? window.history.back() : (window.location.href = '/')
+        }} />
       )}
     </>
     </Suspense>
