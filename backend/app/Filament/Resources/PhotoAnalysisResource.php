@@ -76,9 +76,9 @@ class PhotoAnalysisResource extends Resource
                         ->where('valid', true)->whereNull('review_status')),
             ])
             ->actions([
-                // Gerçek Board'da düzelt (React SPA; admin oturumu açık sekmede). Ham-JSON İncele sayfası kaldırıldı.
+                // Panel İÇİNDE gerçek Board düzeltme sayfası (iframe) — admin panelden çıkmaz.
                 Tables\Actions\Action::make('duzelt')->label('Düzelt')->icon('heroicon-o-pencil-square')
-                    ->color('primary')->url(fn (PhotoAnalysis $r) => "/foto-duzelt/{$r->id}")->openUrlInNewTab(),
+                    ->color('primary')->url(fn (PhotoAnalysis $r) => PhotoAnalysisResource::getUrl('duzelt', ['record' => $r])),
                 Tables\Actions\DeleteAction::make()->label('Sil'),
             ])
             ->bulkActions([
@@ -94,6 +94,7 @@ class PhotoAnalysisResource extends Resource
     {
         return [
             'index' => Pages\ListPhotoAnalyses::route('/'),
+            'duzelt' => Pages\DuzeltPhotoAnalysis::route('/{record}/duzelt'),
         ];
     }
 }
