@@ -436,9 +436,11 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   const [pm, po] = pips(result!.position!.points, result!.position!.bar)
                   const d = pm - po
                   const hasMove = cands.length > 0
-                  // Standart temalı tahta fotoğrafı çekeni HER ZAMAN beyaz (alt) çizer -> pip nokta
-                  // renkleri de ona göre (sen=beyaz, rakip=koyu). Kup kararında da aynı tahta kullanılır.
-                  const youDark = false
+                  // Tahta FİZİKSEL renkleri yansıtsın: fotoğrafı çeken (pozitif) KOYU oynuyorsa pul
+                  // renklerini takas et (swapStones — görsel, konum/motor etkilenmez) -> kullanıcı kendi
+                  // siyah taşlarını SİYAH görür (fotoyla eşleşir, "renkler ters" bug'ı). photographer
+                  // tanımadan gelir (_orient). pip nokta renkleri de buna göre.
+                  const youDark = result!.debug?.photographer === 'dark'
                   const tag = (who: string, n: number, dark: boolean) => (
                     <div className="photo-pip-tag">
                       <span className={`photo-pip-dot${dark ? ' dark' : ''}`} />
@@ -487,6 +489,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                             pipBottom={pipCount(bstate, 'white')}
                             cube={bcube}
                             mirror={homeLeft}
+                            swapStones={youDark}
                             numberFrom="white"
                             centerLeft={diceOnRight ? undefined : boardDice}
                             centerRight={diceOnRight ? boardDice : undefined}
