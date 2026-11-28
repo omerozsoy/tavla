@@ -11413,41 +11413,8 @@ export default function App() {
           <Lessons onClose={() => setLessonsOpen(false)} />
         </Suspense>
       )}
-      {trainingOpen && (
-        <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <DevBanner />
-          <Suspense fallback={null}>
-            <TrainingView titleOverride={menuTitle('training')} onClose={() => setTrainingOpen(false)} />
-          </Suspense>
-        </div>
-      )}
-      {dailyPuzzleOpen && (
-        <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <DevBanner />
-          <Suspense fallback={null}>
-            <QuizMarathon
-              onClose={() => setDailyPuzzleOpen(false)}
-              nickname={user?.nickname}
-              tab={dailyTab}
-              onTab={setDailyTab}
-            />
-          </Suspense>
-        </div>
-      )}
-      {arenaKey && (
-        <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <DevBanner />
-          <Suspense fallback={null}>
-            <ArenaGame
-              arenaKey={arenaKey}
-              onClose={() => setArenaKey(null)}
-              nickname={user?.nickname}
-              tab={arenaTab}
-              onTab={setArenaTab}
-            />
-          </Suspense>
-        </div>
-      )}
+      {/* TrainingView / QuizMarathon / ArenaGame artik GERCEK SAYFA (page-host conditional
+          return, yukarida) — portal degil. */}
       {liveTournOpen && (
         <Suspense fallback={null}>
           <LiveTournamentSystem titleOverride={menuTitle('liveTournSystem')} onClose={() => setLiveTournOpen(false)} />
@@ -11815,34 +11782,8 @@ export default function App() {
           <Rules onClose={() => setRulesOpen(false)} />
         </Suspense>
       )}
-      {analyzerOpen && premium && (
-        <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <Suspense fallback={null}>
-          <PositionAnalyzer
-            titleOverride={menuTitle('analyzer')}
-            neuralEval={(s, p, deep) =>
-              deep ? neuralRef.current.eval2ply(s, p) : neuralRef.current.evalPosition(s, p)
-            }
-            neuralAnalyze={(s, deep) =>
-              deep ? neuralRef.current.analyzeMoves2ply(s) : neuralRef.current.analyzeMoves(s)
-            }
-            premium={premium}
-            onUpgrade={() => {
-              // Analyzer'i KAPATMA: uyelik modali ustune acilir, kapatilinca
-              // kullanici pozisyon-analizi sayfasinda kalir (ana sayfaya donmez).
-              setMemOpen(true)
-            }}
-            onClose={() => setAnalyzerOpen(false)}
-          />
-          </Suspense>
-        </div>
-      )}
-      {matAnalyzerOpen && premium && (
-        <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <MatAnalyzer titleOverride={menuTitle('matAnalyzer')} onClose={() => setMatAnalyzerOpen(false)} currentName={profile.nickname} />
-        </div>
-      )}
-      {/* PhotoAnalysis artik GERCEK SAYFA (page-host conditional return, yukarida) — portal degil. */}
+      {/* PositionAnalyzer / MatAnalyzer / PhotoAnalysis artik GERCEK SAYFA (page-host conditional
+          return, yukarida) — portal degil. */}
       {fotoDuzeltId !== null && (
         <FotoDuzelt id={fotoDuzeltId} onClose={() => { setFotoDuzeltId(null); window.history.length > 1 ? window.history.back() : (window.location.href = '/') }} />
       )}
@@ -12201,6 +12142,122 @@ export default function App() {
               setHome(true)
             }}
           />
+        </div>
+      </LobbyLayout>
+    )
+  }
+
+  // Arac sayfalari (egitim, soru-maratonu, arena, mat-analiz, pozisyon-analizi) de GERCEK SAYFA
+  // (page-host): mevcut register-overlay.page blogu page-host icinde statik + sola dayali +
+  // standart genislik olur, kose X'leri gizlenir. Cikis menu/logo/geri ile (foto-analiz deseni).
+  if (trainingOpen) {
+    return (
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <div className="register-overlay modal page" role="dialog" aria-modal="true">
+            <DevBanner />
+            <Suspense fallback={null}>
+              <TrainingView
+                titleOverride={menuTitle('training')}
+                onClose={() => {
+                  setTrainingOpen(false)
+                  setHome(true)
+                }}
+              />
+            </Suspense>
+          </div>
+        </div>
+      </LobbyLayout>
+    )
+  }
+  if (dailyPuzzleOpen) {
+    return (
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <div className="register-overlay modal page" role="dialog" aria-modal="true">
+            <DevBanner />
+            <Suspense fallback={null}>
+              <QuizMarathon
+                onClose={() => {
+                  setDailyPuzzleOpen(false)
+                  setHome(true)
+                }}
+                nickname={user?.nickname}
+                tab={dailyTab}
+                onTab={setDailyTab}
+              />
+            </Suspense>
+          </div>
+        </div>
+      </LobbyLayout>
+    )
+  }
+  if (arenaKey) {
+    return (
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <div className="register-overlay modal page" role="dialog" aria-modal="true">
+            <DevBanner />
+            <Suspense fallback={null}>
+              <ArenaGame
+                arenaKey={arenaKey}
+                onClose={() => {
+                  setArenaKey(null)
+                  setHome(true)
+                }}
+                nickname={user?.nickname}
+                tab={arenaTab}
+                onTab={setArenaTab}
+              />
+            </Suspense>
+          </div>
+        </div>
+      </LobbyLayout>
+    )
+  }
+  if (analyzerOpen && premium) {
+    return (
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <div className="register-overlay modal page" role="dialog" aria-modal="true">
+            <Suspense fallback={null}>
+              <PositionAnalyzer
+                titleOverride={menuTitle('analyzer')}
+                neuralEval={(s, p, deep) =>
+                  deep ? neuralRef.current.eval2ply(s, p) : neuralRef.current.evalPosition(s, p)
+                }
+                neuralAnalyze={(s, deep) =>
+                  deep ? neuralRef.current.analyzeMoves2ply(s) : neuralRef.current.analyzeMoves(s)
+                }
+                premium={premium}
+                onUpgrade={() => {
+                  setMemOpen(true)
+                }}
+                onClose={() => {
+                  setAnalyzerOpen(false)
+                  setHome(true)
+                }}
+              />
+            </Suspense>
+          </div>
+        </div>
+      </LobbyLayout>
+    )
+  }
+  if (matAnalyzerOpen && premium) {
+    return (
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <div className="register-overlay modal page" role="dialog" aria-modal="true">
+            <MatAnalyzer
+              titleOverride={menuTitle('matAnalyzer')}
+              onClose={() => {
+                setMatAnalyzerOpen(false)
+                setHome(true)
+              }}
+              currentName={profile.nickname}
+            />
+          </div>
         </div>
       </LobbyLayout>
     )
