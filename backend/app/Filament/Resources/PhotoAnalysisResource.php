@@ -6,12 +6,10 @@ use App\Filament\Resources\PhotoAnalysisResource\Pages;
 use App\Models\PhotoAnalysis;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\HtmlString;
 
 /**
  * "Foto Analizleri": kullanicilarin yukledigi tahta fotograflarinin tanima + gnubg hint kayitlari.
@@ -44,29 +42,9 @@ class PhotoAnalysisResource extends Resource
         return parent::getEloquentQuery()->labelable();
     }
 
-    /**
-     * Editörün başlangıç konumu: form state'teki ground_truth (JSON metni, mutateFormDataBeforeFill)
-     * yoksa tanınan konum. Alpine'a tam iskelet (points[24]+bar+turn+dice+cube) verilir ki alanlar
-     * undefined patlatmasın.
-     */
-    public static function editorPosition(mixed $groundTruthJson, PhotoAnalysis $record): array
-    {
-        $pos = is_string($groundTruthJson) ? json_decode($groundTruthJson, true) : $groundTruthJson;
-        if (! is_array($pos)) {
-            $pos = is_array($record->position) ? $record->position : [];
-        }
-
-        return array_merge([
-            'points' => array_fill(0, 24, 0),
-            'bar' => ['white' => 0, 'black' => 0],
-            'turn' => 'white',
-            'dice' => [],
-            'cube' => ['value' => 1, 'owner' => null],
-        ], $pos);
-    }
-
     public static function form(Form $form): Form
     {
+        // SALT İNCELEME (read-only). Gerçek düzeltme React SPA'da: liste "Düzelt" -> /foto-duzelt/<id>.
         return $form->schema([
             Forms\Components\Placeholder::make('status')->label('Durum')
                 ->content(fn (?PhotoAnalysis $r) => $r?->status ?? '—'),
@@ -83,20 +61,9 @@ class PhotoAnalysisResource extends Resource
             Forms\Components\Placeholder::make('hint')->label('gnubg hint')
                 ->content(fn (?PhotoAnalysis $r) => json_encode($r?->hint, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '—')
                 ->columnSpanFull(),
-            // --- ELLE DÜZELTME (görsel tahta editörü -> eğitim etiketi) ---
-            // ground_truth JSON metni Hidden'da tutulur; editör (Alpine) tıklamalarla ona yazar.
-            Forms\Components\Hidden::make('ground_truth')->rules(['nullable', 'json']),
-            Forms\Components\Placeholder::make('board_editor')->label('Doğru konumu işaretle')
-                ->content(fn (PhotoAnalysis $record, Get $get) => new HtmlString(view('filament.photo-board-editor', [
-                    'pos' => self::editorPosition($get('ground_truth'), $record),
-                    'mineDark' => ($record->debug['photographer'] ?? null) === 'dark',
-                    'homeLeft' => (bool) $record->flip,
-                    'photoUrl' => route('admin.photo-analysis.image', $record),
-                ])->render()))
+            Forms\Components\Placeholder::make('ground_truth')->label('Eğitim etiketi (ground_truth)')
+                ->content(fn (?PhotoAnalysis $r) => json_encode($r?->ground_truth, JSON_PRETTY_PRINT) ?: '— (henüz düzeltilmedi)')
                 ->columnSpanFull(),
-            // Dropdown YOK: Kaydet = bu konumu doğru onayladın -> otomatik "eğitime hazır" (labeled) + listeye dön.
-            Forms\Components\Placeholder::make('ready')->label('Durum')
-                ->content('Fotoğraftaki konum doğruysa (gerekirse düzelttikten sonra) Kaydet\'e bas → ✓ Eğitime hazır olarak işaretlenir, listeye dönülür.'),
         ]);
     }
 
@@ -128,6 +95,9 @@ class PhotoAnalysisResource extends Resource
                         ->where('valid', true)->whereNull('review_status')),
             ])
             ->actions([
+                // Gerçek Board'da düzelt (React SPA; admin oturumu açık sekmede). İnceleme sayfası salt-görüntü.
+                Tables\Actions\Action::make('duzelt')->label('Düzelt')->icon('heroicon-o-pencil-square')
+                    ->color('primary')->url(fn (PhotoAnalysis $r) => "/foto-duzelt/{$r->id}")->openUrlInNewTab(),
                 Tables\Actions\EditAction::make()->label('İncele'),
                 Tables\Actions\DeleteAction::make()->label('Sil'),
             ])
