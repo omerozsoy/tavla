@@ -36,27 +36,6 @@ class PhotoAnalysis extends Model
     }
 
     /**
-     * Admin "Doğru işaretle": tanıma DOĞRU çıkmış fotoğrafı etiket seti için onaylar
-     * (ground_truth = tanınan konum). Böylece eğitim/gate seti kolay+zor TEMSİLİ olur (yalnız düzeltilenler
-     * değil). position yoksa no-op (bozuk/boş etiket yazma). review_status='correct' düzeltilenden ayırır.
-     */
-    public function markCorrect(): void
-    {
-        if (is_array($this->position)) {
-            $this->update(['ground_truth' => $this->position, 'review_status' => 'correct']);
-        }
-    }
-
-    /** Panelde etiketlenebilir kayıtlar: bildirilenler (düzeltilecek) + valid+done (doğru-adayları). */
-    public function scopeLabelable($query)
-    {
-        return $query->where(function ($w) {
-            $w->whereNotNull('reported_at')
-                ->orWhere(fn ($d) => $d->where('status', 'done')->where('valid', true));
-        });
-    }
-
-    /**
      * Admin'in panelde girdigi JSON metnini egitim etiketi dizisine cevirir. Gecersiz/bos -> null
      * (form 'json' kurali gecerli JSON'u zaten garanti eder; bu son savunma). Yeniden egitim bu
      * ground_truth != null satirlari (foto -> dogru konum) uzerinden calisir.

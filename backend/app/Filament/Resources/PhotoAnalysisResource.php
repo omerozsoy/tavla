@@ -34,12 +34,12 @@ class PhotoAnalysisResource extends Resource
         return false;
     }
 
-    // Panel YALNIZ inceleme BEKLEYENleri gosterir: etiketlenebilir (bildirilen + valid/done aday) AMA
-    // henuz ELE ALINMAMIS (review_status null). "Eğitime hazır" (labeled/correct) olanlar listeden DUSER
-    // — isleri bitti, Eğitim Gönderimi tarafina gecerler (ayri sayfa: EgitimGonderimi).
+    // Panel YALNIZ kullanicinin "hatali tarama bildir" ile isaretledigi (reported_at) VE henuz ELE
+    // ALINMAMIS (review_status null) kayitlari gosterir. Basarili/bildirilmemis taramalar listede YOK
+    // (kullanici direktifi). Duzeltilenler (labeled) listeden duser -> Egitim Gonderimi tarafina gecer.
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->labelable()->whereNull('review_status');
+        return parent::getEloquentQuery()->whereNotNull('reported_at')->whereNull('review_status');
     }
 
     public static function form(Form $form): Form
@@ -69,22 +69,14 @@ class PhotoAnalysisResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Durum')
                     ->options(['pending' => 'pending', 'done' => 'done', 'invalid' => 'invalid', 'failed' => 'failed']),
-                // Temsili etiket: bildirilmemiş, tanıması güvenilir (valid+done), henüz etiketsiz = "doğru adayları".
-                Tables\Filters\Filter::make('correct_candidates')->label('Doğru adayları')
-                    ->query(fn ($query) => $query->whereNull('reported_at')->where('status', 'done')
-                        ->where('valid', true)->whereNull('review_status')),
             ])
             ->actions([
-                // Panel İÇİNDE gerçek Board düzeltme sayfası (iframe) — admin Filament'ten ÇIKMAZ.
+                // Panel İÇİNDE native Board düzeltme sayfası (DuzeltPhotoAnalysis) — admin Filament'ten ÇIKMAZ.
                 Tables\Actions\Action::make('duzelt')->label('Düzelt')->icon('heroicon-o-pencil-square')
                     ->color('primary')->url(fn (PhotoAnalysis $r) => PhotoAnalysisResource::getUrl('duzelt', ['record' => $r])),
                 Tables\Actions\DeleteAction::make()->label('Sil'),
             ])
             ->bulkActions([
-                // Seçili doğru-taranmış fotoları eğitim etiketi olarak onayla (ground_truth = tanınan konum).
-                Tables\Actions\BulkAction::make('markCorrect')->label('Doğru olarak işaretle')
-                    ->icon('heroicon-o-check-badge')->color('success')->requiresConfirmation()
-                    ->action(fn ($records) => $records->each->markCorrect()),
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
