@@ -1,8 +1,10 @@
-/* Pinch-zoom sarmalayici: surface ustte dokunuslari yakalar, inner olceklenir, tasma kirpilir. */
+/* Pinch-zoom sarmalayici: surface ustte dokunuslari yakalar, inner olceklenir, tasma kirpilir.
+   touch-action surface'te INLINE yonetilir (z==1 -> pan-y sayfa kaydirma serbest; yakinken -> none).
+   Host'ta touch-action YOK: ata 'none' olsaydi surface'in pan-y'sini intersection ile ezip z==1'de
+   sayfa kaydirmayi bloklardi. */
 .pinch-zoom {
   position: relative;
   overflow: hidden;
-  touch-action: none; /* tarayici kaydirma/zoom'u devre disi -> pointer'lari biz surecelim */
 }
 .pinch-inner {
   transform-origin: center center;
@@ -12,7 +14,6 @@
   position: absolute;
   inset: 0;
   z-index: 7; /* .mrv-arrows (z-index:6) ustunde -> tum dokunuslar surface'e */
-  touch-action: none;
   cursor: zoom-in;
 }
 .pinch-surface.zoomed {
