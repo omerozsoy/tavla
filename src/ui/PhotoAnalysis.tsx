@@ -879,7 +879,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
             ) : (
               <>
                 <p className="photo-report-hint">{t('photo.reportHint')}</p>
-                <Button variant="outline" onClick={reportWrong} type="button" className="photo-report-btn">
+                <Button onClick={reportWrong} type="button" className="photo-report-btn">
                   <Icon name="flag" size={15} /> {t('photo.reportBtn')}
                 </Button>
               </>

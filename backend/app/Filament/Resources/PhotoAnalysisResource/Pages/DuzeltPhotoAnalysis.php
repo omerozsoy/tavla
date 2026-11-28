@@ -60,21 +60,18 @@ class DuzeltPhotoAnalysis extends Page
             return;
         }
 
-        $this->getRecord()->update([
-            'ground_truth' => [
-                'points' => array_values(array_map('intval', $points)),
-                'bar' => ['white' => (int) ($pos['bar']['white'] ?? 0), 'black' => (int) ($pos['bar']['black'] ?? 0)],
-                'turn' => $pos['turn'],
-                'dice' => array_values(array_filter(array_map('intval', $pos['dice'] ?? []), fn ($d) => $d >= 1 && $d <= 6)),
-                'cube' => [
-                    'value' => (int) ($pos['cube']['value'] ?? 1),
-                    'owner' => in_array($pos['cube']['owner'] ?? null, ['white', 'black'], true) ? $pos['cube']['owner'] : null,
-                ],
+        $this->getRecord()->labelCorrected([
+            'points' => array_values(array_map('intval', $points)),
+            'bar' => ['white' => (int) ($pos['bar']['white'] ?? 0), 'black' => (int) ($pos['bar']['black'] ?? 0)],
+            'turn' => $pos['turn'],
+            'dice' => array_values(array_filter(array_map('intval', $pos['dice'] ?? []), fn ($d) => $d >= 1 && $d <= 6)),
+            'cube' => [
+                'value' => (int) ($pos['cube']['value'] ?? 1),
+                'owner' => in_array($pos['cube']['owner'] ?? null, ['white', 'black'], true) ? $pos['cube']['owner'] : null,
             ],
-            'review_status' => 'labeled',
         ]);
 
-        Notification::make()->success()->title('Kaydedildi — eğitime hazır')->send();
+        Notification::make()->success()->title('Kaydedildi — eğitime hazır (+'.PhotoAnalysis::REPORT_REWARD.' coin bildirene)')->send();
         $this->redirect(PhotoAnalysisResource::getUrl('index'));
     }
 

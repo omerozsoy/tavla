@@ -104,4 +104,33 @@ class AdminPhotoAnalysisTest extends TestCase
         $this->assertNull($pa->refresh()->ground_truth);
         $this->assertNull($pa->review_status);
     }
+
+    private function gt(): array
+    {
+        return ['points' => array_fill(0, 24, 0), 'bar' => ['white' => 0, 'black' => 0], 'turn' => 'white', 'dice' => [2, 6], 'cube' => ['value' => 1, 'owner' => null]];
+    }
+
+    // Doğru hata bildirimi ödülü: bildiren kullanıcı, tarama elle düzeltilince REPORT_REWARD coin alır.
+    public function test_label_rewards_reporter_once(): void
+    {
+        $reporter = User::factory()->create(['coins' => 50]);
+        $pa = PhotoAnalysis::create(['user_id' => $reporter->id, 'image_path' => 'p/a.jpg', 'status' => 'done', 'reported_at' => now()]);
+
+        $pa->labelCorrected($this->gt());
+        $this->assertSame(50 + PhotoAnalysis::REPORT_REWARD, $reporter->refresh()->coins);
+
+        // Yeniden kaydet -> idempotent, çift ödeme YOK.
+        $pa->labelCorrected($this->gt());
+        $this->assertSame(50 + PhotoAnalysis::REPORT_REWARD, $reporter->refresh()->coins);
+    }
+
+    // Bildirilmemiş (reported_at null) tarama düzeltmesi ödül vermez.
+    public function test_label_without_report_gives_no_reward(): void
+    {
+        $owner = User::factory()->create(['coins' => 50]);
+        $pa = PhotoAnalysis::create(['user_id' => $owner->id, 'image_path' => 'p/a.jpg', 'status' => 'done']);
+
+        $pa->labelCorrected($this->gt());
+        $this->assertSame(50, $owner->refresh()->coins);
+    }
 }

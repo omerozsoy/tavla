@@ -40,7 +40,7 @@ class AdminPhotoAnalysisController extends Controller
             'ground_truth.cube' => ['required', 'array'],
         ]);
 
-        $photoAnalysis->update(['ground_truth' => $data['ground_truth'], 'review_status' => 'labeled']);
+        $photoAnalysis->labelCorrected($data['ground_truth']);
 
         return response()->json(['ok' => true]);
     }

@@ -777,10 +777,11 @@ body.has-bottom-nav .page-host .photo-page {
   text-align: center;
 }
 .photo-report-hint {
-  margin: 0 0 10px;
-  font-size: var(--fs-xs);
-  color: var(--muted);
-  line-height: 1.45;
+  margin: 0 auto 12px;
+  max-width: 460px;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  line-height: 1.5;
 }
 .photo-report-btn {
   gap: 6px;
