@@ -76,9 +76,9 @@ class PhotoAnalysisResource extends Resource
                         ->where('valid', true)->whereNull('review_status')),
             ])
             ->actions([
-                // Panel İÇİNDE gerçek Board düzeltme sayfası (iframe) — admin panelden çıkmaz.
+                // Gerçek temalı Board düzeltme: kendi tam-ekran sayfası (/foto-duzelt/<id>), iframe DEĞİL.
                 Tables\Actions\Action::make('duzelt')->label('Düzelt')->icon('heroicon-o-pencil-square')
-                    ->color('primary')->url(fn (PhotoAnalysis $r) => PhotoAnalysisResource::getUrl('duzelt', ['record' => $r])),
+                    ->color('primary')->url(fn (PhotoAnalysis $r) => '/foto-duzelt/'.$r->id),
                 Tables\Actions\DeleteAction::make()->label('Sil'),
             ])
             ->bulkActions([
@@ -94,7 +94,6 @@ class PhotoAnalysisResource extends Resource
     {
         return [
             'index' => Pages\ListPhotoAnalyses::route('/'),
-            'duzelt' => Pages\DuzeltPhotoAnalysis::route('/{record}/duzelt'),
         ];
     }
 }

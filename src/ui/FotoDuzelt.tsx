@@ -8,9 +8,9 @@ import { useToast } from './Toast'
 import { adminGetPhotoAnalysis, adminLabelPhotoAnalysis, type AdminPhotoAnalysis } from '../api'
 import './FotoDuzelt.css'
 
-// Admin foto düzeltme sayfası (/foto-duzelt/<id>): SOLDA foto, SAĞDA GERÇEK temalı Board (standart Board
-// bileşeni). Fırça (Sen/Rakip/Sil) + board'daki noktaya tıkla -> taş ekle/çıkar (paint modeli). Bar/Sıra/
-// Zar/Küp kontrolleri. Tanımanın okuduğu zar/küp referans gösterilir. Kaydet -> ground_truth (eğitim etiketi).
+// Admin foto düzeltme — KENDİ tam-ekran sayfası (/foto-duzelt/<id>, iframe DEĞİL). SOLDA foto, SAĞDA gerçek
+// temalı Board. Fırça (Sen/Rakip/Sil) + noktaya tıkla → taş ekle/çıkar (paint). Bar/Sıra/Zar/Küp kontrolleri.
+// Tanımanın okuduğu zar/küp referansı gösterilir. Kaydet → ground_truth (eğitim etiketi).
 const EMPTY_FROMS = new Set<number | 'bar'>()
 const EMPTY_TARGETS = new Set<number | 'off'>()
 const ALL_CLICKABLE: Set<number | 'bar'> = new Set<number | 'bar'>([...Array(24).keys(), 'bar'])
@@ -54,7 +54,7 @@ export default function FotoDuzelt({ id, onClose }: { id: number; onClose: () =>
     }
   }, [id])
 
-  // Noktaya/bara tıkla -> aktif fırçayı uygula. Aynı renk +1 (max 15); zıt renk varsa yeni renge 1; Sil -1.
+  // Noktaya/bara tıkla → aktif fırçayı uygula. Aynı renk +1 (max 15); zıt renk varsa yeni renge 1; Sil → taşı kaldır.
   function paintPoint(i: number) {
     setPts((prev) => {
       const n = prev.slice()
@@ -100,14 +100,22 @@ export default function FotoDuzelt({ id, onClose }: { id: number; onClose: () =>
     }
   }
 
+  const stoneCount = pts.reduce((s, v) => s + Math.abs(v), 0) + bar.white + bar.black
+
   return (
-    <div className="fd-page">
-      <button className="fd-x" onClick={onClose} type="button" aria-label="Kapat">
-        <Icon name="x" size={20} />
-      </button>
-      <h1 className="fd-title">
-        <Icon name="pencil" size={22} /> Foto Düzelt <span className="fd-id">#{id}</span>
-      </h1>
+    <div className="fd-screen">
+      <header className="fd-topbar">
+        <button className="fd-back" onClick={onClose} type="button">
+          <Icon name="x" size={18} /> Panele dön
+        </button>
+        <h1 className="fd-title">
+          <Icon name="pencil" size={18} /> Foto Düzelt <span className="fd-id">#{id}</span>
+        </h1>
+        <Button className="fd-save-top" onClick={save} disabled={saving || !rec}>
+          {saving ? <span className="btn-spinner" aria-hidden="true" /> : <Icon name="check" size={16} />}
+          Kaydet → Eğitime hazır
+        </Button>
+      </header>
 
       {err ? (
         <div className="fd-err">{err}</div>
@@ -116,18 +124,43 @@ export default function FotoDuzelt({ id, onClose }: { id: number; onClose: () =>
           <span className="btn-spinner" aria-hidden="true" /> Yükleniyor…
         </div>
       ) : (
-        <>
-          <div className="fd-brush">
-            <b>Renk:</b>
-            <button type="button" className={brush === 'me' ? 'on me' : ''} onClick={() => setBrush('me')}>● Sen</button>
-            <button type="button" className={brush === 'opp' ? 'on opp' : ''} onClick={() => setBrush('opp')}>● Rakip</button>
-            <button type="button" className={brush === 'erase' ? 'on erase' : ''} onClick={() => setBrush('erase')}>✕ Sil</button>
-            <button type="button" className="fd-clear" onClick={() => { setPts(Array(24).fill(0)); setBar({ white: 0, black: 0 }) }}>🗑 Temizle</button>
-            <span className="fd-hint">Noktaya tıkla → taş ekle/çıkar</span>
-          </div>
+        <div className="fd-grid">
+          {/* SOL: kaynak fotoğraf + tanımanın okudukları */}
+          <section className="fd-photo-col">
+            <div className="fd-photo-wrap">
+              <img className="fd-photo" src={rec.image_url} alt="" />
+            </div>
+            <div className="fd-reads">
+              <span className="fd-read-chip">
+                Zar okudu: <b>{readDice.length ? readDice.join('-') : '—'}</b>
+              </span>
+              <span className="fd-read-chip">
+                Küp okudu: <b>{readCube ? `${readCube.value}${readCube.owner ? ` (${readCube.owner === 'white' ? 'sen' : 'rakip'})` : ' (orta)'}` : '—'}</b>
+              </span>
+            </div>
+          </section>
 
-          <div className="fd-main">
-            <img className="fd-photo" src={rec.image_url} alt="" />
+          {/* SAĞ: gerçek temalı board + düzenleme kontrolleri */}
+          <section className="fd-editor-col">
+            <div className="fd-brush" role="group" aria-label="Taş fırçası">
+              <button type="button" className={brush === 'me' ? 'fd-chip on me' : 'fd-chip'} onClick={() => setBrush('me')}>
+                <span className="fd-dot me" /> Sen
+              </button>
+              <button type="button" className={brush === 'opp' ? 'fd-chip on opp' : 'fd-chip'} onClick={() => setBrush('opp')}>
+                <span className="fd-dot opp" /> Rakip
+              </button>
+              <button type="button" className={brush === 'erase' ? 'fd-chip on erase' : 'fd-chip'} onClick={() => setBrush('erase')}>
+                <Icon name="x" size={14} /> Taş Sil
+              </button>
+              <span className="fd-sep" />
+              <button type="button" className="fd-chip fd-clear" onClick={() => { setPts(Array(24).fill(0)); setBar({ white: 0, black: 0 }) }}>
+                <Icon name="trash" size={14} /> Tahtayı Boşalt
+              </button>
+              <span className="fd-hint">
+                {brush === 'erase' ? 'Taşa tıkla → kaldır' : 'Noktaya tıkla → taş ekle'} · {stoneCount} taş
+              </span>
+            </div>
+
             <div className="fd-board">
               <Board
                 state={state}
@@ -148,52 +181,50 @@ export default function FotoDuzelt({ id, onClose }: { id: number; onClose: () =>
                 showPip
               />
             </div>
-          </div>
 
-          <div className="fd-ctl">
-            <div className="fd-row">
-              <b>Bar</b>
-              <span>Sen</span>
-              <button type="button" onClick={() => bumpBar('white', -1)}>−</button>
-              <span className="fd-num">{bar.white}</span>
-              <button type="button" onClick={() => bumpBar('white', 1)}>+</button>
-              <span>Rakip</span>
-              <button type="button" onClick={() => bumpBar('black', -1)}>−</button>
-              <span className="fd-num">{bar.black}</span>
-              <button type="button" onClick={() => bumpBar('black', 1)}>+</button>
+            <div className="fd-ctl">
+              <div className="fd-row">
+                <b>Bar</b>
+                <span className="fd-lbl">Sen</span>
+                <button type="button" onClick={() => bumpBar('white', -1)}>−</button>
+                <span className="fd-num">{bar.white}</span>
+                <button type="button" onClick={() => bumpBar('white', 1)}>+</button>
+                <span className="fd-lbl">Rakip</span>
+                <button type="button" onClick={() => bumpBar('black', -1)}>−</button>
+                <span className="fd-num">{bar.black}</span>
+                <button type="button" onClick={() => bumpBar('black', 1)}>+</button>
+              </div>
+              <div className="fd-row">
+                <b>Sıra</b>
+                <button type="button" className={turn === 'white' ? 'on' : ''} onClick={() => setTurn('white')}>Sen</button>
+                <button type="button" className={turn === 'black' ? 'on' : ''} onClick={() => setTurn('black')}>Rakip</button>
+                <b>Zar</b>
+                <select value={dice[0] || 0} onChange={(e) => setDie(0, Number(e.target.value))}>
+                  {DICE.map((v) => <option key={v} value={v}>{v || '—'}</option>)}
+                </select>
+                <select value={dice[1] || 0} onChange={(e) => setDie(1, Number(e.target.value))}>
+                  {DICE.map((v) => <option key={v} value={v}>{v || '—'}</option>)}
+                </select>
+              </div>
+              <div className="fd-row">
+                <b>Küp</b>
+                <select value={cube.value} onChange={(e) => setCube((c) => ({ ...c, value: Number(e.target.value), owner: Number(e.target.value) === 1 ? null : c.owner }))}>
+                  {CUBES.map((v) => <option key={v} value={v}>{v}</option>)}
+                </select>
+                <select value={cube.owner ?? ''} onChange={(e) => setCube((c) => ({ value: e.target.value ? c.value : 1, owner: (e.target.value || null) as Player | null }))}>
+                  <option value="">orta</option>
+                  <option value="white">sen</option>
+                  <option value="black">rakip</option>
+                </select>
+              </div>
             </div>
-            <div className="fd-row">
-              <b>Sıra</b>
-              <button type="button" className={turn === 'white' ? 'on' : ''} onClick={() => setTurn('white')}>Sen</button>
-              <button type="button" className={turn === 'black' ? 'on' : ''} onClick={() => setTurn('black')}>Rakip</button>
-              <b>Zar</b>
-              <select value={dice[0] || 0} onChange={(e) => setDie(0, Number(e.target.value))}>
-                {DICE.map((v) => <option key={v} value={v}>{v || '—'}</option>)}
-              </select>
-              <select value={dice[1] || 0} onChange={(e) => setDie(1, Number(e.target.value))}>
-                {DICE.map((v) => <option key={v} value={v}>{v || '—'}</option>)}
-              </select>
-              {readDice.length > 0 && <span className="fd-read">okudu: {readDice.join('-')}</span>}
-            </div>
-            <div className="fd-row">
-              <b>Küp</b>
-              <select value={cube.value} onChange={(e) => setCube((c) => ({ ...c, value: Number(e.target.value), owner: Number(e.target.value) === 1 ? null : c.owner }))}>
-                {CUBES.map((v) => <option key={v} value={v}>{v}</option>)}
-              </select>
-              <select value={cube.owner ?? ''} onChange={(e) => setCube((c) => ({ value: e.target.value ? c.value : 1, owner: (e.target.value || null) as Player | null }))}>
-                <option value="">orta</option>
-                <option value="white">sen</option>
-                <option value="black">rakip</option>
-              </select>
-              {readCube && <span className="fd-read">okudu: {readCube.value}{readCube.owner ? ` (${readCube.owner === 'white' ? 'sen' : 'rakip'})` : ' (orta)'}</span>}
-            </div>
-          </div>
 
-          <Button className="fd-save" onClick={save} disabled={saving}>
-            {saving ? <span className="btn-spinner" aria-hidden="true" /> : <Icon name="check" size={16} />}
-            Kaydet → Eğitime hazır
-          </Button>
-        </>
+            <Button className="fd-save" onClick={save} disabled={saving}>
+              {saving ? <span className="btn-spinner" aria-hidden="true" /> : <Icon name="check" size={16} />}
+              Kaydet → Eğitime hazır
+            </Button>
+          </section>
+        </div>
       )}
     </div>
   )
