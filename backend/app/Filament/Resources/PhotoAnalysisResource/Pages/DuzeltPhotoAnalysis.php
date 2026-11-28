@@ -27,10 +27,15 @@ class DuzeltPhotoAnalysis extends Page
     /** Düzenlenen konum (Alpine board buraya $wire.set ile yazar). */
     public array $pos = [];
 
+    /** Fotoğrafı çeken (Sen) KOYU taşla mı oynuyor? = YÖN. Recognition yanlış tahmin ederse admin
+     *  "Yön" takasıyla düzeltir (puanları çevir + bar swap). Kaydedince debug['photographer']'a yazılır. */
+    public bool $photographerDark = false;
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
         $this->pos = static::editorPosition($this->record);
+        $this->photographerDark = ($this->record->debug['photographer'] ?? null) === 'dark';
     }
 
     public function getTitle(): string
@@ -60,7 +65,14 @@ class DuzeltPhotoAnalysis extends Page
             return;
         }
 
-        $this->getRecord()->labelCorrected([
+        // YÖN düzeltmesi: admin "Ben hangi renk?" takası yaptıysa düzeltilmiş fotoğrafçı rengini debug'a
+        // yaz (re-open doğru render + yönelim sınıflandırıcısı eğitim etiketi).
+        $r = $this->getRecord();
+        $debug = is_array($r->debug) ? $r->debug : [];
+        $debug['photographer'] = $this->photographerDark ? 'dark' : 'light';
+        $r->update(['debug' => $debug]);
+
+        $r->labelCorrected([
             'points' => array_values(array_map('intval', $points)),
             'bar' => ['white' => (int) ($pos['bar']['white'] ?? 0), 'black' => (int) ($pos['bar']['black'] ?? 0)],
             'turn' => $pos['turn'],

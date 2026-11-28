@@ -57,7 +57,7 @@
 
 <div class="fd" x-data="{
         pos: @js($this->pos),
-        mineDark: @js((bool) $mineDark),
+        mineDark: @js($this->photographerDark),
         brush: 'me',
         zoom: false,
         d0: ((@js($this->pos['dice'] ?? []))[0] || 0),
@@ -82,6 +82,18 @@
         bar(k, d) { if (!this.pos.bar) this.pos.bar = { white: 0, black: 0 }; this.pos.bar[k] = Math.max(0, Math.min(15, this.barV(k) + d)); this.sync() },
         syncDice() { this.pos.dice = [Number(this.d0), Number(this.d1)].filter(x => x >= 1 && x <= 6); this.sync() },
         setTurn(t) { this.pos.turn = t; this.sync() },
+        // YÖN: Ben (fotoğrafçı/Sen) hangi renk? Recognition yanlışsa tüm sen/rakip ATAMASI terstir
+        // (convention: +=fotoğrafçı; yanlış renkte puanlar negatife çevrilmiş). Takas = puanları çevir +
+        // bar swap + fotoğrafçı rengini değiştir. GÖRSEL board aynı kalır, SAHİPLİK (sen/rakip) düzelir.
+        setMine(dark) { if (dark !== this.mineDark) this.swapColors() },
+        swapColors() {
+            this.pos.points = (this.pos.points || []).map(v => -v)
+            const b = this.pos.bar || { white: 0, black: 0 }
+            this.pos.bar = { white: b.black || 0, black: b.white || 0 }
+            this.mineDark = !this.mineDark
+            this.$wire.set('photographerDark', this.mineDark, false)
+            this.sync()
+        },
         // Küp yok = tavlada küp açılmamış (değer 1, ortada). Recognition zarı küp sandıysa bununla temizle.
         setCubeNone(none) {
             if (none) this.pos.cube = { value: 1, owner: null }
@@ -92,15 +104,24 @@
         sync() { this.$wire.set('pos', this.pos, false) }
     }">
 
-    {{-- Fırça --}}
-    <div class="fd-card fd-row">
-        <span class="fd-label" style="margin-right:2px">Taş</span>
-        <button type="button" class="fd-chip" :class="brush==='me' && 'on'" @click="brush='me'"><span class="fd-sw" :style="{background: meColor()}"></span> Sen</button>
-        <button type="button" class="fd-chip" :class="brush==='opp' && 'on'" @click="brush='opp'"><span class="fd-sw" :style="{background: oppColor()}"></span> Rakip</button>
-        <button type="button" class="fd-chip era" :class="brush==='erase' && 'on'" @click="brush='erase'">✕ Taş Sil</button>
-        <span style="width:1px;height:22px;background:var(--br)"></span>
-        <button type="button" class="fd-chip danger" @click="clearBoard()">🗑 Tahtayı Boşalt</button>
-        <span class="fd-hint" x-text="brush==='erase' ? 'Taşa tıkla → kaldır' : 'Noktaya tıkla → taş ekle'"></span>
+    {{-- Yön (Ben hangi renk?) + Fırça --}}
+    <div class="fd-card" style="display:flex;flex-direction:column;gap:10px">
+        <div class="fd-row">
+            <span class="fd-label" style="margin-right:2px">Yön — Ben (Sen)</span>
+            <button type="button" class="fd-chip" :class="!mineDark && 'on'" @click="setMine(false)"><span class="fd-sw" style="background:#f3eee1"></span> Açık</button>
+            <button type="button" class="fd-chip" :class="mineDark && 'on'" @click="setMine(true)"><span class="fd-sw" style="background:#b5423a"></span> Koyu</button>
+            <span class="fd-hint">Fotoğrafta kendi taşların hangi renk? Yanlışsa seç → sen/rakip ters düzelir (görsel aynı kalır).</span>
+        </div>
+        <div style="height:1px;background:var(--br)"></div>
+        <div class="fd-row">
+            <span class="fd-label" style="margin-right:2px">Taş</span>
+            <button type="button" class="fd-chip" :class="brush==='me' && 'on'" @click="brush='me'"><span class="fd-sw" :style="{background: meColor()}"></span> Sen</button>
+            <button type="button" class="fd-chip" :class="brush==='opp' && 'on'" @click="brush='opp'"><span class="fd-sw" :style="{background: oppColor()}"></span> Rakip</button>
+            <button type="button" class="fd-chip era" :class="brush==='erase' && 'on'" @click="brush='erase'">✕ Taş Sil</button>
+            <span style="width:1px;height:22px;background:var(--br)"></span>
+            <button type="button" class="fd-chip danger" @click="clearBoard()">🗑 Tahtayı Boşalt</button>
+            <span class="fd-hint" x-text="brush==='erase' ? 'Taşa tıkla → kaldır' : 'Noktaya tıkla → taş ekle'"></span>
+        </div>
     </div>
 
     {{-- Foto + tahta --}}

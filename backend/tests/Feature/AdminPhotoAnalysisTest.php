@@ -81,6 +81,20 @@ class AdminPhotoAnalysisTest extends TestCase
         $this->assertSame(['value' => 2, 'owner' => 'white'], $pa->ground_truth['cube']);
     }
 
+    // YÖN düzeltmesi: admin "Ben Koyu" seçerse düzeltilmiş fotoğrafçı rengi debug['photographer']'a yazılır.
+    public function test_duzelt_page_save_persists_photographer_orientation(): void
+    {
+        $pos = ['points' => array_fill(0, 24, 0), 'bar' => ['white' => 0, 'black' => 0], 'turn' => 'white', 'dice' => [], 'cube' => ['value' => 1, 'owner' => null]];
+        $pa = PhotoAnalysis::create(['image_path' => 'p/a.jpg', 'status' => 'done', 'reported_at' => now(), 'debug' => ['photographer' => 'light', 'board_conf' => 0.9]]);
+
+        Livewire::actingAs($this->admin())->test(DuzeltPhotoAnalysis::class, ['record' => $pa->id])
+            ->set('pos', $pos)->set('photographerDark', true)->call('save')->assertHasNoErrors();
+
+        $pa->refresh();
+        $this->assertSame('dark', $pa->debug['photographer']);  // yön güncellendi
+        $this->assertSame(0.9, $pa->debug['board_conf']);        // diğer debug alanları korundu
+    }
+
     // "Küp yok" (recognition zarı küp sandı): değer 1 + sahip null olarak kaydedilir.
     public function test_duzelt_page_save_cube_none(): void
     {
