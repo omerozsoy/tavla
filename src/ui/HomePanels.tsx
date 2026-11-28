@@ -4,7 +4,7 @@ import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
-import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, getFriends, seekers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type Seeker, type PresenceStatus, type Tournament, type Content } from '../api'
+import { liveMatches, leaderboard, rankLeaderboard, prLeaderboard, onlinePlayers, getFriends, seekers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type Seeker, type PresenceStatus, type Tournament, type Content } from '../api'
 import Loading from './Loading'
 import PlayerIdentity from './PlayerIdentity'
 import TopRankBadge from './TopRankBadge'
@@ -868,7 +868,7 @@ export function RankingPanel({
   onOpen?: () => void // baslik -> Liderlik Tablosu sayfasi (/lider-tablosu)
 }) {
   const { t } = useT()
-  const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'pr'>('rating')
+  const [by, setBy] = useState<'rank' | 'rating' | 'pr'>('rank')
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [prRows, setPrRows] = useState<PrLeaderRow[] | null>(null)
   const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (en fazla 100 = 10 sayfa)
@@ -889,8 +889,13 @@ export function RankingPanel({
       prLeaderboard(100) // ilk 100 (10'ar sayfalanir)
         .then((r) => alive && setPrRows(r.players))
         .catch(() => alive && setPrRows([]))
+    } else if (by === 'rank') {
+      // Ünvan sekmesi: efektif rütbeye göre sıralı (modal Liderlik ile aynı endpoint).
+      rankLeaderboard(100)
+        .then((r) => alive && setRows(r))
+        .catch(() => alive && setRows([]))
     } else {
-      leaderboard(100, by) // ilk 100 (10'ar sayfalanir)
+      leaderboard(100, 'rating') // ilk 100 (10'ar sayfalanir)
         .then((r) => alive && setRows(r))
         .catch(() => alive && setRows([]))
     }
@@ -927,14 +932,11 @@ export function RankingPanel({
         </div>
       )}
       <div className="rank-tabs">
+        <Button type="button" variant={by === 'rank' ? 'default' : 'ghost'} aria-pressed={by === 'rank'} onClick={() => changeTab('rank')}>
+          {t('lb.byRank')}
+        </Button>
         <Button type="button" variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => changeTab('rating')}>
           {t('lb.rating')}
-        </Button>
-        <Button type="button" variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => changeTab('coins')}>
-          {t('lb.byCoins')}
-        </Button>
-        <Button type="button" variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => changeTab('wxp')} title={t('an.wxp')}>
-          {t('lb.byWxp')}
         </Button>
         <Button type="button" variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => changeTab('pr')}>
           {t('lb.byPr')}
@@ -991,15 +993,15 @@ export function RankingPanel({
               <span className="rank-flag">
                 <CountryFlag code={r.country} size={22} />
               </span>
-              <span className="rank-val">
-                {by === 'coins' ? (
-                  <Coins amount={r.coins ?? 0} size={12} />
-                ) : by === 'wxp' ? (
-                  r.wxp ?? 0
-                ) : (
-                  r.rating
-                )}
-              </span>
+              {by === 'rank' ? (
+                // Ünvan sekmesi: rating + PR birlikte (ünvan isim altında zaten gösterilir).
+                <span className="rank-val rank-combo">
+                  <span className="rank-combo-rating">{r.rating}</span>
+                  <span className="lb-pr-val">{r.career_pr != null ? r.career_pr.toFixed(2) : '–'}</span>
+                </span>
+              ) : (
+                <span className="rank-val">{r.rating}</span>
+              )}
             </button>
           ))}
         </div>

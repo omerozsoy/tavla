@@ -15481,6 +15481,15 @@ button.acct-row-logout:hover:not(:disabled) {
   align-items: center;
   gap: 3px;
 }
+/* Ünvan sekmesi: rating (muted) + PR (vurgulu) yan yana, aralarında ince ayraç. */
+.rank-val.rank-combo {
+  gap: 8px;
+}
+.rank-combo-rating {
+  color: var(--muted);
+  padding-right: 8px;
+  border-right: 1px solid var(--border);
+}
 
 /* ---- Turnuvalar listesi (tam genislik panel icinde) ---- */
 .tourn-list {
