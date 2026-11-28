@@ -99,6 +99,8 @@ export const PAGES: PageDef[] = [
   // --- ARACLAR: analiz araclari ---
   // Fotograftan Analiz: tahta fotografi cek/sec -> sunucu tanima + gnubg -> en iyi hamle. Araclar'in 1.si.
   { key: 'photoAnalysis', slug: 'foto-analiz', labelKey: 'photo.title', icon: 'camera', group: 'tools', gate: 'user' },
+  // Admin foto düzeltme (/foto-duzelt/<id>): Filament listesinden açılır; sol menüde GIZLI (inMenu:false).
+  { key: 'fotoDuzelt', slug: 'foto-duzelt', labelKey: 'photo.title', icon: 'pencil', group: 'tools', gate: 'user', inMenu: false },
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },
   // Mat Analiz: kullanici .mat maci yukler, motor tam analiz eder (ozet: PR/blunder/hata/kesinsizlik).
   { key: 'matAnalyzer', slug: 'mat-analiz', labelKey: 'ma.title', icon: 'file-magnifying-glass', group: 'tools' },

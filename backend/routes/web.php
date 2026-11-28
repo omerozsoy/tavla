@@ -204,7 +204,7 @@ Route::fallback(function (Request $request) {
         'sans-carki', 'zar-slotu', 'bahane-makinesi', 'kiz-tavlasi',
         'turnuva-takvimi', 'kulupler', 'kulup-rehberi', 'makaleler', 'haberler', 'blog', 'tavla-magazin',
         'urunler', 'hizmetler', 'nasil-oynanir', 'tavla-rehberi', 'turnuva-kurallari', 'sikca-sorulan-sorular', 'dersler', 'tavla-egitimi', 'soru-maratonu', 'gunun-pozisyonu', 'dogru-hamle-mi', 'zamana-karsi', 'kup-karari', 'tek-can', 'canli-turnuva-sistemi', 'bulmaca',
-        'foto-analiz', 'pozisyon-analizi', 'mat-analiz', 'basarimlar', 'hata-gunlugu', 'mac-analizleri', 'mac-analizleri-detay',
+        'foto-analiz', 'foto-duzelt', 'pozisyon-analizi', 'mat-analiz', 'basarimlar', 'hata-gunlugu', 'mac-analizleri', 'mac-analizleri-detay',
         'oyun-onizleme', 'cerceve-anim', 'adillik',
         'uyelik', 'magaza', 'pul-tasarimlari', 'siparislerim', 'sepet', 'teslimat-bilgileri', 'odeme', 'kart-odeme', 'cerceveler',
         'istatistiklerim', 'profil', 'profil-duzenle', 'ayarlar', 'tahta-ayarlari',

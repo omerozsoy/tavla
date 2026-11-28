@@ -163,6 +163,7 @@ import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 const PositionAnalyzer = lazy(() => import('./ui/PositionAnalyzer'))
 const PhysicsDice = lazy(() => import('./ui/PhysicsDice')) // admin 3D testi: fizik WebGL zarı (three+cannon)
 const Board3D = lazy(() => import('./ui/Board3D')) // admin 3D testi (SADE): hazır 3D tavla modülü (three+cannon)
+const FotoDuzelt = lazy(() => import('./ui/FotoDuzelt')) // admin foto düzeltme (gerçek Board; /foto-duzelt/<id>)
 // Bayrak: hazır 3D tavla modülünü (Board3D) admin 3D toggle açıkken göster. false -> eski tahta aynen.
 const USE_3D_BOARD = true
 import MatAnalyzer from './ui/MatAnalyzer'
@@ -1179,6 +1180,7 @@ export default function App() {
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [matAnalyzerOpen, setMatAnalyzerOpen] = useState(false) // Mat Analiz: .mat yukle + gnubg tam analiz
   const [photoAnalysisOpen, setPhotoAnalysisOpen] = useState(false) // Fotograftan analiz: foto yukle + tanima + gnubg
+  const [fotoDuzeltId, setFotoDuzeltId] = useState<number | null>(null) // admin foto duzeltme (/foto-duzelt/<id>)
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [duelOpen, setDuelOpen] = useState(false) // Bireysel Düello sayfası
   // Çevrimiçi Oyuncular'dan düelloya davet edilen oyuncu -> /duello sayfasında ÖN-SEÇİLİ gelir.
@@ -1754,6 +1756,7 @@ export default function App() {
     if (analyzerOpen) { setAnalyzerOpen(false); redirect = true }
     if (matAnalyzerOpen) { setMatAnalyzerOpen(false); redirect = true }
     if (photoAnalysisOpen) { setPhotoAnalysisOpen(false); redirect = true }
+    if (fotoDuzeltId !== null) { setFotoDuzeltId(null); redirect = true }
     if (matchHistOpen) { setMatchHistOpen(false); redirect = true }
     if (redirect) setMemOpen(true)
   }, [authChecked, blunderOpen, analyzerOpen, matAnalyzerOpen, matchHistOpen, user])
@@ -2147,6 +2150,12 @@ export default function App() {
         case 'foto-analiz':
           if (!getToken()) { requireLogin(); break } // giris gerekli (API auth-only)
           setPhotoAnalysisOpen(true)
+          break
+        case 'foto-duzelt':
+          // Admin foto duzeltme: /foto-duzelt/<id>. Login sart; admin zorlamasi API (403) + bilesende
+          // (soguk-yuklemede user bayat olabilir -> applyFromPath'te is_admin kontrolu guvenilmez).
+          if (!getToken()) { requireLogin(); break }
+          setFotoDuzeltId(Number(seg[1]) || null)
           break
         case 'basarimlar':
           setAchOpen(true)
@@ -11111,6 +11120,7 @@ export default function App() {
     analyzerOpen ||
     matAnalyzerOpen ||
     photoAnalysisOpen ||
+    fotoDuzeltId !== null ||
     achOpen ||
     friendSetupOpen ||
     editProfile ||
@@ -11835,6 +11845,11 @@ export default function App() {
       {photoAnalysisOpen && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
           <PhotoAnalysis titleOverride={menuTitle('photoAnalysis')} onClose={() => setPhotoAnalysisOpen(false)} />
+        </div>
+      )}
+      {fotoDuzeltId !== null && (
+        <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <FotoDuzelt id={fotoDuzeltId} onClose={() => { setFotoDuzeltId(null); window.history.length > 1 ? window.history.back() : (window.location.href = '/') }} />
         </div>
       )}
     </>
