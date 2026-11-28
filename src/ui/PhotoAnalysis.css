@@ -566,3 +566,92 @@
   color: #2e7d32;
   font-weight: 600;
 }
+
+/* Sonuc duzeni: mobilde dikey (board ustte, hamleler altta). Web'de (>=1025px) board SOLDA,
+   hamle paneli SAGDA (kullanici istegi). .photo-main sarici flex. */
+.photo-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.photo-main-moves {
+  min-width: 0;
+}
+@media (min-width: 1025px) {
+  .photo-page {
+    max-width: 920px;
+  }
+  .photo-main {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 28px;
+  }
+  .photo-main-board {
+    flex: 0 0 460px;
+    max-width: 460px;
+  }
+  .photo-main-moves {
+    flex: 1 1 auto;
+    text-align: left;
+    padding-top: 4px;
+  }
+}
+
+/* Hamle listesi — hamle analizi (.mrv-cands) stili: #, hamle, mutlak equity (+isaretli),
+   en iyiye gore kayip (#1 = —). Tiklanabilir (secili = board oklari o hamleye doner). */
+.photo-moves {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.photo-moves-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.photo-moves-head,
+.photo-move {
+  display: grid;
+  grid-template-columns: 22px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+.photo-moves-head {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  padding: 0 10px 2px;
+}
+.photo-move {
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.photo-move:hover {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.photo-move.sel {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.pm-no {
+  opacity: 0.5;
+  font-size: 0.85rem;
+}
+.pm-move {
+  font-weight: 600;
+}
+.pm-eq {
+  opacity: 0.85;
+}
+.pm-loss {
+  opacity: 0.6;
+}

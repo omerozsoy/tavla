@@ -428,6 +428,8 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
         <div className="photo-result">
           {done ? (
             <>
+              <div className="photo-main">
+                <div className="photo-main-board">
               {result!.position?.points &&
                 (() => {
                   // Pip'ler tahtanin KENDI taraflarinda: rakip ustte, fotografi ceken altta (+ tas rengi)
@@ -512,7 +514,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                     </>
                   )
                 })()}
-              {/* En iyi hamle / kup karari board'un HEMEN ALTINDA (kullanici istegi); ayarlar asagida. */}
+                </div>
+                <div className="photo-main-moves">
+              {/* Sag panel (web'de board'un saginda): kup karari VEYA hamle analizi stili equity listesi. */}
               {cube ? (
                 <div className="photo-cube">
                   <div className="photo-best">
@@ -585,29 +589,37 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   {!offer && <div className="photo-cube-hint">{t('photo.cubeHint')}</div>}
                 </div>
               ) : (
-                <div className="photo-best">
-                  {t('photo.best')}: <b>{cands[0].move}</b>
-                </div>
-              )}
-              {cands.length > 1 && (
-                <ul className="photo-cands photo-cands-pick">
-                  {cands.map((c, i) => (
-                    <li key={i}>
+                <div className="photo-moves">
+                  <div className="photo-moves-title">{t('photo.best')}</div>
+                  <div className="photo-moves-head">
+                    <span className="pm-no">#</span>
+                    <span className="pm-move">{t('mrv.move')}</span>
+                    <span className="pm-eq">{t('mrv.equity')}</span>
+                    <span className="pm-loss">{t('mrv.loss')}</span>
+                  </div>
+                  {cands.map((c, i) => {
+                    const eq = typeof c.equity === 'number' ? c.equity : null
+                    const best = typeof cands[0]?.equity === 'number' ? (cands[0].equity as number) : null
+                    const diff = eq !== null && best !== null ? eq - best : null
+                    return (
                       <button
+                        key={i}
                         type="button"
-                        className={`photo-cand-btn${i === sel ? ' on' : ''}`}
+                        className={`photo-move${i === sel ? ' sel' : ''}`}
                         onClick={() => setSelectedCand(i)}
                         aria-pressed={i === sel}
                       >
-                        <span className="photo-cand-move">{c.move}</span>
-                        {typeof c.equity === 'number' && (
-                          <span className="photo-cand-eq">{c.equity.toFixed(3)}</span>
-                        )}
+                        <span className="pm-no">{i + 1}</span>
+                        <span className="pm-move">{c.move}</span>
+                        <span className="pm-eq">{eq !== null ? `${eq >= 0 ? '+' : ''}${eq.toFixed(3)}` : '—'}</span>
+                        <span className="pm-loss">{i === 0 ? '—' : diff !== null ? `−${(-diff).toFixed(3)}` : ''}</span>
                       </button>
-                    </li>
-                  ))}
-                </ul>
+                    )
+                  })}
+                </div>
               )}
+                </div>
+              </div>
               <div className={`photo-matchctl${cubeBusy ? ' busy' : ''}`}>
                 <label>
                   {t('photo.match')}{' '}
