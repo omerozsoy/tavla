@@ -1756,7 +1756,6 @@ export default function App() {
     if (analyzerOpen) { setAnalyzerOpen(false); redirect = true }
     if (matAnalyzerOpen) { setMatAnalyzerOpen(false); redirect = true }
     if (photoAnalysisOpen) { setPhotoAnalysisOpen(false); redirect = true }
-    if (fotoDuzeltId !== null) { setFotoDuzeltId(null); redirect = true }
     if (matchHistOpen) { setMatchHistOpen(false); redirect = true }
     if (redirect) setMemOpen(true)
   }, [authChecked, blunderOpen, analyzerOpen, matAnalyzerOpen, matchHistOpen, user])
@@ -10485,6 +10484,7 @@ export default function App() {
     setAnalyzerOpen(false)
     setMatAnalyzerOpen(false)
     setPhotoAnalysisOpen(false)
+    setFotoDuzeltId(null) // admin foto duzeltme sayfasi: navigasyonda kapanir
     setEditProfile(false)
     setSpectate(null) // /izle URL sayfasi: menu/logo navigasyonu izlemeyi de kapatir
   }
