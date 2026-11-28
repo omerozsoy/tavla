@@ -74,7 +74,7 @@ export function PinchZoom({ children, max = 3, className = '' }: { children: Rea
   }, [max])
 
   return (
-    <div ref={host} className={`pinch-zoom ${className}`}>
+    <div ref={host} className={`pinch-zoom ${className}${t.z > 1 ? ' zoomed' : ''}`}>
       <div className="pinch-inner" style={{ transform: `translate(${t.x}px,${t.y}px) scale(${t.z})` }}>
         {children}
       </div>

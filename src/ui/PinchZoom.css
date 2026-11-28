@@ -4,6 +4,13 @@
    sayfa kaydirmayi bloklardi. */
 .pinch-zoom {
   position: relative;
+  /* overflow:hidden SADECE yakinken (zoomed): yoksa host bir scroll-container olur ve surface'in
+     pan-y'si en yakin scroll ATASI olarak ONU hedefler; board tam oturdugu icin kaydiracak icerik
+     yok + Android WebView .main'e ZINCIRLEMEZ -> sayfa "asagi kaymiyor". z==1'de board zaten tam
+     oturur (kirpma gereksiz) -> overflow:visible, pan-y .main'i kaydirir. */
+  overflow: visible;
+}
+.pinch-zoom.zoomed {
   overflow: hidden;
 }
 .pinch-inner {
