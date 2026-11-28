@@ -623,6 +623,8 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
               )}
                 </div>
               </div>
+              <section className="photo-settings">
+                <div className="photo-settings-title">{t('photo.settingsTitle')}</div>
               <div className={`photo-matchctl${cubeBusy ? ' busy' : ''}`}>
                 <label>
                   {t('photo.match')}{' '}
@@ -680,28 +682,25 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                 <div className="photo-cubectl-state">
                   {cubeState(result!.position, result!.debug?.cube ?? null, t)}
                 </div>
-                {/* Kullanici istegi: cok buton yerine DROPDOWN'lar — Kup [deger] [yer/durum]. */}
+                {/* Hizli TEK-TIK secim: deger cipleri + konum cipleri (dropdown ac/sec yok). */}
                 <div className="photo-cubectl-row">
                   <span className="photo-cubectl-label">{t('photo.cube')}</span>
-                  <select
-                    disabled={cubeBusy}
-                    value={cubeModeOf(result!.position).value}
-                    onChange={(e) => {
-                      const v = Number(e.target.value)
-                      changeCube(v === 1 ? { mode: 'center' } : { value: v })
-                    }}
-                  >
+                  <div className="photo-cube-chips">
                     {[1, 2, 4, 8, 16, 32, 64].map((v) => (
-                      <option key={v} value={v}>
+                      <button
+                        key={v}
+                        type="button"
+                        disabled={cubeBusy}
+                        className={`photo-cube-chip${cubeModeOf(result!.position).value === v ? ' on' : ''}`}
+                        onClick={() => changeCube(v === 1 ? { mode: 'center' } : { value: v })}
+                      >
                         {v}
-                      </option>
+                      </button>
                     ))}
-                  </select>
-                  <select
-                    disabled={cubeBusy}
-                    value={cubeModeOf(result!.position).mode}
-                    onChange={(e) => changeCube({ mode: e.target.value as CubeMode })}
-                  >
+                  </div>
+                </div>
+                <div className="photo-cubectl-row">
+                  <div className="photo-cube-chips">
                     {(
                       [
                         ['center', t('photo.cubeCenter')],
@@ -711,11 +710,17 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                         ['offer_opp', t('photo.cubeOfferOpp')],
                       ] as const
                     ).map(([mode, label]) => (
-                      <option key={mode} value={mode}>
+                      <button
+                        key={mode}
+                        type="button"
+                        disabled={cubeBusy}
+                        className={`photo-cube-chip${cubeModeOf(result!.position).mode === mode ? ' on' : ''}`}
+                        onClick={() => changeCube({ mode })}
+                      >
                         {label}
-                      </option>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </div>
               </div>
               <div className={`photo-dice${cubeBusy ? ' busy' : ''}`}>
@@ -755,6 +760,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                       : t('photo.turnMe')}
                 </b>
               </div>
+              </section>
               {/* ANALIZ NEYE GORE YAPILDI: kup degeri + skor okunamiyor -> varsayim acikca gosterilir */}
               {(() => {
                 const ml = result!.position?.matchLength ?? 0

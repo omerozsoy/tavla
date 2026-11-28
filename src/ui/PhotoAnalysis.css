@@ -1,9 +1,12 @@
-/* Fotograftan Pozisyon Analizi sayfasi (MatAnalyzer duzeniyle uyumlu, sade). */
+/* Fotograftan Pozisyon Analizi — site tasarim sistemiyle (terracotta/krem) yeniden tasarlandi.
+   Flat dil: beyaz --card-bg kartlar + 1px --border, Ink metin, brick --accent; golge yok.
+   Tum renkler token'dan -> dark/light otomatik doner. Kamera overlay (.photo-cam*) dokunulmadi. */
 .photo-page {
   position: relative;
   max-width: 560px;
   margin: 0 auto;
-  padding: 18px 16px 40px;
+  padding: 20px 16px 48px;
+  color: var(--text);
 }
 .photo-x {
   position: absolute;
@@ -14,64 +17,85 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  border: 1px solid var(--border);
   border-radius: 50%;
-  background: color-mix(in srgb, currentColor 8%, transparent);
-  color: inherit;
+  background: var(--card-bg);
+  color: var(--muted);
   cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
 }
 .photo-x:hover {
-  background: color-mix(in srgb, currentColor 15%, transparent);
+  color: var(--text);
+  border-color: var(--accent);
 }
 .photo-head {
   text-align: center;
-  margin-bottom: 18px;
+  margin: 4px 0 20px;
 }
 .photo-title {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 1.5rem;
+  gap: 10px;
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
   margin: 0 0 6px;
 }
+.photo-title svg {
+  color: var(--accent);
+}
 .photo-sub {
-  opacity: 0.7;
-  font-size: 0.9rem;
-  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  max-width: 44ch;
+  margin: 0 auto;
 }
 
+/* ===== Cekim karti (bos durum) ===== */
 .photo-capture {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  align-items: center;
+  gap: 16px;
+  align-items: stretch;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
 }
 .photo-drop {
   width: 100%;
-  min-height: 190px;
+  min-height: 210px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border: 2px dashed color-mix(in srgb, currentColor 28%, transparent);
-  border-radius: 16px;
-  background: color-mix(in srgb, currentColor 4%, transparent);
-  color: inherit;
+  gap: 10px;
+  border: 2px dashed color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  color: var(--text);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 .photo-drop:hover {
-  border-color: color-mix(in srgb, currentColor 48%, transparent);
-  background: color-mix(in srgb, currentColor 7%, transparent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.photo-drop svg {
+  color: var(--accent);
 }
 .photo-drop-title {
-  font-weight: 600;
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
 }
 .photo-drop-hint {
-  font-size: 0.82rem;
-  opacity: 0.65;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  max-width: 34ch;
+  text-align: center;
+  line-height: 1.45;
 }
 .photo-preview {
   display: block;
@@ -80,7 +104,8 @@
   width: auto;
   height: auto;
   margin: 0 auto;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
   cursor: pointer;
 }
 .photo-pick-row {
@@ -93,7 +118,54 @@
   gap: 8px;
 }
 
-/* Kilavuz cerceveli kamera (tam ekran) */
+/* Yon secici (evler nereye toplaniyor) — segment kontrol */
+.photo-home {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px solid var(--border);
+  font-size: var(--fs-xs);
+}
+.photo-home button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.photo-home-ico.rot-l {
+  transform: rotate(-90deg);
+}
+.photo-home-ico.rot-r {
+  transform: rotate(90deg);
+}
+.photo-home button.on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.photo-home button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.photo-analyze-btn {
+  align-self: center;
+  min-width: 200px;
+  gap: 8px;
+}
+
+/* ===== Kilavuz cerceveli kamera (tam ekran) — DOKUNULMADI ===== */
 .photo-cam {
   position: fixed;
   inset: 0;
@@ -202,87 +274,65 @@
   }
 }
 
-.photo-home {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 999px;
-  background: color-mix(in srgb, currentColor 6%, transparent);
-  font-size: 0.85rem;
-}
-.photo-home-label {
-  padding: 0 8px 0 10px;
-  opacity: 0.75;
-}
-.photo-home button {
-  border: none;
-  border-radius: 999px;
-  padding: 6px 14px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-.photo-home button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.photo-home-ico.rot-l {
-  transform: rotate(-90deg);
-}
-.photo-home-ico.rot-r {
-  transform: rotate(90deg);
-}
-.photo-home button.on {
-  background: var(--color-primary, #2b5fd9);
-  color: #fff;
-}
-.photo-home button:disabled {
-  cursor: default;
-  opacity: 0.7;
-}
-
-.photo-analyze-btn {
-  min-width: 190px;
-  gap: 8px;
-}
-
+/* ===== Sonuc ===== */
 .photo-result {
-  margin-top: 22px;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Sonuc duzeni: mobilde dikey (board ustte, panel altta). Web'de (>=1025px) board SOLDA,
+   panel SAGDA. .photo-main sarici flex; iki yani ayri kart. */
+.photo-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.photo-main-board {
   padding: 16px;
-  border-radius: 14px;
-  background: color-mix(in srgb, currentColor 5%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
   text-align: center;
 }
-.photo-board {
-  display: block;
-  width: 100%;
-  max-width: 360px;
-  margin: 0 auto 12px;
-  border-radius: 8px;
+.photo-main-moves {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
 }
-/* Hamle sonucu: kullanıcının default temalı Board'u + hamle okları (MoveArrows). Board'un global
-   --board-h (viewport) dar foto kolonunda taşardı -> kolona (cqw) göre küçült + TÜM türev geometriyi
-   yeniden türet (App.css :root 179-189 / .article-board-stage ile birebir oranlar). */
+@media (min-width: 1025px) {
+  .photo-page {
+    max-width: 940px;
+  }
+  .photo-main {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .photo-main-board {
+    flex: 0 0 468px;
+    max-width: 468px;
+  }
+  .photo-main-moves {
+    flex: 1 1 auto;
+  }
+}
+
+/* Board + pip etiketleri */
 .photo-board-wrap {
   container-type: inline-size;
   width: 100%;
   max-width: 480px;
-  margin: 0 auto 12px;
-  /* Pul rengi takası (swapStones=foto çeken koyu oynuyorsa) için tema renklerini ÜST elemanda
-     yakala -> .board.stones-swapped --cream/--navy'yi buradan okur (game-area deseni). Bu capture
-     olmadan foto board game-area DIŞINDA olduğundan --stone-* tanımsız kalıp pul rengi SİLİNİR. */
+  margin: 6px auto;
+  /* Pul rengi takasi (swapStones) icin tema renklerini UST elemanda yakala. */
   --stone-light: var(--cream);
   --stone-dark: var(--navy);
 }
 .photo-board-stage {
   position: relative;
-  /* .board display:grid blok olarak kabi DOLDURUR -> stage footprint'ten genisse 'auto' sutun
-     gerilip board-inner'i sola, bear-off tepsisini saga iter (AYRIK tepsi + board tam dolmaz).
-     flex ile .board'u DOGAL footprint'inde ortala -> tepsi bitisik, board ortali tam-genislik. */
   display: flex;
   justify-content: center;
   width: 100%;
@@ -301,204 +351,145 @@
 .photo-board-stage .pt-numbers {
   font-size: calc(var(--checker) * 0.5);
   font-variant-numeric: tabular-nums;
-  /* global .pt-numbers rengi beyazımsı (koyu oyun tahtası için); foto sayfası açık zemin ->
-     okunmaz -> koyu mürekkebe çevir (article-board deseni). */
   color: var(--muted);
   font-weight: 600;
 }
-/* Sonuc board'u SALT-GORSEL -> iki parmak pinch-zoom serbest. Oyun board'u suruklemek icin
-   .checker/.cube'a touch-action:none koyar; burada etkilesim YOK -> manipulation ile ezilir
-   (tek parmak kaydirma + iki parmak yakinlastirma açik, double-tap kapali). Daha yuksek
-   ozgulluk (.board descendant) global .checker{touch-action:none} kuralini gecersiz kilar. */
+/* Sonuc board'u SALT-GORSEL -> pinch-zoom serbest (global .checker touch-action:none ezilir). */
 .photo-board-stage,
 .photo-board-stage .board,
 .photo-board-stage .board * {
   touch-action: manipulation;
 }
-.photo-dice {
-  font-size: 0.95rem;
-  opacity: 0.8;
-  margin-bottom: 6px;
-}
-.photo-dice.busy {
-  opacity: 0.5;
-}
-.photo-dice-sel {
-  padding: 2px 4px;
-  margin: 0 2px;
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  border-radius: 7px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: 700;
-}
-.photo-best {
-  font-size: 1.25rem;
-  margin-bottom: 10px;
-}
-.photo-assume {
-  margin: 4px 0 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-  background: color-mix(in srgb, currentColor 4%, transparent);
-  text-align: left;
-  font-size: 0.88rem;
-}
-.photo-assume-title {
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-.photo-assume-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 8px;
-  padding: 3px 0;
-}
-.photo-assume-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.photo-assume-badge.warn {
-  background: #fff1d6;
-  color: #8a5300;
-}
-.photo-assume-badge.ok {
-  background: #dff5e6;
-  color: #1d6b38;
-}
+
 .photo-pip-tag {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 1rem;
+  gap: 7px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
   margin: 4px 0;
   font-variant-numeric: tabular-nums;
 }
 .photo-pip-tag b {
-  font-size: 1.15rem;
+  font-size: var(--fs-lg);
+  color: var(--text);
 }
 .photo-pip-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #f3eee1;
-  border: 1px solid rgba(0, 0, 0, 0.35);
+  background: var(--cream);
+  border: 1px solid color-mix(in srgb, var(--navy) 45%, transparent);
 }
 .photo-pip-dot.dark {
-  background: #b5423a;
+  background: var(--navy);
+  border-color: var(--navy);
 }
 .photo-pips {
-  font-size: 0.92rem;
-  margin: 0 0 8px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin: 6px 0 0;
   font-variant-numeric: tabular-nums;
 }
-.photo-pips-diff {
-  opacity: 0.7;
+.photo-pips b {
+  color: var(--text);
 }
-.photo-matchctl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  justify-content: center;
-  align-items: center;
-  margin: 0 0 10px;
-  font-size: 0.85rem;
+
+/* ===== Hamle paneli ===== */
+.photo-best {
+  font-size: var(--fs-lg);
+  line-height: 1.35;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  color: var(--text);
 }
-.photo-matchctl.busy {
-  opacity: 0.6;
-}
-.photo-matchctl select {
-  padding: 3px 6px;
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: 600;
-}
-.photo-crawford {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.photo-cubectl {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-  margin: 0 0 10px;
-}
-.photo-cubectl.busy {
-  opacity: 0.6;
-}
-.photo-cubectl-state {
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-.photo-cubectl-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-  align-items: center;
-}
-.photo-cubectl-label {
-  font-size: 0.85rem;
-  opacity: 0.75;
-  margin-right: 4px;
-}
-/* Kup deger/mod DROPDOWN'lari (buton satiri yerine) — match select'iyle tutarli. */
-.photo-cubectl-row select {
-  padding: 4px 8px;
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-.photo-cubectl button {
-  min-width: 34px;
-  padding: 4px 9px;
-  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-  border-radius: 8px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-.photo-cubectl button.on {
-  background: var(--color-primary, #2b5fd9);
-  border-color: var(--color-primary, #2b5fd9);
-  color: #fff;
+.photo-best b {
+  color: var(--accent);
 }
 .photo-offer-sub {
-  font-size: 0.9rem;
-  font-weight: 500;
-  opacity: 0.8;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--muted);
   margin-top: 4px;
 }
 .photo-cube-probs {
-  font-size: 0.92rem;
-  opacity: 0.85;
-  margin-bottom: 10px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-bottom: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.photo-cube-probs b {
+  color: var(--text);
 }
 .photo-cube-hint {
-  margin-top: 10px;
-  font-size: 0.82rem;
-  opacity: 0.65;
+  margin-top: 12px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  line-height: 1.45;
 }
+
+/* Hamle listesi — #, hamle, equity, en iyiye gore kayip. Tiklanabilir (board oklari doner). */
+.photo-moves {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.photo-moves-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  margin-bottom: 6px;
+}
+.photo-moves-head,
+.photo-move {
+  display: grid;
+  grid-template-columns: 22px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+.photo-moves-head {
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  padding: 0 10px 2px;
+}
+.photo-move {
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.photo-move:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.photo-move.sel {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.pm-no {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.pm-move {
+  font-weight: var(--fw-semibold);
+}
+.pm-eq {
+  color: var(--text);
+}
+.pm-loss {
+  color: var(--muted);
+}
+
+/* Kup karari adaylari (equity listesi) */
 .photo-cands {
   list-style: none;
   padding: 0;
@@ -510,153 +501,171 @@
 .photo-cands li {
   display: flex;
   justify-content: space-between;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: color-mix(in srgb, currentColor 5%, transparent);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
   font-variant-numeric: tabular-nums;
 }
 .photo-cand-eq {
-  opacity: 0.6;
+  color: var(--muted);
 }
-/* Tıklanabilir aday: seçilince tahtadaki oklar o hamleye döner (en iyi = ilk/varsayılan). */
-.photo-cands-pick li {
-  padding: 0;
-  background: none;
-}
-.photo-cand-btn {
+
+/* ===== Analiz ayarlari karti (mac + kup + zar birlikte) ===== */
+.photo-settings {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 6px 12px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: color-mix(in srgb, currentColor 5%, transparent);
-  color: inherit;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  text-align: left;
+}
+.photo-settings-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+}
+.photo-settings select,
+.photo-dice-sel {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
   font: inherit;
-  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
 }
-.photo-cand-btn:hover {
-  background: color-mix(in srgb, currentColor 10%, transparent);
+.photo-settings select:disabled,
+.photo-dice-sel:disabled {
+  cursor: default;
 }
-.photo-cand-btn.on {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+
+.photo-matchctl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  font-size: var(--fs-sm);
 }
+.photo-matchctl label,
+.photo-cubectl-label {
+  color: var(--muted);
+}
+.photo-matchctl.busy,
+.photo-cubectl.busy,
+.photo-dice.busy {
+  opacity: 0.55;
+}
+.photo-crawford {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.photo-cubectl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.photo-cubectl-state {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+.photo-cubectl-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: var(--fs-sm);
+}
+.photo-cubectl-label {
+  font-size: var(--fs-sm);
+}
+
+.photo-dice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.photo-dice b {
+  color: var(--text);
+}
+.photo-dice-sel {
+  margin: 0 2px;
+  font-weight: var(--fw-bold);
+}
+
+/* ===== "Neye gore analiz edildi" bilgi karti ===== */
+.photo-assume {
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+  text-align: left;
+  font-size: var(--fs-sm);
+}
+.photo-assume-title {
+  font-weight: var(--fw-bold);
+  margin-bottom: 8px;
+}
+.photo-assume-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+  padding: 4px 0;
+}
+.photo-assume-badge {
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-bold);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+.photo-assume-badge.warn {
+  background: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  color: color-mix(in srgb, var(--color-warning) 72%, var(--text));
+}
+.photo-assume-badge.ok {
+  background: color-mix(in srgb, var(--color-success) 20%, transparent);
+  color: color-mix(in srgb, var(--color-success) 72%, var(--text));
+}
+
 .photo-invalid {
-  opacity: 0.85;
-  font-size: 0.95rem;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  color: var(--muted);
+  font-size: var(--fs-md);
   line-height: 1.5;
+  text-align: center;
 }
+
+/* ===== Hatali tarama bildir ===== */
 .photo-report {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px dashed color-mix(in srgb, currentColor 18%, transparent);
   text-align: center;
 }
 .photo-report-hint {
-  margin: 0 0 8px;
-  font-size: 0.85rem;
-  opacity: 0.7;
-  line-height: 1.4;
+  margin: 0 0 10px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  line-height: 1.45;
 }
 .photo-report-btn {
   gap: 6px;
 }
 .photo-report-thanks {
-  font-size: 0.9rem;
-  color: #2e7d32;
-  font-weight: 600;
-}
-
-/* Sonuc duzeni: mobilde dikey (board ustte, hamleler altta). Web'de (>=1025px) board SOLDA,
-   hamle paneli SAGDA (kullanici istegi). .photo-main sarici flex. */
-.photo-main {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.photo-main-moves {
-  min-width: 0;
-}
-@media (min-width: 1025px) {
-  .photo-page {
-    max-width: 920px;
-  }
-  .photo-main {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 28px;
-  }
-  .photo-main-board {
-    flex: 0 0 460px;
-    max-width: 460px;
-  }
-  .photo-main-moves {
-    flex: 1 1 auto;
-    text-align: left;
-    padding-top: 4px;
-  }
-}
-
-/* Hamle listesi — hamle analizi (.mrv-cands) stili: #, hamle, mutlak equity (+isaretli),
-   en iyiye gore kayip (#1 = —). Tiklanabilir (secili = board oklari o hamleye doner). */
-.photo-moves {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.photo-moves-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-.photo-moves-head,
-.photo-move {
-  display: grid;
-  grid-template-columns: 22px 1fr auto auto;
-  gap: 10px;
-  align-items: center;
-}
-.photo-moves-head {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.55;
-  padding: 0 10px 2px;
-}
-.photo-move {
-  padding: 7px 10px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: color-mix(in srgb, currentColor 5%, transparent);
-  color: inherit;
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
-}
-.photo-move:hover {
-  background: color-mix(in srgb, currentColor 10%, transparent);
-}
-.photo-move.sel {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-}
-.pm-no {
-  opacity: 0.5;
-  font-size: 0.85rem;
-}
-.pm-move {
-  font-weight: 600;
-}
-.pm-eq {
-  opacity: 0.85;
-}
-.pm-loss {
-  opacity: 0.6;
+  font-size: var(--fs-sm);
+  color: var(--color-success);
+  font-weight: var(--fw-semibold);
 }

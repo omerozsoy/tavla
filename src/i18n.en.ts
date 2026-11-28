@@ -1773,6 +1773,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   // ---- Mat Analiz ----
   'photo.title': 'Photo Analysis',
   'photo.sub': 'Take a photo of the board and let TavlaTV read the position and show the best move.',
+  'photo.settingsTitle': 'Analysis settings',
   'photo.pick': 'Take a photo of the board',
   'photo.pickHint': 'Shoot from above in landscape; keep the whole board visible with a little margin',
   'photo.camOpen': 'Open Camera',

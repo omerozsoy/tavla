@@ -1830,6 +1830,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   // ---- Mat Analiz ----
   'photo.title': 'Fotoğraftan Analiz',
   'photo.sub': 'Tahtanın fotoğrafını çek; TavlaTV pozisyonu okuyup en iyi hamleyi göstersin.',
+  'photo.settingsTitle': 'Analiz ayarları',
   'photo.pick': 'Tahtanın fotoğrafını çek',
   'photo.pickHint': 'Yukarıdan, yatay çek; tahtanın tamamı ve etrafında biraz boşluk görünsün',
   'photo.camOpen': 'Kamerayı Aç',
