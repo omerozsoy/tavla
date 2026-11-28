@@ -4,6 +4,7 @@ import type { GameState, Player, Step } from './engine/types'
 import { normalizeCountry } from './countries'
 import { COIN_PACKAGES, type CoinPackage } from './coinPackages'
 import { turnStarted, consumeBlur } from './secondScreen'
+import { isIOSNativeApp } from './appEnv'
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ||
@@ -195,6 +196,8 @@ async function req<T>(path: string, options: RequestInit = {}, timeoutMs?: numbe
         ...(gate ? { 'X-Site-Gate': gate } : {}),
         // Güvenlik Kalkanı "kim hangi sayfada" için o anki SPA rotasını bildir (yalnız yol, gizli veri yok).
         ...(typeof location !== 'undefined' ? { 'X-Page': location.pathname } : {}),
+        // iOS native app (Capacitor) UA'da Safari'den ayrışmaz -> kanalı doğru damgalamak için sunucuya bildir.
+        ...(isIOSNativeApp() ? { 'X-App-Platform': 'ios' } : {}),
         ...(options.headers || {}),
       },
     })

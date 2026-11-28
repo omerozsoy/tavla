@@ -35,21 +35,29 @@ class Payment extends Model
 
                 return;
             }
-            $ua = request()?->userAgent();
+            $req = request();
+            // 'iphone' kanalı YALNIZ gerçek iOS uygulaması içindir. iOS Capacitor WebView UA'da
+            // Safari'den ayrışmaz -> istemci (api.ts) 'X-App-Platform: ios' başlığı ile bildirir.
+            // Başlık yoksa (iPhone Safari dahil) uygulama değildir -> UA'dan android_app / web.
+            if ($req && strtolower((string) $req->header('X-App-Platform')) === 'ios') {
+                $p->channel = 'iphone';
+
+                return;
+            }
+            $ua = $req?->userAgent();
             $p->channel = $ua ? self::channelFromUserAgent($ua) : null;
         });
     }
 
     // appEnv.ts ile AYNI sinyal: kurulu TavlaTV APK = remote-load Android WebView ('; wv)'), Facebook/
-    // Instagram in-app tarayıcıları HARİÇ (onlar bizim app değil). iOS uygulamamız yok -> iPhone = web tarayıcı.
+    // Instagram in-app tarayıcıları HARİÇ (onlar bizim app değil). Uygulama değilse (iPhone Safari,
+    // masaüstü, mobil tarayıcı) -> web. iOS uygulaması UA'dan ayrışmaz, X-App-Platform başlığıyla
+    // ayrıca işlenir (bkz. booted) -> burada iPhone UA de 'web' döner.
     public static function channelFromUserAgent(?string $ua): string
     {
         $ua = (string) $ua;
         if (preg_match('/;\s*wv\)/i', $ua) && ! preg_match('/FBAN|FBAV|FB_IAB|Instagram|GSA\//i', $ua)) {
             return 'android_app';
-        }
-        if (preg_match('/iPhone|iPad|iPod/i', $ua)) {
-            return 'iphone';
         }
 
         return 'web';

@@ -17,8 +17,9 @@ class PaymentChannelTest extends TestCase
         $this->assertSame('web', Payment::channelFromUserAgent(
             'Mozilla/5.0 (Linux; Android 13; wv) AppleWebKit/537.36 [FBAN/FB4A;FBAV/400]'
         ));
-        // iPhone Safari (iOS uygulamamız yok -> iphone = web tarayıcı).
-        $this->assertSame('iphone', Payment::channelFromUserAgent(
+        // iPhone Safari = uygulama DEĞİL -> web. ('iphone' kanalı yalnız gerçek iOS app için,
+        // o da UA'dan değil X-App-Platform başlığından damgalanır -> bkz. Payment::booted.)
+        $this->assertSame('web', Payment::channelFromUserAgent(
             'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605 Safari/604'
         ));
         // Masaüstü Chrome -> web.
