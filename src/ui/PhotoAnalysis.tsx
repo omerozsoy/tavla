@@ -17,7 +17,7 @@ import { PinchZoom } from './PinchZoom'
 import { pipCount } from '../engine/evaluate'
 import type { GameState, Player } from '../engine/types'
 import { moveToSteps } from './photoMoveSteps'
-import { IS_NATIVE_APP } from '../appEnv'
+import { IS_NATIVE_APP, MOBILE_UI } from '../appEnv'
 import PhotoCamera from './PhotoCamera'
 import './PhotoAnalysis.css'
 
@@ -176,7 +176,8 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   // web'de kamera yok). Galeri/dosya butonu her iki ortamda da ayrica durur.
   const pickArea = () => (IS_NATIVE_APP ? openCamera() : fileRef.current?.click())
 
-  // Web: resim alanina dosya surukle-birak (app'te alakasiz — kamera). Sadece gorsel dosya kabul.
+  // Surukle-birak YALNIZ masaustu web'de (kullanici direktifi): telefonda/app'te dosya suruklenemez
+  // -> MOBILE_UI (app VEYA mobil ekran <=1024px) kapsaminda kapali. Sadece gorsel dosya kabul.
   const [dragOver, setDragOver] = useState(false)
   function onDropFile(e: React.DragEvent) {
     e.preventDefault()
@@ -188,7 +189,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     e.preventDefault()
     if (!dragOver) setDragOver(true)
   }
-  const dropHandlers = IS_NATIVE_APP
+  const dropHandlers = MOBILE_UI
     ? {}
     : { onDragOver: onDragOverFile, onDragLeave: () => setDragOver(false), onDrop: onDropFile }
 
@@ -402,7 +403,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
           >
             <Icon name="camera" size={40} />
             <div className="photo-drop-title">{IS_NATIVE_APP ? t('photo.pick') : t('photo.gallery')}</div>
-            <div className="photo-drop-hint">{IS_NATIVE_APP ? t('photo.pickHint') : t('photo.dropHint')}</div>
+            <div className="photo-drop-hint">{MOBILE_UI ? t('photo.pickHint') : t('photo.dropHint')}</div>
           </button>
         )}
 
