@@ -31,8 +31,12 @@ sunucu gnubg** (`SERVER_BOT=true`). Mimari ve kurulum için README.md.
   `current` HEAD = commit'in mi (`readlink current` + `git rev-parse HEAD`) + `curl https://tavlatv.com/`.
   Elle "Deploy Now" YALNIZCA: CI-yeşilinden >10dk release yok (nadir App teslimat düşmesi, ~1.5sa
   vakası) VEYA **CI KIRMIZI** (Forge deploy ETMEZ; frontend CI flakey'liği backend-only push'u da bloklar).
-- Deploy edemiyorsan: `forge` user sudo'su ŞİFRE ister (passwordless YOK), site dosyaları `tavla:tavla`
-  (forge yazamaz) → SSH'tan elle deploy edilemez; panel/hook şart. SSH anahtar: `~/.ssh/tavla`.
+- **SSH yetki (2026-11-28 DOĞRULANDI):** `forge` user'da `sudo -n` **ŞİFRESİZ TAM yetki** var (`sudo -n -l`
+  → `NOPASSWD: ALL`; `sudo -n -u tavla ...` ile tavla dosyalarına YAZABİLİR, `sudo -n supervisorctl
+  restart/stop/start/status *` şifresiz). (Eski not "forge sudo ŞİFRE ister/tavla yazamaz" YANLIŞ'tı.)
+  → recognition/gnubg/worker daemon'larını SSH'tan yönetebilirsin. SSH anahtar: `~/.ssh/tavla`
+  (PowerShell ssh; git-bash agent görmez). AMA **git-deploy'u yine de QD/panel yapar** — kod push akışı
+  değişmez; SSH ancak daemon restart / dosya denetimi / tinker için.
 - QD gelmezse ÖNCE CI'ya bak: `gh run list --branch main --limit 1` — kırmızıysa Forge deploy ETMEZ.
   Forge GitHub **App** ile bağlı; repoda KLASİK WEBHOOK YOK (`gh api repos/omerozsoy/tavla/hooks` → `[]`)
   → "Settings → Webhooks → Recent Deliveries" BOŞTUR, oraya bakma (eski/yanlış tavsiyeydi).
@@ -48,7 +52,8 @@ sunucu gnubg** (`SERVER_BOT=true`). Mimari ve kurulum için README.md.
 
 ## Üretim altyapısı
 - **Laravel Forge yönetimli, IP 148.251.126.242.** SSH: `ssh -i ~/.ssh/tavla forge@148.251.126.242`
-  (forge=sudo'lu ama ŞİFRELİ; site user `tavla`=sudo YOK). Repo: `/home/tavla/tavlatv.com/current`.
+  (forge=ŞİFRESİZ tam sudo `NOPASSWD: ALL`; site user `tavla`=kendi sudo'su YOK ama forge `sudo -u tavla`
+  ile onun adına iş yapar). Repo: `/home/tavla/tavlatv.com/current`.
   Servisler **systemd DEĞİL → Forge Daemons + supervisor** (gnubg ×18, reverb, worker'lar, scheduler).
 - gnubg havuzları port-bazlı (canlı / heavy / backfill ayrı); .env değişince config:cache + queue:restart gerektirir.
   Deploy'da otomatik restart beklenmez → gerekirse Forge panel'den daemon restart.
