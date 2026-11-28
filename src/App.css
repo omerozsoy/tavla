@@ -22015,6 +22015,14 @@ body:has(.spectate-view) .app.lobby {
   text-align: center;
   margin-top: auto;
 }
+/* Tecrube (EP) karti: buyuk sayinin altinda "nasil kazanilir" izahi */
+.ep-detail {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.55;
+  text-align: center;
+  margin-top: 10px;
+}
 
 .an-charts {
   display: flex;

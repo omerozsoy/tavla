@@ -417,11 +417,11 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               )}
             </div>
 
-            {/* ===== Alt satır (2 sütun): Zar Ortalamaları · WXP ===== */}
+            {/* ===== Alt satır: Zar Ortalamaları (tam genişlik) · altında Tecrübe (EP) + WXP ===== */}
             <div className="stats-dash">
 
-              {/* Zar Ortalamaları — zar-başına Sen/Rakip kırılımı */}
-              <div className="sd-card dice-card">
+              {/* Zar Ortalamaları — zar-başına Sen/Rakip kırılımı (tam satır) */}
+              <div className="sd-card dice-card sd-card-wide">
                 <div className="sd-head">
                   <span className="sd-ic"><Icon name="dice" size={18} /></span>
                   <div className="sd-head-txt">
@@ -477,7 +477,30 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                 )}
               </div>
 
-              {/* WXP — Kazanma Deneyim Puanlari (Zar'ın yanında, yarı yarıya) */}
+              {/* Tecrübe (EP) — rütbe tecrübesi; nasıl kazanıldığı detayıyla (WXP'nin solu) */}
+              <div className="sd-card ep-card">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="medal" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('rank.c3Title')}</div>
+                  </div>
+                </div>
+                {error ? (
+                  <div className="lb-empty small">{t('lb.error')}</div>
+                ) : !data ? (
+                  <div aria-busy="true">
+                    <Skeleton w={120} h={40} r={8} style={{ display: 'block', margin: '4px auto' }} />
+                    <Skeleton w="100%" h={54} r={8} style={{ display: 'block', marginTop: 12 }} />
+                  </div>
+                ) : (
+                  <>
+                    <div className="wxp-total">{fmtNum(data.rankEp ?? 0)} EP</div>
+                    <div className="ep-detail">{t('rank.c3Sub')}</div>
+                  </>
+                )}
+              </div>
+
+              {/* WXP — Kazanma Deneyim Puanlari (Tecrübe'nin yanında, yarı yarıya) */}
               <div className="sd-card wxp-card">
                 <div className="sd-head">
                   <span className="sd-ic"><Icon name="star" size={18} /></span>
