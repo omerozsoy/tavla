@@ -131,7 +131,17 @@ def _value(cls, hi_crop, centered):
         return 2, "model"
     if c == 1:
         return 4, "model"
-    # sinif 2 = 8 veya ustu: hane sayisi ipucu (2 hane -> 16; aksi 8). Kullanici uyarilir.
+    # sinif 2 = 8 veya ustu. CubeClassify 8/16/32/64 AYIRMAZ. Once OCR (kuruluysa) tam degeri okur
+    # -> {8,16,32,64}, yeter guvende src='ocr' (kesin). OCR yok/basarisiz -> digit_count ipucu (8 vs 16).
+    if hi_crop is not None and getattr(hi_crop, "size", 0):
+        try:
+            import cube_read
+            rgb = cv2.cvtColor(hi_crop, cv2.COLOR_BGR2RGB)
+            v, conf, _ = cube_read.read_value(rgb, class_hint=2)
+            if v in (8, 16, 32, 64) and conf >= 0.6:
+                return v, "ocr"
+        except Exception:
+            pass
     return (16 if digit_count(hi_crop) == 2 else 8), "model_ge8"
 
 

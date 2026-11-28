@@ -30,9 +30,11 @@ echo "== 3) venv =="
 "$UV" venv --python 3.12 "$BASE/venv"
 
 echo "== 4) bağımlılıklar (stdlib http.server -> web framework YOK) =="
-# ai-edge-litert = TFLite runtime (5 görüş modeli bununla koşar). Pillow aslında gereksiz
-# (cv2 yeter) ama zarar yok.
-"$UV" pip install --python "$BASE/venv/bin/python" ai-edge-litert opencv-python-headless numpy Pillow
+# ai-edge-litert = TFLite runtime (5 görüş modeli bununla koşar). Pillow OCR rotasyonu için gerekli.
+# rapidocr-onnxruntime = kup DEGER okuma (sinif-2 icinde 8/16/32/64 ayrimi; cube_read.py). Kuruluysa
+# cube.py OCR'i kullanir, degilse digit_count fallback (opsiyonel; eski davranis hic kirilmaz).
+"$UV" pip install --python "$BASE/venv/bin/python" ai-edge-litert opencv-python-headless numpy Pillow \
+  rapidocr-onnxruntime
 
 echo "== 5) doğrulama: import + sürümler =="
 "$BASE/venv/bin/python" - <<'PY'
@@ -43,6 +45,11 @@ print("cv2    :", cv2.__version__)
 print("numpy  :", numpy.__version__)
 print("Pillow :", PIL.__version__)
 print("litert : OK")
+try:
+    from rapidocr_onnxruntime import RapidOCR
+    print("rapidocr: OK (kup OCR aktif)")
+except Exception as e:
+    print("rapidocr: YOK -> digit_count fallback (", e, ")")
 PY
 
 echo "== 6) requirements freeze (tekrar-üretilebilirlik) =="
