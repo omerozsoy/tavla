@@ -34,11 +34,12 @@ class PhotoAnalysisResource extends Resource
         return false;
     }
 
-    // Panel YALNIZ kullanicilarin "hatali tarama bildir" ile isaretledigi kayitlari gosterir (inceleme
-    // kuyrugu). Bildirilmemis analizler listede YOK.
+    // Panel YALNIZ inceleme BEKLEYENleri gosterir: etiketlenebilir (bildirilen + valid/done aday) AMA
+    // henuz ELE ALINMAMIS (review_status null). "Eğitime hazır" (labeled/correct) olanlar listeden DUSER
+    // — isleri bitti, Eğitim Gönderimi tarafina gecerler (ayri sayfa: EgitimGonderimi).
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->labelable();
+        return parent::getEloquentQuery()->labelable()->whereNull('review_status');
     }
 
     public static function form(Form $form): Form
@@ -68,8 +69,6 @@ class PhotoAnalysisResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')->label('Durum')
                     ->options(['pending' => 'pending', 'done' => 'done', 'invalid' => 'invalid', 'failed' => 'failed']),
-                Tables\Filters\Filter::make('unlabeled')->label('Henüz düzeltilmemiş')
-                    ->query(fn ($query) => $query->whereNull('review_status'))->default(),
                 // Temsili etiket: bildirilmemiş, tanıması güvenilir (valid+done), henüz etiketsiz = "doğru adayları".
                 Tables\Filters\Filter::make('correct_candidates')->label('Doğru adayları')
                     ->query(fn ($query) => $query->whereNull('reported_at')->where('status', 'done')

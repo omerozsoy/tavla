@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class PhotoAnalysis extends Model
 {
-    protected $fillable = ['user_id', 'image_path', 'status', 'flip', 'position', 'hint', 'debug', 'valid', 'error', 'reported_at', 'ground_truth', 'review_status'];
+    protected $fillable = ['user_id', 'image_path', 'status', 'flip', 'position', 'hint', 'debug', 'valid', 'error', 'reported_at', 'ground_truth', 'review_status', 'trained_at'];
 
     protected $casts = [
         'position' => 'array',
@@ -21,7 +21,14 @@ class PhotoAnalysis extends Model
         'valid' => 'boolean',
         'flip' => 'boolean',
         'reported_at' => 'datetime',
+        'trained_at' => 'datetime',
     ];
+
+    /** Eğitime hazır: admin düzeltti/onayladı (review_status var) + geçerli etiket (ground_truth var). */
+    public function scopeTrainReady($query)
+    {
+        return $query->whereNotNull('review_status')->whereNotNull('ground_truth');
+    }
 
     public function user(): BelongsTo
     {
