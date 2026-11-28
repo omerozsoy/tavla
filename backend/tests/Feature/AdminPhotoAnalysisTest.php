@@ -79,6 +79,18 @@ class AdminPhotoAnalysisTest extends TestCase
         $this->assertSame(['value' => 2, 'owner' => 'white'], $pa->ground_truth['cube']);
     }
 
+    // "Küp yok" (recognition zarı küp sandı): değer 1 + sahip null olarak kaydedilir.
+    public function test_duzelt_page_save_cube_none(): void
+    {
+        $pos = ['points' => array_fill(0, 24, 0), 'bar' => ['white' => 0, 'black' => 0], 'turn' => 'white', 'dice' => [], 'cube' => ['value' => 1, 'owner' => null]];
+        $pa = PhotoAnalysis::create(['image_path' => 'p/a.jpg', 'status' => 'done', 'reported_at' => now()]);
+
+        Livewire::actingAs($this->admin())->test(DuzeltPhotoAnalysis::class, ['record' => $pa->id])
+            ->set('pos', $pos)->call('save')->assertHasNoErrors();
+
+        $this->assertSame(['value' => 1, 'owner' => null], $pa->refresh()->ground_truth['cube']);
+    }
+
     // Bozuk konum (24≠nokta) kaydedilmez — eğitim etiketini kirletme.
     public function test_duzelt_page_save_rejects_malformed(): void
     {

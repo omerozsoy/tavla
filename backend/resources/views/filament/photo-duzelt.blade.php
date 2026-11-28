@@ -21,6 +21,7 @@
 <style>
     .fd { --card:#fff; --br:#e5e7eb; --ink:#111827; --muted:#6b7280; --chip:#f3f4f6; --field:#fff; --field-br:#d1d5db; --field-ink:#111827; }
     .dark .fd { --card:#1e293b; --br:#334155; --ink:#e2e8f0; --muted:#94a3b8; --chip:#334155; --field:#0f172a; --field-br:#475569; --field-ink:#e2e8f0; }
+    .fd [x-cloak], [x-cloak] { display:none !important; }
     .fd { display:flex; flex-direction:column; gap:16px; user-select:none; color:var(--ink); }
     .fd-card { background:var(--card); border:1px solid var(--br); border-radius:14px; padding:14px 16px; }
     .fd-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
@@ -60,6 +61,7 @@
         pos: @js($this->pos),
         mineDark: @js((bool) $mineDark),
         brush: 'me',
+        zoom: false,
         d0: ((@js($this->pos['dice'] ?? []))[0] || 0),
         d1: ((@js($this->pos['dice'] ?? []))[1] || 0),
         mag(i) { return Math.abs(this.pos.points?.[i] || 0) },
@@ -79,8 +81,12 @@
         bar(k, d) { if (!this.pos.bar) this.pos.bar = { white: 0, black: 0 }; this.pos.bar[k] = Math.max(0, Math.min(15, this.barV(k) + d)); this.sync() },
         syncDice() { this.pos.dice = [Number(this.d0), Number(this.d1)].filter(x => x >= 1 && x <= 6); this.sync() },
         setTurn(t) { this.pos.turn = t; this.sync() },
-        onCubeVal() { if (Number(this.pos.cube.value) === 1) this.pos.cube.owner = null; this.sync() },
-        onCubeOwner() { if (!this.pos.cube.owner) this.pos.cube.value = 1; this.sync() },
+        // Küp yok = tavlada küp açılmamış (değer 1, ortada). Recognition zarı küp sandıysa bununla temizle.
+        setCubeNone(none) {
+            if (none) this.pos.cube = { value: 1, owner: null }
+            else this.pos.cube = { value: Math.max(2, Number(this.pos.cube.value) || 2), owner: this.pos.cube.owner || 'white' }
+            this.sync()
+        },
         // Düzeltilmiş konumu Livewire $pos'una deferred yaz (Kaydet action commit'inde uçar).
         sync() { this.$wire.set('pos', this.pos, false) }
     }">
@@ -99,7 +105,10 @@
     {{-- Foto + tahta --}}
     <div class="fd-grid">
         <div style="display:flex;flex-direction:column;gap:10px">
-            <img src="{{ $photoUrl }}" alt="" class="fd-photo"/>
+            <div style="position:relative;cursor:zoom-in" @click="zoom=true" title="Büyütmek için tıkla">
+                <img src="{{ $photoUrl }}" alt="" class="fd-photo"/>
+                <span style="position:absolute;right:8px;bottom:8px;background:rgba(15,23,42,.78);color:#fff;font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px;display:inline-flex;align-items:center;gap:5px;pointer-events:none">🔍 Büyüt (zar)</span>
+            </div>
             <div class="fd-row" style="gap:7px">
                 <span class="fd-read">Zar okudu: <b>{{ count($readDice) ? implode('-', $readDice) : '—' }}</b></span>
                 <span class="fd-read">Küp okudu: <b>{{ $readCubeLabel }}</b></span>
@@ -179,13 +188,16 @@
                 </div>
 
                 <div class="fd-ctl">
-                    <span class="fd-label">Küp</span>
-                    <div class="fd-row" style="gap:8px">
-                        <select class="fd-select" x-model.number="pos.cube.value" @change="onCubeVal()">
-                            @foreach ([1, 2, 4, 8, 16, 32, 64] as $v)<option value="{{ $v }}">{{ $v }}</option>@endforeach
+                    <span class="fd-label">Küp <span style="text-transform:none;font-weight:500">(zar sanılmışsa "yok" işaretle)</span></span>
+                    <label class="fd-row" style="gap:7px;cursor:pointer;font-size:13px">
+                        <input type="checkbox" :checked="Number(pos.cube.value)===1" @change="setCubeNone($event.target.checked)" style="width:16px;height:16px;accent-color:#16a34a"/>
+                        Küp yok (ortada / açılmamış)
+                    </label>
+                    <div class="fd-row" style="gap:8px" x-show="Number(pos.cube.value)!==1" x-cloak>
+                        <select class="fd-select" x-model.number="pos.cube.value" @change="sync()">
+                            @foreach ([2, 4, 8, 16, 32, 64] as $v)<option value="{{ $v }}">{{ $v }}</option>@endforeach
                         </select>
-                        <select class="fd-select" x-model="pos.cube.owner" @change="onCubeOwner()">
-                            <option value="">orta</option>
+                        <select class="fd-select" x-model="pos.cube.owner" @change="sync()">
                             <option value="white">sen</option>
                             <option value="black">rakip</option>
                         </select>
@@ -203,5 +215,16 @@
         <span wire:loading wire:target="save" class="fd-hint">Kaydediliyor…</span>
         <span class="fd-hint" style="flex:1 1 220px">Fotoğrafa bak; renk seç, noktalara tıklayarak taşları doğru say. Bar/Sıra/Zar/Küp'ü düzelt → Kaydet.</span>
     </div>
+
+    {{-- Fotoğraf büyüteç (lightbox): tıkla → büyük aç, zarı gör; arkaplan/X/Esc ile kapat --}}
+    <template x-teleport="body">
+        <div x-show="zoom" x-cloak @click="zoom=false" @keydown.escape.window="zoom=false"
+            style="position:fixed;inset:0;z-index:9999;background:rgba(2,6,23,.92);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out"
+            x-transition.opacity>
+            <img src="{{ $photoUrl }}" alt="" style="max-width:96vw;max-height:92vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.6)"/>
+            <button type="button" @click.stop="zoom=false" aria-label="Kapat"
+                style="position:fixed;top:18px;right:22px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:22px;cursor:pointer;line-height:1">✕</button>
+        </div>
+    </template>
 </div>
 </x-filament-panels::page>
