@@ -66,6 +66,7 @@ class AdminPhotoAnalysisTest extends TestCase
         $edited['points'][5] = 2;   // sen 2 taş
         $edited['points'][12] = -3; // rakip 3 taş
         $edited['turn'] = 'black';
+        $edited['bar'] = ['white' => 1, 'black' => 2]; // kırık taşlar bara
         $edited['cube'] = ['value' => 2, 'owner' => 'white'];
 
         Livewire::actingAs($this->admin())->test(DuzeltPhotoAnalysis::class, ['record' => $pa->id])
@@ -76,6 +77,7 @@ class AdminPhotoAnalysisTest extends TestCase
         $this->assertSame(2, $pa->ground_truth['points'][5]);
         $this->assertSame(-3, $pa->ground_truth['points'][12]);
         $this->assertSame('black', $pa->ground_truth['turn']);
+        $this->assertSame(['white' => 1, 'black' => 2], $pa->ground_truth['bar']);
         $this->assertSame(['value' => 2, 'owner' => 'white'], $pa->ground_truth['cube']);
     }
 

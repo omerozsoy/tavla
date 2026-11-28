@@ -32,11 +32,9 @@
     .fd-chip { height:36px; padding:0 14px; border-radius:9px; border:1px solid var(--field-br); background:var(--field);
                color:var(--field-ink); font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:.12s; }
     .fd-chip:hover { border-color:var(--muted); }
-    .fd-sw { width:13px; height:13px; border-radius:50%; display:inline-block; box-shadow:0 0 0 1px rgba(0,0,0,.25) inset; }
-    .fd-sw.me { background:#f3eee1; } .fd-sw.opp { background:#b5423a; }
-    .fd-chip.on.me { background:#f3eee1; color:#1b2730; border-color:#f3eee1; box-shadow:0 2px 8px rgba(0,0,0,.18); }
-    .fd-chip.on.opp { background:#b5423a; color:#fff; border-color:#b5423a; box-shadow:0 2px 8px rgba(181,66,58,.35); }
-    .fd-chip.on.era { background:#64748b; color:#fff; border-color:#64748b; }
+    .fd-sw { width:14px; height:14px; border-radius:50%; display:inline-block; box-shadow:0 0 0 1px rgba(0,0,0,.4) inset; }
+    .fd-chip.on { outline:2px solid #3b82f6; outline-offset:1px; border-color:#3b82f6; background:var(--chip); }
+    .fd-chip.on.era { background:#64748b; color:#fff; border-color:#64748b; outline-color:#64748b; }
     .fd-chip.danger { color:#dc2626; border-color:#ef444455; }
     .fd-hint { font-size:12px; color:var(--muted); }
     /* stepper */
@@ -76,6 +74,9 @@
             this.sync()
         },
         fill(i) { const n = this.pos.points?.[i] || 0; return (n > 0) !== this.mineDark ? '#f3eee1' : '#b5423a' },
+        // Fırça/swatch renkleri board ile AYNI (mineDark'a göre): araç çubuğu gerçek konan rengi gösterir.
+        meColor() { return this.mineDark ? '#b5423a' : '#f3eee1' },
+        oppColor() { return this.mineDark ? '#f3eee1' : '#b5423a' },
         clearBoard() { this.pos.points = Array(24).fill(0); this.pos.bar = { white: 0, black: 0 }; this.sync() },
         barV(k) { return this.pos.bar?.[k] || 0 },
         bar(k, d) { if (!this.pos.bar) this.pos.bar = { white: 0, black: 0 }; this.pos.bar[k] = Math.max(0, Math.min(15, this.barV(k) + d)); this.sync() },
@@ -94,8 +95,8 @@
     {{-- Fırça --}}
     <div class="fd-card fd-row">
         <span class="fd-label" style="margin-right:2px">Taş</span>
-        <button type="button" class="fd-chip me" :class="brush==='me' && 'on'" @click="brush='me'"><span class="fd-sw me"></span> Sen</button>
-        <button type="button" class="fd-chip opp" :class="brush==='opp' && 'on'" @click="brush='opp'"><span class="fd-sw opp"></span> Rakip</button>
+        <button type="button" class="fd-chip" :class="brush==='me' && 'on'" @click="brush='me'"><span class="fd-sw" :style="{background: meColor()}"></span> Sen</button>
+        <button type="button" class="fd-chip" :class="brush==='opp' && 'on'" @click="brush='opp'"><span class="fd-sw" :style="{background: oppColor()}"></span> Rakip</button>
         <button type="button" class="fd-chip era" :class="brush==='erase' && 'on'" @click="brush='erase'">✕ Taş Sil</button>
         <span style="width:1px;height:22px;background:var(--br)"></span>
         <button type="button" class="fd-chip danger" @click="clearBoard()">🗑 Tahtayı Boşalt</button>
@@ -144,6 +145,22 @@
                             fill="transparent" style="cursor:pointer" @click="paint({{ $idx }})"/>
                     @endfor
                 @endforeach
+                @php
+                    $barCx = $W / 2; $rBar = $barW / 2 - 1; $dyBar = 2 * $rBar - 2;
+                    $barRakipCy = fn ($k) => $m + $rBar + $k * $dyBar;          // Rakip: üst-orta istif
+                    $barSenCy = fn ($k) => $H - $m - $rBar - $k * $dyBar;       // Sen: alt-orta istif
+                @endphp
+                {{-- Bar (kırık taş) — Rakip üst-orta, Sen alt-orta --}}
+                @for ($k = 0; $k < 5; $k++)
+                    <circle cx="{{ $barCx }}" cy="{{ $barRakipCy($k) }}" r="{{ $rBar }}"
+                        x-show="barV('black') > {{ $k }}" :fill="oppColor()" stroke="rgba(0,0,0,.4)" stroke-width="1" style="pointer-events:none"/>
+                    <circle cx="{{ $barCx }}" cy="{{ $barSenCy($k) }}" r="{{ $rBar }}"
+                        x-show="barV('white') > {{ $k }}" :fill="meColor()" stroke="rgba(0,0,0,.4)" stroke-width="1" style="pointer-events:none"/>
+                @endfor
+                <text x="{{ $barCx }}" y="{{ $barRakipCy(4) + 3.5 }}" font-size="9" text-anchor="middle" font-weight="700"
+                    x-show="barV('black') > 5" x-text="barV('black')" :fill="mineDark ? '#333' : '#fff'" style="pointer-events:none"/>
+                <text x="{{ $barCx }}" y="{{ $barSenCy(4) + 3.5 }}" font-size="9" text-anchor="middle" font-weight="700"
+                    x-show="barV('white') > 5" x-text="barV('white')" :fill="mineDark ? '#fff' : '#333'" style="pointer-events:none"/>
             </svg>
 
             {{-- Bar / Sıra / Zar / Küp --}}
@@ -151,13 +168,13 @@
                 <div class="fd-ctl">
                     <span class="fd-label">Bar (kırık taş)</span>
                     <div class="fd-row" style="gap:8px">
-                        <span class="fd-sw me"></span><span style="font-size:13px">Sen</span>
+                        <span class="fd-sw" :style="{background: meColor()}"></span><span style="font-size:13px">Sen</span>
                         <button type="button" class="fd-step" @click="bar('white',-1)">−</button>
                         <span class="fd-num" x-text="barV('white')"></span>
                         <button type="button" class="fd-step" @click="bar('white',1)">+</button>
                     </div>
                     <div class="fd-row" style="gap:8px">
-                        <span class="fd-sw opp"></span><span style="font-size:13px">Rakip</span>
+                        <span class="fd-sw" :style="{background: oppColor()}"></span><span style="font-size:13px">Rakip</span>
                         <button type="button" class="fd-step" @click="bar('black',-1)">−</button>
                         <span class="fd-num" x-text="barV('black')"></span>
                         <button type="button" class="fd-step" @click="bar('black',1)">+</button>
@@ -167,8 +184,8 @@
                 <div class="fd-ctl">
                     <span class="fd-label">Sıra</span>
                     <div class="fd-row">
-                        <button type="button" class="fd-chip" :class="(pos.turn||'white')==='white' && 'on me'" @click="setTurn('white')"><span class="fd-sw me"></span> Sen</button>
-                        <button type="button" class="fd-chip" :class="pos.turn==='black' && 'on opp'" @click="setTurn('black')"><span class="fd-sw opp"></span> Rakip</button>
+                        <button type="button" class="fd-chip" :class="(pos.turn||'white')==='white' && 'on'" @click="setTurn('white')"><span class="fd-sw" :style="{background: meColor()}"></span> Sen</button>
+                        <button type="button" class="fd-chip" :class="pos.turn==='black' && 'on'" @click="setTurn('black')"><span class="fd-sw" :style="{background: oppColor()}"></span> Rakip</button>
                     </div>
                 </div>
 
