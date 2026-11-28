@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\MatchResult;
 use App\Models\User;
+use App\Models\UserWxpTransaction;
 use App\Support\StatsConfig;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -174,9 +175,16 @@ class PlayerStatisticsService
      */
     private function wxpBlock(User $user): array
     {
-        // Yapay zeka (match_type='ai') maclari HARIC: G/M/kazanma% yalniz gercek maclardan.
-        $wins = (int) MatchResult::where('user_id', $user->id)->real()->where('won', true)->count();
-        $losses = (int) MatchResult::where('user_id', $user->id)->real()->where('won', false)->count();
+        // G/M = WXP ile AYNI kume (kullanici talebi): yalniz dereceli (puanli) maclar; arkadas/ozel
+        // maclar bu kartta sayilmaz. Boylece "4 galibiyet ama 2 WXP" tutarsizligi kalkar.
+        //  - G (wins): WXP ledger satir sayisi -> WXP veren galibiyetlerle BIREBIR (toplam WXP ayni kumeden).
+        //  - M (losses): puanli (rated=true) + gercek kayiplar (arkadas maci rated=false -> haric).
+        // ponytail: rated duelloyu da kapsar (duello WXP VERMEZ ama rating verir) -> duello oynayanda
+        //   M, G'den biraz genis kalabilir. Nadir; gerekirse duelloyu WXP'ye dahil et ya da oda-moduyla ele.
+        $wins = (int) UserWxpTransaction::where('user_id', $user->id)
+            ->where('source', WxpService::SOURCE_MATCH_WIN)->count();
+        $losses = (int) MatchResult::where('user_id', $user->id)->real()
+            ->where('won', false)->where('rated', true)->count();
         $total = $wins + $losses;
         $winRate = $total > 0 ? round($wins / $total * 100, 2) : 0.0;
 

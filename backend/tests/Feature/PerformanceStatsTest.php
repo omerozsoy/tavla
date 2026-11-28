@@ -249,6 +249,30 @@ class PerformanceStatsTest extends TestCase
             ->assertJsonPath('wxp.win_rate', 66.67);
     }
 
+    // WXP karti G/M = WXP ile AYNI kume: arkadas/ozel (rated=false, WXP verilmemis) galibiyet
+    // G'ye, arkadas kaybi M'ye GIRMEZ. Boylece "4 galibiyet ama 2 WXP" tutarsizligi olmaz.
+    public function test_wxp_card_counts_only_ranked_matches(): void
+    {
+        $u = $this->makeUser();
+        $wxp = app(WxpService::class);
+
+        // Dereceli galibiyet (WXP verildi) -> G'ye sayilir
+        $wxp->awardForMatchResult($this->mr($u, true, 5, 'match', null));
+        // Arkadas galibiyeti: WXP verilmedi + rated=false -> G'ye GIRMEZ
+        $this->mr($u, true, 5, 'match', null)->forceFill(['rated' => false])->saveQuietly();
+        // Dereceli kayip (rated=true) -> M'ye sayilir
+        $this->mr($u, false, 5, 'match', null);
+        // Arkadas kaybi (rated=false) -> M'ye GIRMEZ
+        $this->mr($u, false, 5, 'match', null)->forceFill(['rated' => false])->saveQuietly();
+
+        Sanctum::actingAs($u->fresh());
+        $this->getJson('/api/me/performance-stats?period=all')->assertOk()
+            ->assertJsonPath('wxp.wins', 1)          // yalniz dereceli galibiyet (WXP veren)
+            ->assertJsonPath('wxp.losses', 1)        // yalniz dereceli kayip
+            ->assertJsonPath('wxp.total_matches', 2) // arkadas maclari dusuldu
+            ->assertJsonPath('wxp.total', 5);        // WXP toplami degismez (ledger)
+    }
+
     // XG §13: lifetime PR HAVUZLANIR (maç PR ortalamasi DEGIL). Cok-kararli maç agir basar.
     public function test_pooled_pr_pools_raw_totals_not_match_average(): void
     {
