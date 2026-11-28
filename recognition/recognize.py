@@ -18,6 +18,11 @@ import orient_model as OM  # Faz 1: yonelim siniflandiricisi (orient_model.json 
 MODELS = os.environ.get("RECOG_MODELS_DIR", "tensor-models")
 Wd, Hd = 1000, 800
 GAP = 40                 # ayni satirda bu kadar yakin taslar = ayni hane
+BAR_STRIP = 0.05 * Wd    # merkez divider yari-genisligi: |x-merkez|< bu = bar'da kirik tas (hane degil).
+                         # Ic hane (point-0) merkezi ~0.069*Wd'de -> serit guvenli ayirir (fit'ten ONCE).
+                         # ponytail: sabit merkez=Wd/2 varsayimi; ~50px'den fazla kacik bar tasini serit
+                         # kacirir, _fit_lattice'teki round(u)<0 emniyet agi yedekler. Gerekirse fit'li
+                         # barcenter ile 2.-pas yeniden siniflandir.
 COLOR_S_THRESH = 130     # HSV doygunluk: < beyaz, >= kirmizi (ampirik, 15/15 degismeziyle dogrulandi)
 WHITE_COLOR = "W"        # hangi tas-rengi "beyaz" oyuncu (konvansiyon)
 _LOCK = threading.Lock()
@@ -231,10 +236,13 @@ def _fit_lattice(pts):
     fit = float(np.sqrt(((u - jc) ** 2)[i].mean()))   # RMS kalinti (hane biriminde): warp kalitesi olcusu
     slots = []
     for p in pts:
-        if p["x"] < bc:
-            slots.append((p["row"], "L", int(np.clip(round((bc - k * s - p["x"]) / s), 0, 5))))
-        else:
-            slots.append((p["row"], "R", int(np.clip(round((p["x"] - bc - k * s) / s), 0, 5))))
+        side = "L" if p["x"] < bc else "R"
+        u = (bc - k * s - p["x"]) / s if side == "L" else (p["x"] - bc - k * s) / s
+        j = int(round(u))
+        # j < 0: tas ilk haneden MERKEZE dogru, bar boslugunda = KIRIK tas (bar'da). Kullanici kurali:
+        # hicbir haneye yerlesmez, bar'da kalir. Aksi halde 0..5 haneye clamp. (Fit tek-pas; bar tasi
+        # merkez prior'u ile cok az sapar. ponytail: ayri-pas refit gerekmedi, 1-2 bar tasi fit'i bozmaz.)
+        slots.append((p["row"], "BAR", 0) if j < 0 else (p["row"], side, min(j, 5)))
     return slots, bc, s, k, fit
 
 
@@ -262,10 +270,20 @@ def _recognize_warp(warp, board_conf, flip):
     cols = _colors([_feat(warp, b) for b in checkers])
     items = [((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, cols[i], b) for i, b in enumerate(checkers)]
     pts = _cluster(items)
-    slots, barcenter, spacing, k, fit = _fit_lattice(pts)
+    # Bar (kirik tas) merkez divider seridinde durur, hicbir haneye ait degil. Izgara fit'inden ONCE ayir:
+    # bar tasi fit'e girerse izgarayi kendini point-0 sanacak sekilde CERPER (bc/k kayar, test kanitladi).
+    bar_pts = [p for p in pts if abs(p["x"] - Wd / 2) < BAR_STRIP]
+    board_pts = [p for p in pts if abs(p["x"] - Wd / 2) >= BAR_STRIP]
+    slots, barcenter, spacing, k, fit = _fit_lattice(board_pts)
 
     points = [0] * 24
-    for p, sl in zip(pts, slots):
+    bar = {"W": 0, "R": 0}                         # bar'daki kirik taslar (renk-bazli, yonelim ONCESI)
+    for p in bar_pts:
+        bar[p["color"]] += p["count"]
+    for p, sl in zip(board_pts, slots):
+        if sl[1] == "BAR":                         # emniyet agi: serit disi ama bar boslugunda kalan tas
+            bar[p["color"]] += p["count"]
+            continue
         n = _slot_number(*sl)
         if flip:
             # flip = EVLER SOLDA (kullanici secimi): sol-sag ayna. Fotonun sol-alt kosesi ceken icin
@@ -273,20 +291,22 @@ def _recognize_warp(warp, board_conf, flip):
             n = 13 - n if n <= 12 else 37 - n
         points[n - 1] += (1 if p["color"] == WHITE_COLOR else -1) * p["count"]
 
-    white = sum(v for v in points if v > 0); black = -sum(v for v in points if v < 0)
-    placed = sum(abs(v) for v in points)
-    mixed = sum(1 for p in pts if p["mixed"])
-    collisions = len(slots) - len(set(slots))
+    white = sum(v for v in points if v > 0) + bar["W"]; black = -sum(v for v in points if v < 0) + bar["R"]
+    placed = sum(abs(v) for v in points) + bar["W"] + bar["R"]
+    mixed = sum(1 for p in board_pts if p["mixed"])
+    board_slots = [sl for sl in slots if sl[1] != "BAR"]
+    collisions = len(board_slots) - len(set(board_slots))
     # oz-denetim degismezleri (gnubg'ye coP gondermemek icin trust-boundary guard'i):
     #   board_conf>=0.5 (gercek tahta; 0.98 iyi vs 0.16/0.001 kadraj-disi), placed==checkers
     #   (hic iptal/cakisma yok), renk<=15, karisik-hane=0, tas 10..30 (bos/sahte degil)
     valid = (board_conf >= 0.5 and placed == len(checkers) and collisions == 0
              and 10 <= len(checkers) <= 30 and white <= 15 and black <= 15 and mixed == 0)
     return {
-        "points": points, "dice_boxes": dice, "checker_boxes": checkers,
+        "points": points, "bar": bar, "dice_boxes": dice, "checker_boxes": checkers,
         "debug": {
             "board_conf": round(board_conf, 3),
             "checkers": len(checkers), "placed": placed, "white": white, "black": black,
+            "bar_w": bar["W"], "bar_r": bar["R"],
             "mixed_points": mixed, "collisions": collisions, "dice_detected": len(dice),
             "barcenter": round(barcenter), "spacing": round(spacing, 1), "bar_k": round(k, 2),
             "fit": round(fit, 3), "valid": valid, "raw_points": list(points),  # yonelim ONCESI (acik=+); harness okur
@@ -359,6 +379,10 @@ def recognize(bgr, flip=False):
             cube_pos = {"value": 1, "owner": None}
 
         points, photographer, margin = _orient(res["points"])
+        # bar (kirik tas) renk -> oyuncu: yonelim 'dark' ise ceken R oynar -> gnubg-white(pozitif)=R.
+        barc = res["bar"]
+        bar_pos = ({"white": barc["R"], "black": barc["W"]} if photographer == "dark"
+                   else {"white": barc["W"], "black": barc["R"]})
         # SIRA (kullanici kurali): zar bar'in SAGINDA -> fotografi ceken atacak; SOLUNDA -> rakip.
         # Zar yok / esit -> fotografi ceken (en olasi: kendi hamlesini soruyor).
         turn = "black" if left > right else "white"
@@ -370,7 +394,7 @@ def recognize(bgr, flip=False):
                     "dice_side": "left" if left > right else ("right" if right else "none")})
         return {
             "ok": True,
-            "position": {"points": points, "bar": {"white": 0, "black": 0},
+            "position": {"points": points, "bar": bar_pos,
                          "turn": turn, "dice": faces, "cube": cube_pos, "cube_offer": offer,
                          "recognized": recognized},
             "debug": dbg,
