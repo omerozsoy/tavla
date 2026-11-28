@@ -25196,6 +25196,21 @@ body:has(.spectate-view) .app.lobby {
 body.has-bottom-nav {
   padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
 }
+/* AMA .app height:100dvh + overflow:hidden -> gerçek scroller .main (flex:1; overflow-y:auto);
+   body padding'i .main İÇERİĞİNE etki etmez, son öğeler fixed çubuğun ALTINDA kalıyordu
+   ("bazı sayfalarda içerik kapanıyor"). Kök fix: alt boşluğu gerçek scroll container'a ver.
+   Ana sayfa (sayfa kapalı): içerik doğrudan .main'de kayar -> alt rezerv ekle.
+   game-scene hariç: alt menü maçta yok + board yüksekliğe duyarlı.
+   has-page hariç: menü sayfasında .main padding:0; rezerv iç içeriğe (aşağıda) verilir ki
+   page-host'un kendi 56px alt padding'iyle ÇİFTE boşluk olmasın. */
+body.has-bottom-nav .main:not(.game-scene):not(.has-page) {
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+}
+/* Menü sayfaları (page-host): iç içeriğin 56px taban alt padding'i çubuğu karşılar ama
+   çentikli cihazda (safe-area) eksik kalıp son öğeyi örtüyordu -> güvenli-alanı da ekle. */
+body.has-bottom-nav .page-host .register-overlay.page > *:not(.register-overlay) {
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+}
 /* Alt menü aktifken (mobil) üst hamburger KALDIRILDI -> hesap barında hamburger payı gereksiz.
    Logo solda, kontroller sağda, normal boşlukla (sağda 52-60px boşluk kalmasın). (0,3,0 özgüllük
    -> ≤430/≤1080 padding kurallarını yener.) */
