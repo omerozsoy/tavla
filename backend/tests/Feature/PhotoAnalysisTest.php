@@ -88,6 +88,27 @@ class PhotoAnalysisTest extends TestCase
         $this->assertSame(2, $pa->refresh()->position['cube']['value']);
     }
 
+    public function test_settings_dice_override_reaches_gnubg_and_persists(): void
+    {
+        $user = User::factory()->create();
+        $pa = $this->donePhoto($user);
+
+        $gnubg = $this->mock(GnuBgClient::class);
+        $gnubg->shouldReceive('analyze')->twice()
+            ->withArgs(fn (array $p) => $p['dice'] === [5, 2])
+            ->andReturn(['result' => ['hint' => [['move' => '24/19 13/11']]]]);
+
+        // kullanici zari 5-2 olarak duzeltir
+        $this->actingAs($user)->postJson("/api/photo-analysis/{$pa->id}/settings", [
+            'cube_value' => 1, 'dice' => [5, 2],
+        ])->assertOk()->assertJsonPath('position.dice.0', 5)->assertJsonPath('position.dice.1', 2);
+
+        // kalici: sonraki (zarsiz) kup/mac degisimi de duzeltilmis zari kullanir
+        $this->actingAs($user)->postJson("/api/photo-analysis/{$pa->id}/settings", [
+            'cube_value' => 1,
+        ])->assertOk()->assertJsonPath('position.dice.0', 5);
+    }
+
     public function test_settings_match_score_and_crawford_reach_gnubg(): void
     {
         $user = User::factory()->create();

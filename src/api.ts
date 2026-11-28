@@ -330,6 +330,8 @@ export interface PhotoSettings {
   score_me: number
   score_opp: number
   crawford: boolean
+  /** kullanici zar okumasini duzeltir ([] veya [d1,d2]); gonderilmezse tanimanin okudugu kalir */
+  dice?: number[]
 }
 export async function setPhotoAnalysisSettings(id: number, s: PhotoSettings): Promise<PhotoAnalysisResult> {
   return req(`/photo-analysis/${id}/settings`, { method: 'POST', body: JSON.stringify(s) })

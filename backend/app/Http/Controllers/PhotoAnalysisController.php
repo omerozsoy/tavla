@@ -63,6 +63,9 @@ class PhotoAnalysisController extends Controller
             'score_opp' => ['sometimes', 'integer', 'min:0', 'max:24'],
             'crawford' => ['sometimes', 'boolean'],
             'cube_offer' => ['nullable', Rule::in(['white', 'black'])],
+            // Kullanici zar okumasini duzeltir (tanima yanlis okuyabilir) -> [] veya [d1,d2]
+            'dice' => ['sometimes', 'array', 'max:2'],
+            'dice.*' => ['integer', 'min:1', 'max:6'],
         ]);
         $value = (int) $data['cube_value'];
         $owner = $data['cube_owner'] ?? null;
@@ -89,6 +92,13 @@ class PhotoAnalysisController extends Controller
         $position = $photoAnalysis->position;
         // tanimanin buldugu sira/zar (eski kayitlarda 'recognized' yok -> mevcut deger)
         $recognized = $position['recognized'] ?? ['turn' => $position['turn'] ?? 'white', 'dice' => $position['dice'] ?? []];
+        // Kullanici zar duzeltti -> recognized'a yaz (sonraki kup/mac degisimlerinde de kalici olsun).
+        if ($request->has('dice')) {
+            $recognized['dice'] = array_values(array_filter(
+                $data['dice'] ?? [],
+                fn ($d) => $d >= 1 && $d <= 6
+            ));
+        }
         $position['recognized'] = $recognized;
         if ($offerBy !== null) {
             $pre = max(1, intdiv($value, 2));

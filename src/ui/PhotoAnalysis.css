@@ -294,6 +294,10 @@
 .photo-board-stage .pt-numbers {
   font-size: calc(var(--checker) * 0.5);
   font-variant-numeric: tabular-nums;
+  /* global .pt-numbers rengi beyazımsı (koyu oyun tahtası için); foto sayfası açık zemin ->
+     okunmaz -> koyu mürekkebe çevir (article-board deseni). */
+  color: var(--muted);
+  font-weight: 600;
 }
 /* Sonuc board'u SALT-GORSEL -> iki parmak pinch-zoom serbest. Oyun board'u suruklemek icin
    .checker/.cube'a touch-action:none koyar; burada etkilesim YOK -> manipulation ile ezilir
@@ -308,6 +312,19 @@
   font-size: 0.95rem;
   opacity: 0.8;
   margin-bottom: 6px;
+}
+.photo-dice.busy {
+  opacity: 0.5;
+}
+.photo-dice-sel {
+  padding: 2px 4px;
+  margin: 0 2px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
 }
 .photo-best {
   font-size: 1.25rem;

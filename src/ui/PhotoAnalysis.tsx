@@ -306,7 +306,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
 
   // Ayarlari (kup + mac) sunucuya gonder -> ayni konum yeniden analiz. Kup modu: ortada (deger 1) /
   // sende / rakipte (deger >= 2) / sen cektin / sana cekildi (teklif edilen deger >= 2).
-  function settingsFor(r: PhotoAnalysisResult, m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }) {
+  function settingsFor(r: PhotoAnalysisResult, m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }, diceOver?: number[]) {
     const cur = cubeModeOf(r.position)
     const mode = cubeOver?.mode ?? cur.mode
     let v = cubeOver?.value ?? cur.value
@@ -325,15 +325,17 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
       score_me: n.me,
       score_opp: n.opp,
       crawford: n.crawford,
+      ...(diceOver ? { dice: diceOver } : {}),
     }
   }
 
-  async function applySettings(m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }) {
+  async function applySettings(m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }, diceOver?: number[]) {
     if (!result || cubeBusy) return
     const fromCube = cubeOver !== undefined
+    const fromDice = diceOver !== undefined
     const n = normMatch(m)
     setMatch(n)
-    if (!fromCube) {
+    if (!fromCube && !fromDice) {
       try {
         localStorage.setItem(MATCH_KEY, JSON.stringify(n))
       } catch {
@@ -342,9 +344,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     }
     setCubeBusy(true)
     try {
-      setResult(await setPhotoAnalysisSettings(result.id, settingsFor(result, n, cubeOver)))
+      setResult(await setPhotoAnalysisSettings(result.id, settingsFor(result, n, cubeOver, diceOver)))
       if (fromCube) setCubeChosen(true)
-      else setMatchChosen(true)
+      else if (!fromDice) setMatchChosen(true)
     } catch (e) {
       notify.error((e as { message?: string })?.message || t('photo.failed'))
     } finally {
@@ -354,6 +356,14 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
 
   function changeCube(over: { mode?: CubeMode; value?: number }) {
     void applySettings(match, over)
+  }
+
+  // Kullanici okunan zari duzeltir: tek haneyi degistir -> yeni [d1,d2] ile yeniden analiz.
+  function changeDie(idx: 0 | 1, val: number) {
+    const cur = (result!.position?.dice ?? []).filter((d) => d >= 1 && d <= 6)
+    const next = [cur[0] ?? val, cur[1] ?? val] as number[]
+    next[idx] = val
+    void applySettings(match, undefined, next.filter((d) => d >= 1 && d <= 6))
   }
 
   // "Hatali tarama bildir": kaydi admin incelemesine isaretler. Admin resme bakip dogru konumu elle
@@ -820,8 +830,31 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   </select>
                 </div>
               </div>
-              <div className="photo-dice">
-                {t('photo.dice')}: <b>{result!.position?.dice?.join('-') || '—'}</b>
+              <div className={`photo-dice${cubeBusy ? ' busy' : ''}`}>
+                {t('photo.dice')}:{' '}
+                {offer ? (
+                  // Cekilmis kup: zar yok (kup karari) -> okunan degeri degistirmek anlamsiz
+                  <b>—</b>
+                ) : (
+                  (() => {
+                    const cur = (result!.position?.dice ?? []).filter((d) => d >= 1 && d <= 6)
+                    return ([0, 1] as const).map((idx) => (
+                      <select
+                        key={idx}
+                        className="photo-dice-sel"
+                        value={cur[idx] ?? 0}
+                        disabled={cubeBusy}
+                        onChange={(e) => changeDie(idx, Number(e.target.value))}
+                      >
+                        {[1, 2, 3, 4, 5, 6].map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    ))
+                  })()
+                )}
                 {' · '}
                 {/* tanima kurali: zar bar'in saginda -> fotografi ceken, solunda -> rakip */}
                 <b>
