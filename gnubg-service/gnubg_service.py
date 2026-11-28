@@ -1113,12 +1113,18 @@ def _review_cache_put(key, val):
         pass
 
 
-def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, plies, score=None):
+def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, plies, score=None,
+                     cube_val=1, cube_owner=None):
     """Tek bir taş-hamlesi kararını analiz et -> LogEntry-uyumlu dict (frontend MatchReport için).
     pos = analiz ÖNCESİ konum; played_steps = gerçekten oynanan adımlar. hint (gnubg) ile
     aday listesi + oynanan adayın kaybı hesaplanır (PR çekirdeğiyle aynı yol).
     score: {white,black} oyun-basi maç skoru (match-play checker equity için) — None ise 0–0
-    (eski davranış). 0-0 varsaymak oyun 2+'da checker PR'i de bozar (match-play equity skora bağlı)."""
+    (eski davranış). 0-0 varsaymak oyun 2+'da checker PR'i de bozar (match-play equity skora bağlı).
+    cube_val/cube_owner: o anki küp değeri + sahibi. KRİTİK (bkz player raporu 2026-11-28): eskiden
+    küp gnubgid'e GEÇMİYORDU -> gnubg checker equity'sini DAİMA küp=1 (merkez) varsayarak hesaplıyordu.
+    "Ölü küp" skorlarında (ör. 3-puan maç, 0-1, küp 4: kazanan maçı alır) mars/beşmarsın maç değeri
+    SIFIRdır; ama küp=1 varsayımıyla mars önemli sayılıp equity kaybı -> PR SİSTEMATİK ŞİŞİYORDU. Küpü
+    geçmek gnubg'nin match-equity'sini doğru kılar (/analyze canlı yolu zaten küpü geçiriyordu)."""
     entry = {
         "player": turn,
         "pos": {"points": list(pos_points), "bar": dict(bar), "off": dict(off), "turn": turn},
@@ -1128,7 +1134,8 @@ def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, 
     }
     try:
         gid = structured_to_gnubgid({"points": pos_points, "bar": bar, "turn": turn,
-                                     "dice": dice, "matchLength": match_len, "score": score or {}})
+                                     "dice": dice, "matchLength": match_len, "score": score or {},
+                                     "cube": {"value": cube_val, "owner": cube_owner}})
         ckey = ("m", gid, plies)
         cand = _review_cache_get(ckey)
         if cand is None:
@@ -1566,7 +1573,8 @@ def _reviewmatch(mat_text, plies=2, progress_key=None):
                     break  # bozuk .mat -> bu oyunu durdur (gecerli kisim korunur)
                 # Analiz: karar ONCESI pozisyon
                 e = _review_decision(pos["points"], pos["bar"], pos["off"], color, dice,
-                                     steps, match_len, plies, score=gscore)
+                                     steps, match_len, plies, score=gscore,
+                                     cube_val=cube_val, cube_owner=cube_owner)
                 if isinstance(e.get("pos"), dict):  # tahtada doğru küp görünsün (double sonrası)
                     e["pos"]["cube"] = {"value": cube_val, "owner": cube_owner}
                 e["seq"] = len(log)
