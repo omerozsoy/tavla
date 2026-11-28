@@ -11,7 +11,6 @@ import { ToastProvider } from './ui/Toast.tsx'
 import { TopRanksProvider } from './topRanks.tsx'
 import { RolesProvider } from './roles.tsx'
 import { RanksProvider } from './rankProvider.tsx'
-import RankAnnounce from './ui/RankAnnounce.tsx'
 import { TeamTagsProvider } from './teamTags.tsx'
 import { PresenceProvider } from './presence.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
@@ -80,7 +79,6 @@ createRoot(document.getElementById('root')!, {
             <TeamTagsProvider>
             <PresenceProvider>
             <RanksProvider>
-              <RankAnnounce />
               <App />
               {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
               <GatePrompt />
