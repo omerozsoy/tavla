@@ -1833,6 +1833,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'photo.settingsTitle': 'Analiz ayarları',
   'photo.pick': 'Tahtanın fotoğrafını çek',
   'photo.pickHint': 'Yukarıdan, yatay çek; tahtanın tamamı ve etrafında biraz boşluk görünsün',
+  'photo.dropHint': 'Dosyayı buraya sürükle ya da seçmek için tıkla; tahtanın tamamı ve etrafında biraz boşluk görünsün',
   'photo.camOpen': 'Kamerayı Aç',
   'photo.retake': 'Yeniden Çek',
   'photo.gallery': 'Galeriden Seç',

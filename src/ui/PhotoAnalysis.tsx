@@ -176,6 +176,22 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   // web'de kamera yok). Galeri/dosya butonu her iki ortamda da ayrica durur.
   const pickArea = () => (IS_NATIVE_APP ? openCamera() : fileRef.current?.click())
 
+  // Web: resim alanina dosya surukle-birak (app'te alakasiz — kamera). Sadece gorsel dosya kabul.
+  const [dragOver, setDragOver] = useState(false)
+  function onDropFile(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    const f = e.dataTransfer.files?.[0]
+    if (f && f.type.startsWith('image/')) pick(f)
+  }
+  function onDragOverFile(e: React.DragEvent) {
+    e.preventDefault()
+    if (!dragOver) setDragOver(true)
+  }
+  const dropHandlers = IS_NATIVE_APP
+    ? {}
+    : { onDragOver: onDragOverFile, onDragLeave: () => setDragOver(false), onDrop: onDropFile }
+
   // Telefon fotograflari buyuk (10MB+) + EXIF donuk olabilir -> upload once kucult + EXIF duzelt.
   async function downscale(f: File, max = 1600, quality = 0.85): Promise<Blob> {
     const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' })
@@ -376,12 +392,17 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
         />
         {preview ? (
           // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-          <img src={preview} className="photo-preview" alt="" onClick={pickArea} />
+          <img src={preview} className="photo-preview" alt="" onClick={pickArea} {...dropHandlers} />
         ) : (
-          <button className="photo-drop" onClick={pickArea} type="button">
+          <button
+            className={`photo-drop${dragOver ? ' drag' : ''}`}
+            onClick={pickArea}
+            type="button"
+            {...dropHandlers}
+          >
             <Icon name="camera" size={40} />
             <div className="photo-drop-title">{IS_NATIVE_APP ? t('photo.pick') : t('photo.gallery')}</div>
-            <div className="photo-drop-hint">{t('photo.pickHint')}</div>
+            <div className="photo-drop-hint">{IS_NATIVE_APP ? t('photo.pickHint') : t('photo.dropHint')}</div>
           </button>
         )}
 

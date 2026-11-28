@@ -83,6 +83,12 @@
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
+/* Web surukle-birak: dosya alanin uzerindeyken belirgin accent vurgu. */
+.photo-drop.drag {
+  border-color: var(--accent);
+  border-style: solid;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
 .photo-drop svg {
   color: var(--accent);
 }

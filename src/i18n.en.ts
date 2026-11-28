@@ -1776,6 +1776,7 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'photo.settingsTitle': 'Analysis settings',
   'photo.pick': 'Take a photo of the board',
   'photo.pickHint': 'Shoot from above in landscape; keep the whole board visible with a little margin',
+  'photo.dropHint': 'Drag a file here or click to pick; keep the whole board visible with a little margin',
   'photo.camOpen': 'Open Camera',
   'photo.retake': 'Retake',
   'photo.gallery': 'Choose from Gallery',
