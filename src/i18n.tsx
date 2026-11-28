@@ -2157,6 +2157,10 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'wxp.m': 'M',
   'wxp.winRate': 'Toplam Kaz. %',
   'wxp.legend': 'Jeton +1 • 1S +1 • 3S +3 • 5S +5 • 7S +7 WXP',
+  // EP · Tecrübe kartı: rakamın nasıl hesaplandığı (backend RankProgress ile birebir)
+  'ep.calc':
+    'EP = ciddi maçlarının (gerçek, dereceli, analiz edilmiş) uzunluklarının toplamıdır — kazansan da kaybetsen de her maç hedef puanı kadar EP ekler. Jeton, 1 ve 3 puanlık maçlar sayılmaz.',
+  'ep.legend': '5S +5 • 7S +7 EP (kazan/kaybet fark etmez)',
   'dice.title': 'Zar Ortalamaları',
   'dice.sub': 'Attığın zarların yoğunluğu (toplam %100)',
   'dice.openingWin': 'Açılış Kazanma:',

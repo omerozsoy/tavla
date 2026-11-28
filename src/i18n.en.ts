@@ -2096,6 +2096,10 @@ Only genuinely played league matches affect your TavlaTV rating; walkovers and b
   'wxp.m': 'L',
   'wxp.winRate': 'Total Win %',
   'wxp.legend': 'Coin +1 • 1pt +1 • 3pt +3 • 5pt +5 • 7pt +7 WXP',
+  // EP · Experience card: how the number is computed (mirrors backend RankProgress)
+  'ep.calc':
+    'EP is the sum of the lengths of your serious matches (real, ranked, analyzed) — every match adds EP equal to its target points whether you win or lose. Coin, 1- and 3-point matches do not count.',
+  'ep.legend': '5pt +5 • 7pt +7 EP (win or lose)',
   'dice.title': 'Dice Averages',
   'dice.sub': 'How often you rolled each (totals 100%)',
   'dice.openingWin': 'Opening Win:',

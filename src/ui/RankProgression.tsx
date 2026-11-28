@@ -87,9 +87,6 @@ export function RankProgression({
   const [fill, setFill] = useState(0)
 
   const hasCurrent = typeof currentRating === 'number'
-  const current = hasCurrent ? rankOf(currentRating as number) : undefined
-  const currentIdx = current ? rankIndex(current) : -1
-  const next = current ? nextRank(current) : undefined
 
   // PR/EP prop olarak verilmediyse (ör. Bilgi sayfası ranks sekmesi) ve kullanıcı giriş
   // yapmışsa (currentRating var) /me'den kendi pencere-PR + EP'sini çek -> "Senin Durumun"
@@ -116,6 +113,13 @@ export function RankProgression({
   const eligIdx = hasStatus ? eligibleRankIndex(currentRating as number, prVal, epVal) : -1
   const eligible = eligIdx >= 0 ? RANKS[eligIdx] : undefined // -2 = geçici (PR verisi yok)
 
+  // "Mevcut rütbe" = EFEKTİF rütbe (rating+PR+EP) — site geneli rozetle/Senin Durumun ile AYNI.
+  // Böylece özet + dikey merdiven işareti, yalnız-puana bakan rankOf ile çelişmez. Veri henüz
+  // yoksa (fetch bekliyor / PR verisi yok -> eligible undefined) geçici olarak puan rütbesine düşer.
+  const current = eligible ?? (hasCurrent ? rankOf(currentRating as number) : undefined)
+  const currentIdx = current ? rankIndex(current) : -1
+  const next = current ? nextRank(current) : undefined
+
   // Omurga dolgusu: current marker'ın merkezine kadar ÖLÇÜLÜR (aile etiketleri
   // değişken yükseklik kattığından yüzde hesabı ıskalar; ölçüm tam isabet eder).
   useLayoutEffect(() => {
@@ -137,7 +141,7 @@ export function RankProgression({
     const ro = new ResizeObserver(compute)
     ro.observe(track)
     return () => ro.disconnect()
-  }, [hasCurrent, currentRating, compact])
+  }, [hasCurrent, currentRating, currentIdx, compact])
 
   const stateOf = (r: RankTier): 'completed' | 'current' | 'upcoming' | 'default' => {
     if (!current) return 'default'

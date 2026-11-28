@@ -417,11 +417,11 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               )}
             </div>
 
-            {/* ===== Alt satır: Zar Ortalamaları (tam genişlik) · altında Tecrübe (EP) + WXP ===== */}
-            <div className="stats-dash">
+            {/* ===== Alt satır (3 sütun yan yana): Zar Ortalamaları · EP · WXP ===== */}
+            <div className="stats-dash stats-dash-3">
 
-              {/* Zar Ortalamaları — zar-başına Sen/Rakip kırılımı (tam satır) */}
-              <div className="sd-card dice-card sd-card-wide">
+              {/* Zar Ortalamaları — zar-başına Sen/Rakip kırılımı */}
+              <div className="sd-card dice-card">
                 <div className="sd-head">
                   <span className="sd-ic"><Icon name="dice" size={18} /></span>
                   <div className="sd-head-txt">
@@ -495,7 +495,8 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                 ) : (
                   <>
                     <div className="wxp-total">{fmtNum(data.rankEp ?? 0)} EP</div>
-                    <div className="ep-detail">{t('rank.c3Sub')}</div>
+                    <div className="ep-detail">{t('ep.calc')}</div>
+                    <div className="wxp-legend">{t('ep.legend')}</div>
                   </>
                 )}
               </div>
