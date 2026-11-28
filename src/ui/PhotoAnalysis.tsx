@@ -512,10 +512,15 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   }
                   const steps = hasMove ? (cands[sel]?.steps ?? moveToSteps(turn, cands[sel]?.move)) : []
                   const rawOwner = result!.position!.cube?.owner
-                  const bcube = {
-                    value: result!.position!.cube?.value ?? 1,
-                    owner: (rawOwner === 'white' || rawOwner === 'black' ? rawOwner : null) as Player | null,
-                  }
+                  // Teklif (al/pas): gnubg icin position.cube pre-double'a iner (deger 1 -> board "64"
+                  // ortada basar, yaniltici). Gosterimde GERCEK teklif degerini ortada goster (cekilmis
+                  // kup kimsenin degil -> owner null = merkez).
+                  const bcube = offer
+                    ? { value: offer.value, owner: null as Player | null }
+                    : {
+                        value: result!.position!.cube?.value ?? 1,
+                        owner: (rawOwner === 'white' || rawOwner === 'black' ? rawOwner : null) as Player | null,
+                      }
                   // Okunan zarlari board ustunde goster (sira gelenin tarafinda; PositionAnalyzer deseni).
                   const boardDice =
                     bstate.dice.length >= 1 ? (
