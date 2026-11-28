@@ -700,7 +700,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   </div>
                 </div>
                 <div className="photo-cubectl-row">
-                  <div className="photo-cube-chips">
+                  <div className="photo-cube-chips photo-cube-chips-who">
                     {(
                       [
                         ['center', t('photo.cubeCenter')],
