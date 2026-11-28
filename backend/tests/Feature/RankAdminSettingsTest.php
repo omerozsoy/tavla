@@ -6,7 +6,6 @@ use App\Filament\Pages\RatingSettings;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\RankDivisions;
-use App\Support\RankProgress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -34,14 +33,12 @@ class RankAdminSettingsTest extends TestCase
 
         Livewire::test(RatingSettings::class)
             ->set('data.div_g3__ep', 420) // g3 (varsayılan 400) -> 420, m1=400 ≤ 420 ≤ g2=450 (azalmayan)
-            ->set('data.rank_pr_window_ep', 300)
             ->set('data.rank_system_active', true)
             ->set('data.rank_demote_grace_days', 7)
             ->call('save')
             ->assertHasNoErrors();
 
         $this->assertSame(420, RankDivisions::epThresholds()['div.g3']);
-        $this->assertSame(300, RankProgress::windowEp());
         $this->assertSame('1', Setting::get('rank_system_active'));
         $this->assertSame(7, Setting::int('rank_demote_grace_days'));
     }

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\MatchResult;
-use App\Models\Setting;
 use App\Models\User;
 use App\Services\CareerPrService;
 use App\Support\RankDivisions;
@@ -13,8 +12,8 @@ use Tests\TestCase;
 
 /**
  * RankProgress: YENİ rütbe sistemi (rating + PR + EP) türetilmiş değerleri.
- *  - EP = Σ match_length (1 ve 3 puanlık HARİÇ)
- *  - Pencere PR = son WINDOW_EP EP'lik maçlarda karar-ağırlıklı gnubg_pr
+ *  - EP = Σ match_length (jeton/1 puanlık HARİÇ; 3+ puan DAHİL)
+ *  - PR = tüm geçerli maçlarda karar-ağırlıklı gnubg_pr (TEK PR; kariyer PR ile aynı, pencere YOK)
  * + RankDivisions EP eşik doğrulaması (azalmayan).
  */
 class RankProgressTest extends TestCase
@@ -46,7 +45,7 @@ class RankProgressTest extends TestCase
         return $mr;
     }
 
-    // Karar-ağırlıklı pencere PR + EP toplamı. (2×100 + 8×20)/120 = 3.00; EP = 5+5 = 10.
+    // Karar-ağırlıklı PR + EP toplamı. (2×100 + 8×20)/120 = 3.00; EP = 5+5 = 10.
     public function test_window_pr_weighted_and_ep_sum(): void
     {
         $u = $this->user('a');
@@ -58,32 +57,33 @@ class RankProgressTest extends TestCase
         $this->assertSame(10, $p['ep']);
     }
 
-    // 1 ve 3 puanlık maçlar EP'ye ve pencereye GİRMEZ.
-    public function test_one_and_three_point_matches_excluded(): void
+    // JETON (1 puanlık) maçlar EP'ye ve PR'a GİRMEZ; 3+ puanlık maçlar GİRER.
+    public function test_only_one_point_matches_excluded(): void
     {
         $u = $this->user('b');
         $this->mr($u, 4.0, 100, 5);
-        $this->mr($u, 99.0, 100, 1); // 1 puanlık -> hariç
-        $this->mr($u, 99.0, 100, 3); // 3 puanlık -> hariç
+        $this->mr($u, 10.0, 100, 3);  // 3 puanlık -> DAHİL (artık hariç değil)
+        $this->mr($u, 99.0, 100, 1);  // 1 puanlık (jeton) -> HARİÇ
 
         $p = RankProgress::forUser($u);
-        $this->assertSame(5, $p['ep']);                    // yalnız 5 puanlık
-        $this->assertEqualsWithDelta(4.00, $p['window_pr'], 0.001); // 99'lar karışmadı
+        $this->assertSame(8, $p['ep']);                            // 5 + 3 (jeton hariç)
+        // (4×100 + 10×100) / 200 = 7.00; 99'luk jeton karışmadı.
+        $this->assertEqualsWithDelta(7.00, $p['window_pr'], 0.001);
     }
 
-    // Pencere son WINDOW_EP EP ile sınırlı: eski maç PR'a girmez ama toplam EP'ye sayılır.
-    public function test_window_bounded_by_recent_ep(): void
+    // Pencere YOK: tüm geçerli maçlar (jeton hariç) tek havuzda; eski maçlar da PR'a girer.
+    public function test_no_window_all_lifetime_pooled(): void
     {
         $u = $this->user('c');
-        $this->mr($u, 2.0, 100, 200);  // en eski (düşük id)
-        $this->mr($u, 10.0, 100, 200); // pencere içinde
-        $this->mr($u, 10.0, 100, 200); // en yeni, pencere içinde
+        $this->mr($u, 2.0, 100, 200);  // en eski
+        $this->mr($u, 10.0, 100, 200);
+        $this->mr($u, 10.0, 100, 200); // en yeni
 
         $p = RankProgress::forUser($u);
-        // Son 400 EP = iki 10-PR maçı -> pencere PR = 10 (eski 2-PR hariç).
-        $this->assertEqualsWithDelta(10.00, $p['window_pr'], 0.001);
-        $this->assertSame(600, $p['ep']);          // toplam yine 600
-        $this->assertSame(RankProgress::WINDOW_EP, $p['window_ep']);
+        // Hepsi havuza girer: (2 + 10 + 10)×100 / 300 = 7.33 (eski 2-PR maçı DAHİL).
+        $this->assertEqualsWithDelta(7.33, $p['window_pr'], 0.01);
+        $this->assertSame(600, $p['ep']);
+        $this->assertSame(600, $p['window_ep']); // pencere kalktı -> window_ep = ep
     }
 
     // Analizli maçı olmayan oyuncu: window_pr null, ep 0 (provisional).
@@ -112,19 +112,5 @@ class RankProgressTest extends TestCase
         $mins['div.g3'] = 777;
         RankDivisions::putEp($mins);
         $this->assertSame(777, RankDivisions::epThresholds()['div.g3']);
-    }
-
-    // PR penceresi admin ayarı (rank_pr_window_ep) forUser'ı etkiler.
-    public function test_window_ep_setting_controls_window(): void
-    {
-        Setting::put('rank_pr_window_ep', '100');
-        $this->assertSame(100, RankProgress::windowEp());
-
-        $u = $this->user('w');
-        $this->mr($u, 2.0, 100, 100); // en eski, pencere dışı (100 EP sınırı)
-        $this->mr($u, 10.0, 100, 100); // en yeni, pencere içi
-        $p = RankProgress::forUser($u);
-        $this->assertEqualsWithDelta(10.0, $p['window_pr'], 0.001); // yalnız son 100 EP
-        $this->assertSame(200, $p['ep']); // toplam yine 200
     }
 }

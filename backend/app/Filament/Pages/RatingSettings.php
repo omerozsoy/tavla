@@ -5,7 +5,6 @@ namespace App\Filament\Pages;
 use App\Jobs\RefreshAllRanksJob;
 use App\Models\Setting;
 use App\Support\RankDivisions;
-use App\Support\RankProgress;
 use App\Support\RankService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Fieldset;
@@ -105,7 +104,6 @@ class RatingSettings extends Page implements HasForms
             $state[RankDivisions::formKey($key).'__ep'] = $epMin;
         }
         // Yeni rütbe sistemi (rating + PR + EP) genel ayarları.
-        $state['rank_pr_window_ep'] = RankProgress::windowEp();
         $state['rank_system_active'] = Setting::get('rank_system_active', '0') === '1';
         $state['rank_demote_grace_days'] = Setting::int('rank_demote_grace_days', 14);
         $state['rank_system_announce'] = Setting::get('rank_system_announce', '0') === '1';
@@ -118,16 +116,11 @@ class RatingSettings extends Page implements HasForms
             ->schema([
                 // Yeni rütbe sistemi (rating + PR + EP) genel ayarları.
                 Section::make('Yeni Rütbe Sistemi (PR + EP)')
-                    ->description('Rütbe = Rating ≥ eşiği VE PR ≤ eşiği VE EP ≥ eşiği (üçü birden). PR “son N EP” penceresinden ölçülür. “Aktif” kapalıyken site rütbeyi hâlâ yalnız rating’e göre gösterir (bilgi sayfası şartları yine görünür).')
+                    ->description('Rütbe = Rating ≥ eşiği VE PR ≤ eşiği VE EP ≥ eşiği (üçü birden). PR = oyuncunun TÜM geçerli maçlarının karar-ağırlıklı ortalaması (jeton/1 puanlık maçlar hariç); profilde gösterilen “Kariyer PR” ile AYNI tek değerdir. “Aktif” kapalıyken site rütbeyi hâlâ yalnız rating’e göre gösterir (bilgi sayfası şartları yine görünür).')
                     ->schema([
                         Toggle::make('rank_system_active')
                             ->label('Yeni sistem aktif (site geneli zorlama)')
                             ->helperText('Kapalı: rütbe yalnız rating. Açık: rating+PR+EP üçü birden.'),
-                        TextInput::make('rank_pr_window_ep')
-                            ->label('PR penceresi')
-                            ->numeric()->required()->minValue(50)->maxValue(5000)->step(50)
-                            ->suffix('EP')
-                            ->helperText('PR, son bu kadar EP’lik maçtan ölçülür. Varsayılan 400.'),
                         TextInput::make('rank_demote_grace_days')
                             ->label('Düşüş toleransı')
                             ->numeric()->required()->minValue(0)->maxValue(90)
@@ -293,7 +286,6 @@ class RatingSettings extends Page implements HasForms
         RankDivisions::putEp($epMin);
 
         // Genel ayarlar.
-        Setting::put('rank_pr_window_ep', (string) max(50, (int) ($data['rank_pr_window_ep'] ?? RankProgress::WINDOW_EP)));
         Setting::put('rank_system_active', ! empty($data['rank_system_active']) ? '1' : '0');
         Setting::put('rank_demote_grace_days', (string) max(0, (int) ($data['rank_demote_grace_days'] ?? 14)));
         Setting::put('rank_system_announce', ! empty($data['rank_system_announce']) ? '1' : '0');

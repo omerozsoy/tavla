@@ -208,6 +208,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   <Icon name="target" size={16} /> {t('stats.careerPr')}
                 </div>
                 <div className="career-pr-card-sub">{t('med.lowGood')}</div>
+                <div className="career-pr-card-sub">{t('stats.careerPrNote')}</div>
                 {perf?.career && perf.career.pr != null && !perf.career.eligible && (
                   <div className="career-pr-hint">
                     {t('stats.careerNeed', {

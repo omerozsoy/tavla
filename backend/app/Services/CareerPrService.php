@@ -49,7 +49,11 @@ class CareerPrService
             // PUANSIZ maçlar (rated=false: puansız arkadaş odası / friendly 24h limiti aşımı) kariyer PR'a
             // ve PR sıralamasına GİRMEZ; PR'ları yalnız o maçın analizinde görünür. Eski satırlar
             // migration varsayılanıyla rated=true -> geçmiş havuz değişmez.
-            ->where('rated', true);
+            ->where('rated', true)
+            // JETON (1 puanlık / "Tek Oyun") maçlar PR'a GİRMEZ: kısa+kolay maç PR'ı gürültülü/şişirir.
+            // TEK PR tanımının kaynağı burası -> hem kariyer PR'ı hem rütbe PR'ı (RankProgress) aynı kümeyi
+            // kullanır. null match_length (çok eski kayıt) korunur; yalnız net 1-puanlıklar elenir.
+            ->where(fn ($q) => $q->whereNull('match_length')->orWhere('match_length', '!=', 1));
     }
 
     /** Bir oyuncunun aggregate Career PR degerlerini maçlarindan YENIDEN hesapla + kaydet. */
