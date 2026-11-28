@@ -272,6 +272,11 @@
   width: 100%;
   max-width: 480px;
   margin: 0 auto 12px;
+  /* Pul rengi takası (swapStones=foto çeken koyu oynuyorsa) için tema renklerini ÜST elemanda
+     yakala -> .board.stones-swapped --cream/--navy'yi buradan okur (game-area deseni). Bu capture
+     olmadan foto board game-area DIŞINDA olduğundan --stone-* tanımsız kalıp pul rengi SİLİNİR. */
+  --stone-light: var(--cream);
+  --stone-dark: var(--navy);
 }
 .photo-board-stage {
   position: relative;
