@@ -33,6 +33,13 @@
 .page-host .photo-x {
   display: none;
 }
+/* Mobil app alt menu (bottom-nav, yalniz APK'da body.has-bottom-nav): bare .photo-page
+   register-overlay.page DEGIL -> page-host'un otomatik alt rezervini (App.css ~25226, yalniz
+   register-overlay.page cocuklarina) ALMAZ -> son ogeler cubugun altinda kalip "asagi kaymiyor"
+   hissi veriyordu. Rezervi ELLE ver (diger arac sayfalariyla ayni 112px + guvenli alan). */
+body.has-bottom-nav .page-host .photo-page {
+  padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+}
 /* Gercek sayfa: dar/ortali modal kolonu DEGIL -> SOLA DAYALI + standart sayfa genisligi
    (seo-landing/service deseni: max-width 1400 + margin 0 + clamp yatay padding). Baslik ve
    icerik sola dayanir; form/sonuc bloklari okunur genislikte kalir. */
