@@ -1,0 +1,20 @@
+/* Pinch-zoom sarmalayici: surface ustte dokunuslari yakalar, inner olceklenir, tasma kirpilir. */
+.pinch-zoom {
+  position: relative;
+  overflow: hidden;
+  touch-action: none; /* tarayici kaydirma/zoom'u devre disi -> pointer'lari biz surecelim */
+}
+.pinch-inner {
+  transform-origin: center center;
+  will-change: transform;
+}
+.pinch-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 7; /* .mrv-arrows (z-index:6) ustunde -> tum dokunuslar surface'e */
+  touch-action: none;
+  cursor: zoom-in;
+}
+.pinch-surface.zoomed {
+  cursor: grab;
+}

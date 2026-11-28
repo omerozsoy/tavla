@@ -13,6 +13,7 @@ import {
 import Board from './Board'
 import { MoveArrows } from './MatReview'
 import { Die } from './Dice'
+import { PinchZoom } from './PinchZoom'
 import { pipCount } from '../engine/evaluate'
 import type { GameState, Player } from '../engine/types'
 import { moveToSteps } from './photoMoveSteps'
@@ -570,7 +571,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                       {tag(t('photo.opp'), po, !youDark)}
                       {hasMove ? (
                         <div className="photo-board-wrap">
-                          <div className="photo-board-stage">
+                          <PinchZoom className="photo-board-stage">
                             <Board
                               state={bstate}
                               selectableFroms={EMPTY_FROMS}
@@ -595,7 +596,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                                 mover={turn}
                               />
                             )}
-                          </div>
+                          </PinchZoom>
                         </div>
                       ) : (
                         <PositionBoard
