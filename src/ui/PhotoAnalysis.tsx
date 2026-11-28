@@ -193,15 +193,38 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     : { onDragOver: onDragOverFile, onDragLeave: () => setDragOver(false), onDrop: onDropFile }
 
   // Telefon fotograflari buyuk (10MB+) + EXIF donuk olabilir -> upload once kucult + EXIF duzelt.
+  // Decode: once createImageBitmap(from-image). Bazi Android WebView'da bu seceneK "source image could
+  // not be decoded" ile patlar (web/iPhone'da calisir) -> <img> elementiyle yedek decode (objectURL
+  // zaten app'te yukleniyor, modern WebView drawImage'da EXIF yonunu uygular).
+  async function decode(f: File): Promise<{ draw(ctx: CanvasRenderingContext2D, w: number, h: number): void; width: number; height: number }> {
+    try {
+      const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' })
+      return { width: bmp.width, height: bmp.height, draw: (c, w, h) => c.drawImage(bmp, 0, 0, w, h) }
+    } catch {
+      const url = URL.createObjectURL(f)
+      try {
+        const img = await new Promise<HTMLImageElement>((res, rej) => {
+          const el = new Image()
+          el.onload = () => res(el)
+          el.onerror = () => rej(new Error('decode'))
+          el.src = url
+        })
+        return { width: img.naturalWidth, height: img.naturalHeight, draw: (c, w, h) => c.drawImage(img, 0, 0, w, h) }
+      } finally {
+        URL.revokeObjectURL(url)
+      }
+    }
+  }
+
   async function downscale(f: File, max = 1600, quality = 0.85): Promise<Blob> {
-    const bmp = await createImageBitmap(f, { imageOrientation: 'from-image' })
-    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
-    const w = Math.round(bmp.width * scale)
-    const h = Math.round(bmp.height * scale)
+    const src = await decode(f)
+    const scale = Math.min(1, max / Math.max(src.width, src.height))
+    const w = Math.round(src.width * scale)
+    const h = Math.round(src.height * scale)
     const canvas = document.createElement('canvas')
     canvas.width = w
     canvas.height = h
-    canvas.getContext('2d')!.drawImage(bmp, 0, 0, w, h)
+    src.draw(canvas.getContext('2d')!, w, h)
     return await new Promise((res, rej) =>
       canvas.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), 'image/jpeg', quality),
     )
