@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { IS_NATIVE_APP, isIOSNativeApp } from '../appEnv'
 import './PinchZoom.css'
+
+// Android WebView: non-passive touchstart/touchmove listener'lar z==1 tek-parmak sayfa kaydirmayi
+// BLOKLUYOR (web + iOS'ta sorun yok; "sadece android app foto-analiz asagi kaymiyor" kok nedeni).
+// Android app'te listener'lari PASSIVE yap + preventDefault'u ATLA -> native scroll calisir;
+// davranisi touch-action zaten yonetir (z==1 pan-y = sayfa kaydir, zoomed none = JS pan; Android'de
+// native zoom kapali). iOS WKWebView'de pointer/touch guvenilmez -> non-passive + preventDefault kalir.
+const ANDROID_APP = IS_NATIVE_APP && !isIOSNativeApp()
 
 // Element-seviyesi iki-parmak pinch-zoom + yakinken tek-parmak kaydirma. Capacitor WebView native
 // zoom'u kapattigi icin (zoomEnabled=false) viewport pinch APP'te calismaz -> kendi transform'umuz.
@@ -32,7 +40,7 @@ export function PinchZoom({ children, max = 3, className = '' }: { children: Rea
     const start = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         g.current = { ...g.current, dist: dist(e.touches), z: tRef.current.z, mode: 'pinch' }
-        e.preventDefault()
+        if (!ANDROID_APP) e.preventDefault()
       } else if (e.touches.length === 1 && tRef.current.z > 1) {
         g.current = { ...g.current, mode: 'pan', sx: e.touches[0].clientX, sy: e.touches[0].clientY, px: tRef.current.x, py: tRef.current.y }
       } else {
@@ -41,11 +49,11 @@ export function PinchZoom({ children, max = 3, className = '' }: { children: Rea
     }
     const move = (e: TouchEvent) => {
       if (g.current.mode === 'pinch' && e.touches.length >= 2) {
-        e.preventDefault()
+        if (!ANDROID_APP) e.preventDefault()
         const z = (g.current.z * dist(e.touches)) / (g.current.dist || 1)
         setT((p) => clamp(z, p.x, p.y))
       } else if (g.current.mode === 'pan' && e.touches.length === 1 && tRef.current.z > 1) {
-        e.preventDefault()
+        if (!ANDROID_APP) e.preventDefault()
         const nx = g.current.px + (e.touches[0].clientX - g.current.sx)
         const ny = g.current.py + (e.touches[0].clientY - g.current.sy)
         setT((p) => clamp(p.z, nx, ny))
@@ -61,8 +69,8 @@ export function PinchZoom({ children, max = 3, className = '' }: { children: Rea
       }
     }
 
-    el.addEventListener('touchstart', start, { passive: false })
-    el.addEventListener('touchmove', move, { passive: false })
+    el.addEventListener('touchstart', start, { passive: ANDROID_APP })
+    el.addEventListener('touchmove', move, { passive: ANDROID_APP })
     el.addEventListener('touchend', end)
     el.addEventListener('touchcancel', end)
     return () => {
