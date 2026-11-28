@@ -459,13 +459,6 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
           {done ? (
             <>
               <div className="photo-main">
-                {/* Web (genis ekran): cekilen fotograf board'un YANINDA — karsilastirma + en iyi
-                    hamle yaninda. CSS ile yalniz >=1025px'te gorunur (mobilde ustteki onizleme kalir). */}
-                {preview && (
-                  <div className="photo-main-photo">
-                    <img src={preview} alt="" />
-                  </div>
-                )}
                 <div className="photo-main-board">
               {result!.position?.points &&
                 (() => {
