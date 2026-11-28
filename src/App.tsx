@@ -11842,15 +11842,9 @@ export default function App() {
           <MatAnalyzer titleOverride={menuTitle('matAnalyzer')} onClose={() => setMatAnalyzerOpen(false)} currentName={profile.nickname} />
         </div>
       )}
-      {photoAnalysisOpen && (
-        <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <PhotoAnalysis titleOverride={menuTitle('photoAnalysis')} onClose={() => setPhotoAnalysisOpen(false)} />
-        </div>
-      )}
+      {/* PhotoAnalysis artik GERCEK SAYFA (page-host conditional return, yukarida) — portal degil. */}
       {fotoDuzeltId !== null && (
-        <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <FotoDuzelt id={fotoDuzeltId} onClose={() => { setFotoDuzeltId(null); window.history.length > 1 ? window.history.back() : (window.location.href = '/') }} />
-        </div>
+        <FotoDuzelt id={fotoDuzeltId} onClose={() => { setFotoDuzeltId(null); window.history.length > 1 ? window.history.back() : (window.location.href = '/') }} />
       )}
     </>
     </Suspense>
@@ -12189,6 +12183,24 @@ export default function App() {
           {/* Kurulum altına taranabilir SEO içeriği (ince sayfa düzeltmesi). Davet modunda
               (maç daveti) gösterme — "arkadaşınla oyna" içeriği davet ekranına ait değil. */}
           {!inviteTarget && <SeoAppSection page="arkadasinla-oyna" />}
+        </div>
+      </LobbyLayout>
+    )
+  }
+
+  // Fotograftan Analiz: GERCEK SAYFA (page-host) — ust bar + sol menu gorunur kalir, modal/X yok
+  // (kullanici direktifi: "gercek sayfa yap"). Cikis menu/logo/tarayici-geri ile (sayfa mantigi).
+  if (photoAnalysisOpen) {
+    return (
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <PhotoAnalysis
+            titleOverride={menuTitle('photoAnalysis')}
+            onClose={() => {
+              setPhotoAnalysisOpen(false)
+              setHome(true)
+            }}
+          />
         </div>
       </LobbyLayout>
     )

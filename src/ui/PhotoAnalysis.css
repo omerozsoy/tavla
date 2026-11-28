@@ -28,6 +28,11 @@
   color: var(--text);
   border-color: var(--accent);
 }
+/* Gercek sayfa (page-host) olarak acildiginda kapatma X'i GEREKSIZ: cikis ust menu/logo/
+   tarayici-geri ile (sayfa mantigi, kullanici direktifi). */
+.page-host .photo-x {
+  display: none;
+}
 .photo-head {
   text-align: center;
   margin: 4px 0 20px;
