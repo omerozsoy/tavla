@@ -429,11 +429,13 @@ body.has-bottom-nav .page-host .photo-page {
   color: var(--muted);
   font-weight: 600;
 }
-/* Sonuc board'u SALT-GORSEL -> pinch-zoom serbest (global .checker touch-action:none ezilir). */
+/* Sonuc board'u SALT-GORSEL (etkilesim yok) -> global .checker{touch-action:none} (oyun surukleme)
+   board ekrani kaplayinca parmakla sayfa kaydirmayi iptal ediyordu. pan-y ile dikey kaydirmaya izin
+   ver (PinchZoom kaldirildi; mat-analiz board'uyla ayni cozum). */
 .photo-board-stage,
 .photo-board-stage .board,
 .photo-board-stage .board * {
-  touch-action: manipulation;
+  touch-action: pan-y;
 }
 
 .photo-pip-tag {

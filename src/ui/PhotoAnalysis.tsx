@@ -13,7 +13,6 @@ import {
 import Board from './Board'
 import { MoveArrows } from './MatReview'
 import { Die } from './Dice'
-import { PinchZoom } from './PinchZoom'
 import { pipCount } from '../engine/evaluate'
 import type { GameState, Player } from '../engine/types'
 import { moveToSteps } from './photoMoveSteps'
@@ -506,7 +505,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                     <>
                       {tag(t('photo.opp'), po, !youDark)}
                       <div className="photo-board-wrap">
-                        <PinchZoom className="photo-board-stage">
+                        {/* Salt-gorsel board (etkilesim yok). PinchZoom KALDIRILDI: non-passive
+                            touch listener'lari mobil (Android+iOS) sayfa kaydirmayi blokluyordu. */}
+                        <div className="photo-board-stage">
                           <Board
                             state={bstate}
                             selectableFroms={EMPTY_FROMS}
@@ -532,7 +533,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                               mover={turn}
                             />
                           )}
-                        </PinchZoom>
+                        </div>
                       </div>
                       {tag(t('photo.you'), pm, youDark)}
                       <div className="photo-pips">
