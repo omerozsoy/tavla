@@ -295,6 +295,15 @@
   font-size: calc(var(--checker) * 0.5);
   font-variant-numeric: tabular-nums;
 }
+/* Sonuc board'u SALT-GORSEL -> iki parmak pinch-zoom serbest. Oyun board'u suruklemek icin
+   .checker/.cube'a touch-action:none koyar; burada etkilesim YOK -> manipulation ile ezilir
+   (tek parmak kaydirma + iki parmak yakinlastirma açik, double-tap kapali). Daha yuksek
+   ozgulluk (.board descendant) global .checker{touch-action:none} kuralini gecersiz kilar. */
+.photo-board-stage,
+.photo-board-stage .board,
+.photo-board-stage .board * {
+  touch-action: manipulation;
+}
 .photo-dice {
   font-size: 0.95rem;
   opacity: 0.8;
