@@ -12,6 +12,7 @@ import {
 } from '../api'
 import Board from './Board'
 import { MoveArrows } from './MatReview'
+import { Die } from './Dice'
 import { pipCount } from '../engine/evaluate'
 import type { GameState, Player } from '../engine/types'
 import { moveToSteps } from './photoMoveSteps'
@@ -554,6 +555,16 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                     value: result!.position!.cube?.value ?? 1,
                     owner: (rawOwner === 'white' || rawOwner === 'black' ? rawOwner : null) as Player | null,
                   }
+                  // Okunan zarlari board ustunde goster (sira gelenin tarafinda; PositionAnalyzer deseni).
+                  const boardDice =
+                    bstate.dice.length >= 1 ? (
+                      <div className="board-dice">
+                        {bstate.dice.slice(0, 2).map((v, i) => (
+                          <Die key={i} value={v} owner={turn} used={false} />
+                        ))}
+                      </div>
+                    ) : null
+                  const diceOnRight = turn === 'white'
                   return (
                     <>
                       {tag(t('photo.opp'), po, !youDark)}
@@ -573,6 +584,8 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                               cube={bcube}
                               mirror={homeLeft}
                               numberFrom="white"
+                              centerLeft={diceOnRight ? undefined : boardDice}
+                              centerRight={diceOnRight ? boardDice : undefined}
                               showPip={false}
                             />
                             {steps.length > 0 && (
@@ -608,6 +621,102 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                     </>
                   )
                 })()}
+              {/* En iyi hamle / kup karari board'un HEMEN ALTINDA (kullanici istegi); ayarlar asagida. */}
+              {cube ? (
+                <div className="photo-cube">
+                  <div className="photo-best">
+                    {offer && cube.proper ? (
+                      (() => {
+                        const v = offerVerdict(cube.proper)
+                        const head =
+                          offer.by === 'white'
+                            ? v.take === false
+                              ? t('photo.offerOppPass')
+                              : t('photo.offerOppTake')
+                            : v.take === false
+                              ? t('photo.offerMePass')
+                              : t('photo.offerMeTake')
+                        const sub =
+                          v.dbl === 'ok'
+                            ? t(offer.by === 'white' ? 'photo.dblMineOk' : 'photo.dblOppOk')
+                            : v.dbl === 'early'
+                              ? t(offer.by === 'white' ? 'photo.dblMineEarly' : 'photo.dblOppEarly')
+                              : v.dbl === 'toogood'
+                                ? t(offer.by === 'white' ? 'photo.dblMineTooGood' : 'photo.dblOppTooGood')
+                                : ''
+                        return (
+                          <>
+                            <b>{head}</b>
+                            {sub && <div className="photo-offer-sub">{sub}</div>}
+                          </>
+                        )
+                      })()
+                    ) : cube.proper ? (
+                      <>
+                        {t('photo.cubeTitle')}: <b>{cubeAction(cube.proper, t)}</b>
+                      </>
+                    ) : (
+                      // gnubg karar vermedi: kup rakipte / Crawford oyunu / macta katlamak anlamsiz
+                      <b>
+                        {result!.position?.cube?.owner === 'black'
+                          ? t('photo.cubeCantDouble')
+                          : result!.position?.crawford
+                            ? t('photo.cubeCrawford')
+                            : t('photo.cubeNoPoint')}
+                      </b>
+                    )}
+                  </div>
+                  {evalv && evalv.length >= 5 && (
+                    <div className="photo-cube-probs">
+                      {t('photo.winPct')}: <b>{((myWin ?? 0) * 100).toFixed(1)}%</b>
+                      {' · '}
+                      {t('photo.gammonPct')}: <b>{((myGammon ?? 0) * 100).toFixed(1)}%</b>
+                    </div>
+                  )}
+                  {cube.equities && !Array.isArray(cube.equities) && (
+                    <ul className="photo-cands">
+                      {(
+                        [
+                          ['noDouble', t('photo.cubeNoDouble')],
+                          ['doubleTake', t('photo.cubeDoubleTake')],
+                          ['doublePass', t('photo.cubeDoublePass')],
+                        ] as const
+                      ).map(([k, label]) =>
+                        typeof cube.equities?.[k] === 'number' ? (
+                          <li key={k}>
+                            <span className="photo-cand-move">{label}</span>
+                            <span className="photo-cand-eq">{cube.equities[k]!.toFixed(3)}</span>
+                          </li>
+                        ) : null,
+                      )}
+                    </ul>
+                  )}
+                  {!offer && <div className="photo-cube-hint">{t('photo.cubeHint')}</div>}
+                </div>
+              ) : (
+                <div className="photo-best">
+                  {t('photo.best')}: <b>{cands[0].move}</b>
+                </div>
+              )}
+              {cands.length > 1 && (
+                <ul className="photo-cands photo-cands-pick">
+                  {cands.map((c, i) => (
+                    <li key={i}>
+                      <button
+                        type="button"
+                        className={`photo-cand-btn${i === sel ? ' on' : ''}`}
+                        onClick={() => setSelectedCand(i)}
+                        aria-pressed={i === sel}
+                      >
+                        <span className="photo-cand-move">{c.move}</span>
+                        {typeof c.equity === 'number' && (
+                          <span className="photo-cand-eq">{c.equity.toFixed(3)}</span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <div className={`photo-matchctl${cubeBusy ? ' busy' : ''}`}>
                 <label>
                   {t('photo.match')}{' '}
@@ -752,101 +861,6 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   </div>
                 )
               })()}
-              {cube ? (
-                <div className="photo-cube">
-                  <div className="photo-best">
-                    {offer && cube.proper ? (
-                      (() => {
-                        const v = offerVerdict(cube.proper)
-                        const head =
-                          offer.by === 'white'
-                            ? v.take === false
-                              ? t('photo.offerOppPass')
-                              : t('photo.offerOppTake')
-                            : v.take === false
-                              ? t('photo.offerMePass')
-                              : t('photo.offerMeTake')
-                        const sub =
-                          v.dbl === 'ok'
-                            ? t(offer.by === 'white' ? 'photo.dblMineOk' : 'photo.dblOppOk')
-                            : v.dbl === 'early'
-                              ? t(offer.by === 'white' ? 'photo.dblMineEarly' : 'photo.dblOppEarly')
-                              : v.dbl === 'toogood'
-                                ? t(offer.by === 'white' ? 'photo.dblMineTooGood' : 'photo.dblOppTooGood')
-                                : ''
-                        return (
-                          <>
-                            <b>{head}</b>
-                            {sub && <div className="photo-offer-sub">{sub}</div>}
-                          </>
-                        )
-                      })()
-                    ) : cube.proper ? (
-                      <>
-                        {t('photo.cubeTitle')}: <b>{cubeAction(cube.proper, t)}</b>
-                      </>
-                    ) : (
-                      // gnubg karar vermedi: kup rakipte / Crawford oyunu / macta katlamak anlamsiz
-                      <b>
-                        {result!.position?.cube?.owner === 'black'
-                          ? t('photo.cubeCantDouble')
-                          : result!.position?.crawford
-                            ? t('photo.cubeCrawford')
-                            : t('photo.cubeNoPoint')}
-                      </b>
-                    )}
-                  </div>
-                  {evalv && evalv.length >= 5 && (
-                    <div className="photo-cube-probs">
-                      {t('photo.winPct')}: <b>{((myWin ?? 0) * 100).toFixed(1)}%</b>
-                      {' · '}
-                      {t('photo.gammonPct')}: <b>{((myGammon ?? 0) * 100).toFixed(1)}%</b>
-                    </div>
-                  )}
-                  {cube.equities && !Array.isArray(cube.equities) && (
-                    <ul className="photo-cands">
-                      {(
-                        [
-                          ['noDouble', t('photo.cubeNoDouble')],
-                          ['doubleTake', t('photo.cubeDoubleTake')],
-                          ['doublePass', t('photo.cubeDoublePass')],
-                        ] as const
-                      ).map(([k, label]) =>
-                        typeof cube.equities?.[k] === 'number' ? (
-                          <li key={k}>
-                            <span className="photo-cand-move">{label}</span>
-                            <span className="photo-cand-eq">{cube.equities[k]!.toFixed(3)}</span>
-                          </li>
-                        ) : null,
-                      )}
-                    </ul>
-                  )}
-                  {!offer && <div className="photo-cube-hint">{t('photo.cubeHint')}</div>}
-                </div>
-              ) : (
-                <div className="photo-best">
-                  {t('photo.best')}: <b>{cands[0].move}</b>
-                </div>
-              )}
-              {cands.length > 1 && (
-                <ul className="photo-cands photo-cands-pick">
-                  {cands.map((c, i) => (
-                    <li key={i}>
-                      <button
-                        type="button"
-                        className={`photo-cand-btn${i === sel ? ' on' : ''}`}
-                        onClick={() => setSelectedCand(i)}
-                        aria-pressed={i === sel}
-                      >
-                        <span className="photo-cand-move">{c.move}</span>
-                        {typeof c.equity === 'number' && (
-                          <span className="photo-cand-eq">{c.equity.toFixed(3)}</span>
-                        )}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </>
           ) : (
             <div className="photo-invalid">{t(result!.status === 'invalid' ? 'photo.invalid' : 'photo.failed')}</div>

@@ -268,13 +268,18 @@
 .photo-board-wrap {
   container-type: inline-size;
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   margin: 0 auto 12px;
 }
 .photo-board-stage {
   position: relative;
+  /* .board display:grid blok olarak kabi DOLDURUR -> stage footprint'ten genisse 'auto' sutun
+     gerilip board-inner'i sola, bear-off tepsisini saga iter (AYRIK tepsi + board tam dolmaz).
+     flex ile .board'u DOGAL footprint'inde ortala -> tepsi bitisik, board ortali tam-genislik. */
+  display: flex;
+  justify-content: center;
   width: 100%;
-  --board-h: max(150px, min(calc((100cqw - 12px) / 1.52), calc(100vh - 220px)));
+  --board-h: max(150px, min(calc((100cqw - 4px) / 1.52), calc(100vh - 170px)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.14);
   --point-w: var(--col);
