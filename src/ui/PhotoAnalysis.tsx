@@ -333,7 +333,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     setReported(false)
     setCubeChosen(false)
     try {
-      const blob = await downscale(f)
+      // Client kucultme optimizasyon; bazi Android WebView buyuk fotoyu HIC decode edemez
+      // (createImageBitmap + <img> ikisi de duser) -> ham dosyayi gonder, sunucu isler (EXIF: cv2 uygular).
+      const blob = await downscale(f).catch(() => f)
       const { id } = await uploadPhotoAnalysis(blob, left)
       // poll: pending -> done/invalid/failed (~0.7sn aralik, <=60sn; tanima+gnubg tipik 1-2sn)
       for (let i = 0; i < 85; i++) {
