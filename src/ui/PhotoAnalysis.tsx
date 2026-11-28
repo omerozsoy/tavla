@@ -17,6 +17,7 @@ import { PinchZoom } from './PinchZoom'
 import { pipCount } from '../engine/evaluate'
 import type { GameState, Player } from '../engine/types'
 import { moveToSteps } from './photoMoveSteps'
+import { IS_NATIVE_APP } from '../appEnv'
 import PhotoCamera from './PhotoCamera'
 import './PhotoAnalysis.css'
 
@@ -284,6 +285,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     if (camFailed) captureRef.current?.click()
     else setCamOpen(true)
   }
+  // Drop alani / onizleme tiklamasi: APP'te kamera acar, WEB'de dosya secici (kullanici direktifi:
+  // web'de kamera yok). Galeri/dosya butonu her iki ortamda da ayrica durur.
+  const pickArea = () => (IS_NATIVE_APP ? openCamera() : fileRef.current?.click())
 
   // Telefon fotograflari buyuk (10MB+) + EXIF donuk olabilir -> upload once kucult + EXIF duzelt.
   async function downscale(f: File, max = 1600, quality = 0.85): Promise<Blob> {
@@ -467,21 +471,24 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
         />
         {preview ? (
           // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-          <img src={preview} className="photo-preview" alt="" onClick={openCamera} />
+          <img src={preview} className="photo-preview" alt="" onClick={pickArea} />
         ) : (
-          <button className="photo-drop" onClick={openCamera} type="button">
+          <button className="photo-drop" onClick={pickArea} type="button">
             <Icon name="camera" size={40} />
-            <div className="photo-drop-title">{t('photo.pick')}</div>
+            <div className="photo-drop-title">{IS_NATIVE_APP ? t('photo.pick') : t('photo.gallery')}</div>
             <div className="photo-drop-hint">{t('photo.pickHint')}</div>
           </button>
         )}
 
         <div className="photo-pick-row">
-          <Button variant="outline" onClick={openCamera} type="button">
-            <Icon name="camera" size={16} /> {preview ? t('photo.retake') : t('photo.camOpen')}
-          </Button>
+          {/* Kamera YALNIZ kurulu app'te (kullanici direktifi): web'de "Kamera Aç" gizli, dosya seçici kalir. */}
+          {IS_NATIVE_APP && (
+            <Button variant="outline" onClick={openCamera} type="button">
+              <Icon name="camera" size={16} /> {preview ? t('photo.retake') : t('photo.camOpen')}
+            </Button>
+          )}
           <Button variant="outline" onClick={() => fileRef.current?.click()} type="button">
-            {t('photo.gallery')}
+            {preview && !IS_NATIVE_APP ? t('photo.retake') : t('photo.gallery')}
           </Button>
         </div>
 
@@ -775,40 +782,42 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                 <div className="photo-cubectl-state">
                   {cubeState(result!.position, result!.debug?.cube ?? null, t)}
                 </div>
+                {/* Kullanici istegi: cok buton yerine DROPDOWN'lar — Kup [deger] [yer/durum]. */}
                 <div className="photo-cubectl-row">
                   <span className="photo-cubectl-label">{t('photo.cube')}</span>
-                  {[1, 2, 4, 8, 16, 32, 64].map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      disabled={cubeBusy}
-                      className={cubeModeOf(result!.position).value === v ? 'on' : ''}
-                      onClick={() => changeCube(v === 1 ? { mode: 'center' } : { value: v })}
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
-                <div className="photo-cubectl-row">
-                  {(
-                    [
-                      ['center', t('photo.cubeCenter')],
-                      ['mine', t('photo.cubeMine')],
-                      ['opp', t('photo.cubeOpp')],
-                      ['offer_me', t('photo.cubeOfferMe')],
-                      ['offer_opp', t('photo.cubeOfferOpp')],
-                    ] as const
-                  ).map(([mode, label]) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      disabled={cubeBusy}
-                      className={cubeModeOf(result!.position).mode === mode ? 'on' : ''}
-                      onClick={() => changeCube({ mode })}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                  <select
+                    disabled={cubeBusy}
+                    value={cubeModeOf(result!.position).value}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      changeCube(v === 1 ? { mode: 'center' } : { value: v })
+                    }}
+                  >
+                    {[1, 2, 4, 8, 16, 32, 64].map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    disabled={cubeBusy}
+                    value={cubeModeOf(result!.position).mode}
+                    onChange={(e) => changeCube({ mode: e.target.value as CubeMode })}
+                  >
+                    {(
+                      [
+                        ['center', t('photo.cubeCenter')],
+                        ['mine', t('photo.cubeMine')],
+                        ['opp', t('photo.cubeOpp')],
+                        ['offer_me', t('photo.cubeOfferMe')],
+                        ['offer_opp', t('photo.cubeOfferOpp')],
+                      ] as const
+                    ).map(([mode, label]) => (
+                      <option key={mode} value={mode}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="photo-dice">
