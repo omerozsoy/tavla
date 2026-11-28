@@ -39070,9 +39070,9 @@ body:has(.register-overlay) .chat-panel.closed {
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1;
-  color: var(--text);
-  background: color-mix(in srgb, var(--accent) 14%, var(--card, #fff));
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  color: #fff; /* tema-bağımsız: turuncu zemin + beyaz yazı (gece modunda beyaz-üstüne-beyaz bug'ı) */
+  background: var(--accent);
+  border: 1px solid var(--accent);
   border-radius: 6px;
   padding: 2px 5px;
   white-space: nowrap;
