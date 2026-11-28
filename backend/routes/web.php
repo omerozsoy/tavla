@@ -145,9 +145,10 @@ Route::prefix('panel')->group(function () {
     });
 });
 
-// Filament "Foto Analizleri" onizlemesi: private disk'teki tahta fotografini admin'e akitir.
+// Foto düzeltme SPA görseli: imzalı URL (AdminPhotoAnalysisController::show üretir, 30dk). <img> Bearer
+// gönderemez → 'signed' middleware (imza=yetki; URL yalnız admin-gate'li show'dan gelir).
 Route::get('/admin/photo-analyses/{photoAnalysis}/image', [PhotoAnalysisController::class, 'adminImage'])
-    ->middleware('admin')->name('admin.photo-analysis.image');
+    ->middleware('signed')->name('admin.photo-analysis.image');
 
 // ---- Odeme donus sayfasi ----
 // Kullanici donus sayfasi: ?ok=1/0. Gercek fulfillment admin onayinda (kart/havale PENDING).

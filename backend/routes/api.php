@@ -3,6 +3,7 @@
 use App\Http\Controllers\AchievementController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminPhotoAnalysisController;
 use App\Http\Controllers\AdSlotController;
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\AuthController;
@@ -286,6 +287,11 @@ Route::middleware(['auth:sanctum', EnsureActiveAccount::class])->group(function 
     // "Hatali tarama bildir" -> admin incelemesine isaretle (kendini gelistiren egitim dongusu).
     Route::post('/photo-analysis/{photoAnalysis}/report', [PhotoAnalysisController::class, 'report'])
         ->middleware('throttle:20,1,photo-report');
+    // Admin foto düzeltme SPA (/foto-duzelt/<id>): gerçek Board'da düzelt -> ground_truth kaydet.
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/photo-analysis/{photoAnalysis}', [AdminPhotoAnalysisController::class, 'show']);
+        Route::post('/admin/photo-analysis/{photoAnalysis}/label', [AdminPhotoAnalysisController::class, 'label']);
+    });
     // Arkadaş davet (referral): durum (kod/link/kalan hak) + davet maili gönder (günlük sınır).
     Route::get('/me/referral', [ReferralController::class, 'status']);
     Route::post('/me/referral/invite', [ReferralController::class, 'invite'])
