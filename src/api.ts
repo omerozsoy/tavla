@@ -332,6 +332,8 @@ export interface PhotoSettings {
   crawford: boolean
   /** kullanici zar okumasini duzeltir ([] veya [d1,d2]); gonderilmezse tanimanin okudugu kalir */
   dice?: number[]
+  /** kullanici sirayi duzeltir ('white' = ceken/bende, 'black' = rakip/karsida); yoksa tanima kalir */
+  turn?: 'white' | 'black'
 }
 export async function setPhotoAnalysisSettings(id: number, s: PhotoSettings): Promise<PhotoAnalysisResult> {
   return req(`/photo-analysis/${id}/settings`, { method: 'POST', body: JSON.stringify(s) })

@@ -193,7 +193,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
 
   // Ayarlari (kup + mac) sunucuya gonder -> ayni konum yeniden analiz. Kup modu: ortada (deger 1) /
   // sende / rakipte (deger >= 2) / sen cektin / sana cekildi (teklif edilen deger >= 2).
-  function settingsFor(r: PhotoAnalysisResult, m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }, diceOver?: number[]) {
+  function settingsFor(r: PhotoAnalysisResult, m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }, diceOver?: number[], turnOver?: 'white' | 'black') {
     const cur = cubeModeOf(r.position)
     const mode = cubeOver?.mode ?? cur.mode
     let v = cubeOver?.value ?? cur.value
@@ -213,16 +213,18 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
       score_opp: n.opp,
       crawford: n.crawford,
       ...(diceOver ? { dice: diceOver } : {}),
+      ...(turnOver ? { turn: turnOver } : {}),
     }
   }
 
-  async function applySettings(m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }, diceOver?: number[]) {
+  async function applySettings(m: MatchSet, cubeOver?: { mode?: CubeMode; value?: number }, diceOver?: number[], turnOver?: 'white' | 'black') {
     if (!result || cubeBusy) return
     const fromCube = cubeOver !== undefined
     const fromDice = diceOver !== undefined
+    const fromTurn = turnOver !== undefined
     const n = normMatch(m)
     setMatch(n)
-    if (!fromCube && !fromDice) {
+    if (!fromCube && !fromDice && !fromTurn) {
       try {
         localStorage.setItem(MATCH_KEY, JSON.stringify(n))
       } catch {
@@ -231,9 +233,9 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     }
     setCubeBusy(true)
     try {
-      setResult(await setPhotoAnalysisSettings(result.id, settingsFor(result, n, cubeOver, diceOver)))
+      setResult(await setPhotoAnalysisSettings(result.id, settingsFor(result, n, cubeOver, diceOver, turnOver)))
       if (fromCube) setCubeChosen(true)
-      else if (!fromDice) setMatchChosen(true)
+      else if (!fromDice && !fromTurn) setMatchChosen(true)
     } catch (e) {
       notify.error((e as { message?: string })?.message || t('photo.failed'))
     } finally {
@@ -251,6 +253,12 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
     const next = [cur[0] ?? val, cur[1] ?? val] as number[]
     next[idx] = val
     void applySettings(match, undefined, next.filter((d) => d >= 1 && d <= 6))
+  }
+
+  // Kullanici sirayi duzeltir: white = fotografi ceken (bende), black = rakip (karsida) -> yeniden analiz.
+  function changeTurn(turn: 'white' | 'black') {
+    if (result!.position?.turn === turn) return
+    void applySettings(match, undefined, undefined, turn)
   }
 
   // "Hatali tarama bildir": kaydi admin incelemesine isaretler. Admin resme bakip dogru konumu elle
@@ -749,16 +757,30 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   })()
                 )}
                 {' · '}
-                {/* tanima kurali: zar bar'in saginda -> fotografi ceken, solunda -> rakip */}
-                <b>
-                  {offer
-                    ? offer.by === 'white'
-                      ? t('photo.decideOpp')
-                      : t('photo.decideMe')
-                    : result!.position?.turn === 'black'
-                      ? t('photo.turnOpp')
-                      : t('photo.turnMe')}
-                </b>
+                {/* tanima kurali: zar bar'in saginda -> fotografi ceken, solunda -> rakip.
+                    Cekilmis kupte sira katlayan (secilemez); aksi halde kullanici duzeltebilir. */}
+                {offer ? (
+                  <b>{offer.by === 'white' ? t('photo.decideOpp') : t('photo.decideMe')}</b>
+                ) : (
+                  <span className="photo-turn-chips">
+                    <button
+                      type="button"
+                      disabled={cubeBusy}
+                      className={`photo-cube-chip${result!.position?.turn !== 'black' ? ' on' : ''}`}
+                      onClick={() => changeTurn('white')}
+                    >
+                      {t('photo.turnMe')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={cubeBusy}
+                      className={`photo-cube-chip${result!.position?.turn === 'black' ? ' on' : ''}`}
+                      onClick={() => changeTurn('black')}
+                    >
+                      {t('photo.turnOpp')}
+                    </button>
+                  </span>
+                )}
               </div>
               </section>
               {/* ANALIZ NEYE GORE YAPILDI: kup degeri + skor okunamiyor -> varsayim acikca gosterilir */}

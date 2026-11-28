@@ -119,30 +119,35 @@
 }
 
 /* Yon secici (evler nereye toplaniyor) — segment kontrol */
+/* Yon secici: site buton diliyle (keskin 2px kose, 42px, 1px border) birlesik 2 segment. */
 .photo-home {
   display: inline-flex;
   align-self: center;
-  align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--text) 5%, transparent);
   border: 1px solid var(--border);
-  font-size: var(--fs-xs);
+  border-radius: 2px;
+  overflow: hidden;
+  font-size: var(--fs-sm);
 }
 .photo-home button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  height: 42px;
+  padding: 0 16px;
   border: none;
-  border-radius: var(--radius-pill);
-  padding: 6px 14px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text);
   font: inherit;
   font-weight: var(--fw-semibold);
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+}
+.photo-home button + button {
+  border-left: 1px solid var(--border);
+}
+.photo-home button:hover:not(:disabled):not(.on) {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .photo-home-ico.rot-l {
   transform: rotate(-90deg);
@@ -639,6 +644,12 @@
 .photo-dice-sel {
   margin: 0 2px;
   font-weight: var(--fw-bold);
+}
+/* Sira kimde chip'leri (bende/karsida) — kup chip'leriyle ayni stil. */
+.photo-turn-chips {
+  display: inline-flex;
+  gap: 6px;
+  vertical-align: middle;
 }
 
 /* ===== "Neye gore analiz edildi" bilgi karti ===== */

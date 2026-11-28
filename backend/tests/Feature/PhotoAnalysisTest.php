@@ -109,6 +109,27 @@ class PhotoAnalysisTest extends TestCase
         ])->assertOk()->assertJsonPath('position.dice.0', 5);
     }
 
+    public function test_settings_turn_override_reaches_gnubg_and_persists(): void
+    {
+        $user = User::factory()->create();
+        $pa = $this->donePhoto($user); // varsayilan sira white
+
+        $gnubg = $this->mock(GnuBgClient::class);
+        $gnubg->shouldReceive('analyze')->twice()
+            ->withArgs(fn (array $p) => ($p['turn'] ?? null) === 'black')
+            ->andReturn(['result' => ['hint' => [['move' => '24/18']]]]);
+
+        // kullanici sirayi rakibe (karsida = black) ceker
+        $this->actingAs($user)->postJson("/api/photo-analysis/{$pa->id}/settings", [
+            'cube_value' => 1, 'turn' => 'black',
+        ])->assertOk()->assertJsonPath('position.turn', 'black');
+
+        // kalici: sonraki (sirasiz) kup/mac degisimi de duzeltilmis sirayi kullanir
+        $this->actingAs($user)->postJson("/api/photo-analysis/{$pa->id}/settings", [
+            'cube_value' => 1,
+        ])->assertOk()->assertJsonPath('position.turn', 'black');
+    }
+
     public function test_settings_match_score_and_crawford_reach_gnubg(): void
     {
         $user = User::factory()->create();

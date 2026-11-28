@@ -66,6 +66,8 @@ class PhotoAnalysisController extends Controller
             // Kullanici zar okumasini duzeltir (tanima yanlis okuyabilir) -> [] veya [d1,d2]
             'dice' => ['sometimes', 'array', 'max:2'],
             'dice.*' => ['integer', 'min:1', 'max:6'],
+            // Kullanici sirayi duzeltir (white = fotografi ceken / bende, black = rakip / karsida)
+            'turn' => ['sometimes', Rule::in(['white', 'black'])],
         ]);
         $value = (int) $data['cube_value'];
         $owner = $data['cube_owner'] ?? null;
@@ -98,6 +100,11 @@ class PhotoAnalysisController extends Controller
                 $data['dice'] ?? [],
                 fn ($d) => $d >= 1 && $d <= 6
             ));
+        }
+        // Sira duzeltmesi recognized'a kalici yazilir (sonraki kup/mac/zar degisimlerinde de gecerli).
+        // Cekilmis kup (offer) dalinda sira katlayan oyuncudur -> asagida offerBy ezer, override gecmez.
+        if ($request->has('turn')) {
+            $recognized['turn'] = $data['turn'];
         }
         $position['recognized'] = $recognized;
         if ($offerBy !== null) {
