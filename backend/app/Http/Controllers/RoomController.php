@@ -428,7 +428,9 @@ class RoomController extends Controller
             'stakes.*' => ['integer', 'min:0', 'max:1000000000'],
             // NOT: user_id ISTEMCIDEN alinmaz (guvenlik). Sanctum token'indan gelir; asagida
             // $authUser->id kullanilir. Bu yuzden burada validate/kabul EDILMEZ (olu parametre kaldirildi).
+            // Seviye seçici: arayanın kabul ettiği rakip RATING aralığı. 0/yok = o yön serbest.
             'min_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
+            'max_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
             'bet_pct' => ['nullable', 'integer', 'in:0,10,20,30,50,75,100'],
             'targets' => ['nullable', 'array'],
             'targets.*' => ['integer', 'in:1,3,5,7,9,11,13'],
@@ -457,6 +459,9 @@ class RoomController extends Controller
         // kosmadi) yazma -> SQLSTATE cokme onlenir; migrate --force sonrasi devreye girer.
         $hasDiceAuthCol = Schema::hasColumn('rooms', 'dice_authority');
         $minRating = (int) ($data['min_rating'] ?? 0);
+        $maxRating = (int) ($data['max_rating'] ?? 0);
+        // Canlida migration kosmadiysa kolon olmayabilir -> yazma/filtrelemede guard (stakes deseni).
+        $hasOppCols = Schema::hasColumn('rooms', 'min_opp_rating');
         $betPct = (int) ($data['bet_pct'] ?? 0);
         // Oyun Arayanlar'dan HEDEFLI katilim: >0 ise aday havuzu TEK bu oyuncuya daraltilir
         // ve bulunamazsa havuza DUSULMEZ (asagida net hata) -> araya ucuncu sahis giremez.
@@ -539,6 +544,16 @@ class RoomController extends Controller
             $mineStakes = is_array($mine->stakes) ? array_values(array_map('intval', $mine->stakes)) : [(int) $mine->stake];
             sort($mineStakes);
             if ($mineStakes === $stakes) {
+                // Aynı aramayı yeniden pollarken seviye aralığı DEĞİŞMİŞ olabilir ("Aralığı genişlet"
+                // / "Tüm seviyelere aç") -> odayı iptal etmeden güncelle, sonra döndür.
+                if ($hasOppCols) {
+                    $newMin = $minRating > 0 ? $minRating : null;
+                    $newMax = $maxRating > 0 ? $maxRating : null;
+                    if ((int) $mine->min_opp_rating !== (int) $newMin || (int) $mine->max_opp_rating !== (int) $newMax) {
+                        $mine->update(['min_opp_rating' => $newMin, 'max_opp_rating' => $newMax]);
+                    }
+                }
+
                 return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
             }
 
@@ -550,7 +565,7 @@ class RoomController extends Controller
         // ATOMIK: aday secimi (lockForUpdate) + rakibe yazma TEK transaction icinde olmali,
         // aksi halde kilit hemen birakilir ve iki es zamanli istek ayni bekleyen odayi
         // rakip secip ikisi de p2'ye yazabilir (cift eslesme / bahis tutarsizligi).
-        $opponent = DB::transaction(function () use ($data, $stakes, $betPct, $minRating, $targets, $userId, $timeControl, $classic, $hasClassicCol, $opponentId) {
+        $opponent = DB::transaction(function () use ($data, $stakes, $betPct, $minRating, $maxRating, $hasOppCols, $targets, $userId, $timeControl, $classic, $hasClassicCol, $opponentId) {
             $requester = User::lockForUpdate()->find($userId);
             if (! $requester || $requester->isBanned() || Room::userHasActiveMoneyMatch($userId)) {
                 return null;
@@ -564,8 +579,18 @@ class RoomController extends Controller
                 ->where('p1_user_id', '!=', $userId)
                 ->when($opponentId > 0, fn ($qq) => $qq->where('p1_user_id', $opponentId)) // HEDEFLI: yalniz tiklanan arayan
                 ->whereNull('p2_token');
+            // Seviye seçici KARŞILIKLI: (a) adayın rating'i arayanın istediği [min,max] içinde;
+            // (b) arayanın rating'i adayın kayıtlı [min_opp,max_opp] aralığında. null = o yön serbest.
             if ($minRating > 0) {
                 $q->where('p1_rating', '>=', $minRating);
+            }
+            if ($maxRating > 0) {
+                $q->where('p1_rating', '<=', $maxRating);
+            }
+            if ($hasOppCols) {
+                $reqRating = (int) ($data['rating'] ?? 1500);
+                $q->where(fn ($w) => $w->whereNull('min_opp_rating')->orWhere('min_opp_rating', '<=', $reqRating));
+                $q->where(fn ($w) => $w->whereNull('max_opp_rating')->orWhere('max_opp_rating', '>=', $reqRating));
             }
             $candidates = $q->orderBy('created_at')->lockForUpdate()->get();
 
@@ -758,6 +783,11 @@ class RoomController extends Controller
         }
         if ($hasClassicCol) {
             $roomData['classic'] = $classic; // Klasik Tavla bayrağı (eşleşme havuzu + skor + rozet)
+        }
+        if ($hasOppCols) {
+            // Seviye seçici: arayanın kabul ettiği rakip aralığı (0 = o yön serbest -> null).
+            $roomData['min_opp_rating'] = $minRating > 0 ? $minRating : null;
+            $roomData['max_opp_rating'] = $maxRating > 0 ? $maxRating : null;
         }
         // BAĞIMSIZ Faz 1 (staked): bekleyen oda zarı sunucudan (dice_authority, CANLIDA gölge).
         // Faz 2 TAM otorite (authoritative) kararı EŞLEŞME anında verilir (iki oyuncu da bilinince:
@@ -1296,12 +1326,17 @@ class RoomController extends Controller
         // 'stakes' kolonu canlida migrate kosmadan olmayabilir (bkz. matchmaking) -> guard.
         $hasStakes = Schema::hasColumn('rooms', 'stakes');
         $hasClassic = Schema::hasColumn('rooms', 'classic');
+        $hasOppCols = Schema::hasColumn('rooms', 'min_opp_rating');
         $cols = ['code', 'p1_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'stake', 'bet_pct', 'target', 'targets', 'time_control', 'created_at'];
         if ($hasStakes) {
             $cols[] = 'stakes';
         }
         if ($hasClassic) {
             $cols[] = 'classic';
+        }
+        if ($hasOppCols) {
+            $cols[] = 'min_opp_rating';
+            $cols[] = 'max_opp_rating';
         }
 
         // Oyun Arayanlar listesi TÜM bakanlar için AYNI (risk arayanın kendi bakiyesine bağlı, bakanın
@@ -1349,6 +1384,10 @@ class RoomController extends Controller
                     'risk' => $risk, // arayanın riske ettiği tutar (istemci kendi riskiyle min'ler = gerçek pot)
                     'classic' => (bool) ($r->classic ?? false), // Klasik Tavla: rozet + "eşleş" aynı moda katar
                     'time_control' => $r->time_control ?: 'normal', // eslesme tempoyu da sart kosar
+                    // Seviye seçici: arayanın kabul ettiği rakip aralığı (null = sınır yok). Kart bunu
+                    // "X ile Y arasında oynamak istiyor" olarak gösterir + bakanın uygunluğunu belirler.
+                    'min_opp_rating' => $r->min_opp_rating !== null ? (int) $r->min_opp_rating : null,
+                    'max_opp_rating' => $r->max_opp_rating !== null ? (int) $r->max_opp_rating : null,
                     'since' => optional($r->created_at)->toIso8601String(),
                 ];
             });

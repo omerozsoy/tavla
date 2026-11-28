@@ -6,6 +6,7 @@ import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
 import { soloScene } from './soloScenes'
+import { LevelRangeSlider, type LevelRangeValue } from './LevelRangeSlider'
 
 // Tek Oyun = money game: her zaman TEK oyun (1 puan) ama KÜP CANLI. Küp katlandıkça coin bahsi de
 // katlanır (ödeme = stake × küp × 1/2/3 gammon). Küp tavanı 16; en kötü senaryo = stake × 16 × 3 = 48.
@@ -62,9 +63,12 @@ interface Props {
   /** Sol Menü'den admin override (bos -> i18n varsayilani). Bkz MenuItem title/sub. */
   titleOverride?: string
   subOverride?: string
+  /** Rakip Seviyesi slider'i: oyuncunun kendi puani + secim degisince callback. */
+  rating?: number
+  onLevel?: (v: LevelRangeValue) => void
 }
 
-export default function SoloStakes({ coins, board, onPick, onClose, titleOverride, subOverride }: Props) {
+export default function SoloStakes({ coins, board, onPick, onClose, titleOverride, subOverride, rating, onLevel }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Coklu secim: baslangicta oynanabilir ilk seviye secili. Set = secili seviye NO'lari.
@@ -141,6 +145,11 @@ export default function SoloStakes({ coins, board, onPick, onClose, titleOverrid
               )
             })}
           </div>
+
+          {/* Rakip Seviyesi: Tek Oyun 1 puanlık maç (target=1) -> preview L=1. */}
+          {rating != null && (
+            <LevelRangeSlider rating={rating} target={1} onChange={(v) => onLevel?.(v)} />
+          )}
         </div>
 
         <div className="setup-preview">

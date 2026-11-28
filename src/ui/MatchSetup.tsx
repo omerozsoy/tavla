@@ -8,6 +8,7 @@ import PremiumCrown from './PremiumCrown'
 import { PR_TARGET_LABELS } from '../botPr'
 import { BET_PCTS } from '../betOptions'
 import { botPersona } from '../botPersonas'
+import { LevelRangeSlider, type LevelRangeValue } from './LevelRangeSlider'
 
 export type TimeControl = 'casual' | 'normal' | 'speed'
 export type SetupMode = 'pvb' | 'online'
@@ -96,6 +97,8 @@ interface Props {
   onRequirePremium?: () => void // misafir/normal uye Premium bot secince -> uyelik ekrani
   classic?: boolean // KLASIK TAVLA kurulumu: baslik "Klasik Tavla" + kup-yok notu + rakip turu secici (online/bot)
   titleOverride?: string // admin "Sayfa Metni" baslik override'i (bos -> i18n varsayilani)
+  rating?: number // online: Rakip Seviyesi slider'i icin oyuncunun kendi puani
+  onLevel?: (v: LevelRangeValue) => void // Rakip Seviyesi secimi degisince (min/max rating)
 }
 
 // Seviye 11 ve uzeri = Premium bot (Grandmaster/Ultimate). Tek dogruluk kaynagi.
@@ -117,6 +120,8 @@ export default function MatchSetup({
   onRequirePremium,
   classic = false,
   titleOverride,
+  rating,
+  onLevel,
 }: Props) {
   const { t } = useT()
   const mode = initialMode // Mac Oyunu online-only; YZ/Klasik-YZ pvb-only (mod degistirilmez)
@@ -307,6 +312,14 @@ export default function MatchSetup({
             <span className="setup-botfee-lbl">{t('setup.botFee')}</span>
             <Coins amount={botCost} size={15} />
             {coins < botCost && <span className="setup-botfee-warn">{t('setup.botFeeShort')}</span>}
+          </div>
+        )}
+
+        {/* Rakip Seviyesi: çift tutamaçlı seviye seçici (online eşleşme). target = seçilen maç
+            uzunluğu (preview L); accepted değişince önizleme yeniden hesaplanır. */}
+        {mode === 'online' && rating != null && (
+          <div className="setup-row">
+            <LevelRangeSlider rating={rating} target={Math.max(...accepted)} onChange={(v) => onLevel?.(v)} />
           </div>
         )}
 

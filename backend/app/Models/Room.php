@@ -36,6 +36,9 @@ class Room extends Model
         'bet_pct',
         'target',
         'targets',
+        // Seviye seçici: arayanın kabul ettiği rakip RATING aralığı (null = sınır yok).
+        'min_opp_rating',
+        'max_opp_rating',
         'mode',
         // PUANSIZ arkadaş maçı: rating yok + PR kariyer/sıralamaya işlenmez (bkz RatingPolicy).
         'unrated',

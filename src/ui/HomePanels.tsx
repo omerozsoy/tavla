@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import playerPlayIcon from '../assets/player-play.svg'
 import diceSpinIcon from '../assets/dice-spin.gif'
 import { MOBILE_UI } from '../appEnv'
+import { rankOf } from '../ranks'
 
 // Canli mac tipi: Turnuva | Arkadaslik | Puan Maci (N-puan) | Tek Mac (1 oyun)
 type LiveCat = 'single' | 'match' | 'friendly' | 'duel' | 'tournament'
@@ -710,6 +711,7 @@ export function SeekersPanel({
   mySeek,
   onCancelSeek,
   myCoins,
+  myRating,
 }: {
   currentId?: number
   onProfile: (id: number) => void
@@ -718,6 +720,7 @@ export function SeekersPanel({
   mySeek?: Seeker | null // kendi aktif havuz aramam (backend self'i hariç tutar) -> en üstte "Rakip Bekleniyor…" + İptal
   onCancelSeek?: () => void // kendi aramamı iptal et (ana sayfada kal)
   myCoins?: number // giriş yapan kullanıcının coin bakiyesi (%-bahiste riske edilen tutarı hesaplamak için)
+  myRating?: number // Rakip Seviyesi uygunluğu: bakanın puanı arayanın aralığında mı (Oyna gating)
 }) {
   const { t } = useT()
   const [rows, setRows] = useState<Seeker[] | null>(null)
@@ -771,6 +774,13 @@ export function SeekersPanel({
               const lengths = tgList.join('·')
               const maxTarget = Math.max(1, ...tgList)
               const tcKey = SEEK_TC_KEY[s.time_control ?? 'normal']
+              // Rakip Seviyesi: arayanın kabul ettiği rating aralığı + bakanın uygunluğu.
+              const loR = s.min_opp_rating ?? null
+              const hiR = s.max_opp_rating ?? null
+              const hasRange = loR != null || hiR != null
+              const eligible =
+                myRating == null ? true : (loR == null || myRating >= loR) && (hiR == null || myRating <= hiR)
+              const rankName = (r: number) => rankOf(r).code ?? t(rankOf(r).divKey)
               return (
                 <div
                   key={`${s.kind}-${s.id}`}
@@ -821,9 +831,23 @@ export function SeekersPanel({
                         {/* Havuz eşleşmeleri her zaman puanlı (RoomController::matchmaking mode='ranked').
                             Bilgi amaçlı rozet: bu maç rating'i etkiler. */}
                         <span className="seek-chip seek-chip-rated">{t('seekers.rated')}</span>
+                        {hasRange && (
+                          <span className="seek-chip seek-chip-level" title={t('level.range')}>
+                            {rankName(loR ?? 0)}–{hiR != null ? rankName(hiR) : '∞'}
+                          </span>
+                        )}
                       </span>
                     ) : (
                       <span className="seek-avail">{t('online.st.ready')}</span>
+                    )}
+                    {/* "{ad}, {alt} ile {üst} puan arasında oynamak istiyor" — aralık dışı bakan da
+                        neden katılamadığını anlasın. Kendi satırımda gösterme. */}
+                    {!self && s.kind === 'seeking' && hasRange && (
+                      <span className="seek-levelmsg">
+                        {hiR != null
+                          ? t('level.seekMsg', { name: s.name, min: loR ?? 0, max: hiR })
+                          : t('level.seekMsgOpen', { name: s.name, min: loR ?? 0 })}
+                      </span>
                     )}
                   </span>
                   {/* Kendi aramam -> İptal. Başkası seeking -> kuyruğa katıl (eşleş); available -> davet et. */}
@@ -835,9 +859,15 @@ export function SeekersPanel({
                     </span>
                   ) : !self && s.kind === 'seeking' && onJoin ? (
                     <span className="online-actions">
-                      <Button variant="default" size="default" className="online-act seek-act-text" title={t('seekers.join')} onClick={() => onJoin(s)}>
-                        {t('seekers.playNow')}
-                      </Button>
+                      {eligible ? (
+                        <Button variant="default" size="default" className="online-act seek-act-text" title={t('seekers.join')} onClick={() => onJoin(s)}>
+                          {t('seekers.playNow')}
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="default" className="online-act seek-act-text" disabled title={t('level.outOfRange')}>
+                          {t('level.outOfRange')}
+                        </Button>
+                      )}
                     </span>
                   ) : !self && s.kind === 'available' && onInvite ? (
                     <span className="online-actions">

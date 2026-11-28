@@ -38907,3 +38907,152 @@ body:has(.register-overlay) .chat-panel.closed {
   cursor: pointer;
   padding: 0 2px;
 }
+
+/* ---- Rakip Seviyesi (çift tutamaçlı seviye seçici) — LevelRangeSlider ---- */
+.lvl {
+  margin: 10px 0 4px;
+}
+.lvl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.lvl-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.lvl-allbtn {
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.lvl-allbtn.on {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.lvl-track {
+  position: relative;
+  height: 34px;
+  margin: 2px 14px 6px;
+  touch-action: pan-y; /* dikey scroll serbest, yatay sürükleme tutamaca */
+}
+.lvl-rail {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 6px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 16%, transparent);
+}
+.lvl-fill {
+  position: absolute;
+  top: 50%;
+  height: 6px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--accent);
+}
+.lvl-notch {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 35%, transparent);
+  pointer-events: none;
+}
+.lvl-notch-self {
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: transparent;
+  border: 2px solid var(--accent);
+}
+.lvl-handle {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  margin-left: -11px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  padding: 0;
+  touch-action: none;
+}
+.lvl-handle:active {
+  cursor: grabbing;
+}
+.lvl-all .lvl-rail {
+  opacity: 0.4;
+}
+.lvl-readout {
+  display: grid;
+  gap: 3px;
+  font-size: 0.86rem;
+  margin: 8px 2px 0;
+}
+.lvl-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.lvl-lab {
+  color: var(--muted);
+}
+.lvl-val {
+  font-weight: 600;
+  text-align: right;
+}
+.lvl-row-range .lvl-val {
+  color: var(--accent);
+}
+.lvl-preview {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 10px 2px 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.lvl-prev-win {
+  color: #2e9e5b;
+}
+.lvl-prev-loss {
+  color: #c9563f;
+}
+.lvl-prbonus,
+.lvl-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 6px 2px 0;
+  line-height: 1.35;
+}
+
+/* Oyun Arayanlar — Rakip Seviyesi rozeti + mesaj satırı */
+.seek-chip-level {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.seek-levelmsg {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  line-height: 1.3;
+}

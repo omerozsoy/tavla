@@ -2807,6 +2807,7 @@ export async function matchmake(
   stake?: number,
   userId?: number,
   minRating?: number,
+  maxRating?: number, // Rakip Seviyesi: kabul edilen rakip rating UST siniri (0 = serbest)
   betPct?: number,
   targets?: number[],
   timeControl?: string,
@@ -2825,6 +2826,7 @@ export async function matchmake(
       stakes: stakes ?? null, // verilmezse backend [stake]'e duser
       user_id: userId ?? null,
       min_rating: minRating ?? 0,
+      max_rating: maxRating ?? 0,
       bet_pct: betPct ?? 0,
       targets: targets ?? [1],
       time_control: timeControl ?? null,
@@ -2952,6 +2954,8 @@ export interface Seeker {
   risk?: number // arayanin riske ettigi tutar (%-bahis: arayan bakiyesinin bet_pct'si; sabit: stake) -> istemci kendi riskiyle min'ler = gercek pot
   classic?: boolean // Klasik Tavla (kup yok + mars=2) -> rozet + "eslesme" ayni moda katar
   time_control: 'casual' | 'normal' | 'speed' // eslesme icin tempo (kuyruga katilirken ayni olmali)
+  min_opp_rating?: number | null // Rakip Seviyesi: arayanin kabul ettigi alt rating (null = serbest)
+  max_opp_rating?: number | null // Rakip Seviyesi: ust rating (null = serbest)
   since?: string | null // havuza giris zamani (ISO) — "ne kadardir ariyor"
   waitFor?: string | null // yalnız kendi satırımda (mySeek): hedefli davet beklenen rakibin adı (açık arama değil)
 }

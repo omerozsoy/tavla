@@ -619,6 +619,7 @@ import Membership from './ui/Membership'
 import type { PlanId } from './plans'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
+import { type LevelRangeValue } from './ui/LevelRangeSlider'
 import {
   loadGame,
   clearGame,
@@ -1262,7 +1263,10 @@ export default function App() {
   // Arkadaslik (davet kodu) maci mi? true -> NE puan NE coin (dostluk). Davet=friendly,
   // eslesme havuzu/solo=ranked. Mac-sonu raporu + coin settle bunu okur.
   const friendlyRef = useRef(false)
-  const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
+  const minRatingRef = useRef(0) // Rakip Seviyesi: kabul edilen rakip rating ALT siniri (0 = serbest)
+  const maxRatingRef = useRef(0) // Rakip Seviyesi: kabul edilen rakip rating UST siniri (0 = serbest)
+  // Rakip Seviyesi seçicisinin son değeri (Tek Oyun + Maç setup ekranları aynı ref'e yazar).
+  const levelRef = useRef<LevelRangeValue>({ minRating: 0, maxRating: 0, allLevels: true })
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const potRef = useRef(0) // oynanan gercek pot (yuzde maçta min snapshot, sabitte = stake); sunucudan gelir
   const mmOriginRef = useRef<'match' | 'solo' | 'klassik'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
@@ -8009,7 +8013,8 @@ export default function App() {
     stakesRef.current = list
     stakeRef.current = Math.max(...list) // gecici gosterim; eslesmede room.stake ile guncellenir
     betPctRef.current = 0 // Tek Oyun sabit bahis (pct degil)
-    minRatingRef.current = 0 // Tek Oyun: puan filtresi yok
+    minRatingRef.current = levelRef.current.minRating // Rakip Seviyesi (Tek Oyun)
+    maxRatingRef.current = levelRef.current.maxRating
     // Tahta ARTIK seviyeye kilitli degil: oyuncunun secili boardTheme'i korunur
     // (Tahtayi Degistir ile kendisi secer).
     setSoloOpen(false)
@@ -8048,6 +8053,7 @@ export default function App() {
         stakeRef.current,
         user?.id,
         minRatingRef.current,
+        maxRatingRef.current,
         betPctRef.current,
         targetsRef.current,
         tcOverride ?? timeControl,
@@ -8549,7 +8555,11 @@ export default function App() {
       const targets = pickedTargets
       targetsRef.current = targets
       onlineTargetRef.current = Math.max(...targets) // gecici; eslesmede room.target ile guncellenir
+      // HEDEFLI katilim: rakibi bilerek sectim -> KENDI seviye filtremi uygulama (0/0 serbest).
+      // Kart zaten benim puanimin arayanin araligi icinde oldugunu dogruladi; arayanin kayitli
+      // araligi backend'de yine kontrol edilir (karsilikli). Bayat filtremle kendimi bloklamayayim.
       minRatingRef.current = 0
+      maxRatingRef.current = 0
       betPctRef.current = s.bet_pct || 0
       stakesRef.current = stakeList.length > 0 ? stakeList : null
       stakeRef.current = maxStake
@@ -9035,7 +9045,8 @@ export default function App() {
       stakeRef.current = 0 // Mac Oyunu sabit stake degil, % bahis kullanir
       stakesRef.current = null // Tek Oyun coklu-bahis'i sizdirma (Mac Oyunu % bahis)
       betPctRef.current = opts.betPct ?? 0
-      minRatingRef.current = opts.minRating ?? 0
+      minRatingRef.current = levelRef.current.minRating // Rakip Seviyesi (Maç Oyunu)
+      maxRatingRef.current = levelRef.current.maxRating
       classicRef.current = !!opts.classic // Klasik Tavla: ayri eslesme havuzu + kup yok + mars=2
       setMode('online')
       setHome(false)
@@ -10573,7 +10584,16 @@ export default function App() {
     },
     onHome: () => {
       closeAllPages()
-      if (online) handleLeaveRoom()
+      // Rakip beklerken (havuz araması mm_waiting / hedefli davet / rövanş) "Ana Sayfa" = aramayı
+      // KORU — goPage ile birebir. Aksi halde onHome handleLeaveRoom ile aramayı YIKIYORDU: kart
+      // "Oyun Arayanlar"dan kaybolur, poll/heartbeat durur ama sunucu seeker'ı ~2dk canlı kalıp
+      // rakiple eşleşir -> auto-enter yok -> kullanıcı habersiz süreden kaybeder. Korununca: kart
+      // listede görünür + poll sürer + eşleşince auto-enter oyuna sokar. Aktif oyunda (playing) terk et.
+      const waitingForOpponent =
+        room?.status === 'mm_waiting' ||
+        (room?.status === 'waiting' && !!inviteWaitName) ||
+        (rematch.mine === 'yes' && !rematch.code)
+      if (online && !waitingForOpponent) handleLeaveRoom()
       else setHome(true)
     },
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
@@ -11646,6 +11666,10 @@ export default function App() {
           })()}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
+          rating={user?.rating ?? 1500}
+          onLevel={(v) => {
+            levelRef.current = v
+          }}
           titleOverride={menuOverrides['solo']?.title?.[lang]}
           subOverride={menuOverrides['solo']?.sub?.[lang]}
         />
@@ -12065,6 +12089,10 @@ export default function App() {
             })()}
             onChangeBoard={() => setBoardPickerOpen(true)}
             onConfirm={applyMatchSetup}
+            rating={user?.rating ?? 1500}
+            onLevel={(v) => {
+              levelRef.current = v
+            }}
             titleOverride={menuTitle(classicSetup ? 'klassikAi' : setup === 'online' ? 'match' : 'aiGame')}
             premium={user?.plan_active === 'premium'}
             onRequirePremium={() => setMemOpen(true)}
@@ -12605,6 +12633,7 @@ export default function App() {
             <SeekersPanel
               currentId={user?.id}
               myCoins={user?.coins}
+              myRating={user?.rating}
               onProfile={(id) => startTransition(() => setHomeProfileId(id))}
               onJoin={handleJoinSeeker}
               onInvite={user ? handleInviteFriend : undefined}
