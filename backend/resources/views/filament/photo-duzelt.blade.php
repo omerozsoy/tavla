@@ -17,10 +17,51 @@
         ? ($readCube['value'] ?? 1) . (($readCube['owner'] ?? null) ? ' (' . (($readCube['owner'] === 'white') ? 'sen' : 'rakip') . ')' : ' (orta)')
         : '—';
 @endphp
-<div x-data="{
+
+<style>
+    .fd { --card:#fff; --br:#e5e7eb; --ink:#111827; --muted:#6b7280; --chip:#f3f4f6; --field:#fff; --field-br:#d1d5db; --field-ink:#111827; }
+    .dark .fd { --card:#1e293b; --br:#334155; --ink:#e2e8f0; --muted:#94a3b8; --chip:#334155; --field:#0f172a; --field-br:#475569; --field-ink:#e2e8f0; }
+    .fd { display:flex; flex-direction:column; gap:16px; user-select:none; color:var(--ink); }
+    .fd-card { background:var(--card); border:1px solid var(--br); border-radius:14px; padding:14px 16px; }
+    .fd-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .fd-grid { display:grid; grid-template-columns:minmax(240px,340px) 1fr; gap:16px; align-items:start; }
+    @media (max-width:860px){ .fd-grid { grid-template-columns:1fr; } }
+    .fd-label { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    /* fırça / toggle chip'leri */
+    .fd-chip { height:36px; padding:0 14px; border-radius:9px; border:1px solid var(--field-br); background:var(--field);
+               color:var(--field-ink); font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:.12s; }
+    .fd-chip:hover { border-color:var(--muted); }
+    .fd-sw { width:13px; height:13px; border-radius:50%; display:inline-block; box-shadow:0 0 0 1px rgba(0,0,0,.25) inset; }
+    .fd-sw.me { background:#f3eee1; } .fd-sw.opp { background:#b5423a; }
+    .fd-chip.on.me { background:#f3eee1; color:#1b2730; border-color:#f3eee1; box-shadow:0 2px 8px rgba(0,0,0,.18); }
+    .fd-chip.on.opp { background:#b5423a; color:#fff; border-color:#b5423a; box-shadow:0 2px 8px rgba(181,66,58,.35); }
+    .fd-chip.on.era { background:#64748b; color:#fff; border-color:#64748b; }
+    .fd-chip.danger { color:#dc2626; border-color:#ef444455; }
+    .fd-hint { font-size:12px; color:var(--muted); }
+    /* stepper */
+    .fd-step { width:30px; height:30px; border-radius:8px; border:1px solid var(--field-br); background:var(--field); color:var(--field-ink); font-size:16px; cursor:pointer; line-height:1; }
+    .fd-step:hover { border-color:var(--muted); }
+    .fd-num { min-width:20px; text-align:center; font-weight:700; font-variant-numeric:tabular-nums; }
+    /* select */
+    .fd-select { height:34px; min-width:58px; border-radius:8px; border:1px solid var(--field-br); background:var(--field);
+                 color:var(--field-ink); padding:0 8px; font-size:14px; font-weight:600; cursor:pointer; }
+    .fd-photo { width:100%; border-radius:12px; border:1px solid var(--br); display:block; }
+    .fd-read { font-size:12px; background:var(--chip); color:var(--ink); border-radius:999px; padding:4px 11px; }
+    .fd-read b { color:var(--ink); }
+    .fd-board { width:100%; max-width:520px; }
+    .fd-save { height:44px; padding:0 24px; border-radius:11px; border:0; background:#16a34a; color:#fff; font-size:15px;
+               font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(22,163,74,.3); }
+    .fd-save:hover { background:#15803d; }
+    .fd-ctl-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:14px; }
+    .fd-ctl { background:var(--card); border:1px solid var(--br); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:9px; }
+</style>
+
+<div class="fd" x-data="{
         pos: @js($this->pos),
         mineDark: @js((bool) $mineDark),
         brush: 'me',
+        d0: ((@js($this->pos['dice'] ?? []))[0] || 0),
+        d1: ((@js($this->pos['dice'] ?? []))[1] || 0),
         mag(i) { return Math.abs(this.pos.points?.[i] || 0) },
         paint(i) {
             const cur = this.pos.points[i] || 0
@@ -36,123 +77,131 @@
         clearBoard() { this.pos.points = Array(24).fill(0); this.pos.bar = { white: 0, black: 0 }; this.sync() },
         barV(k) { return this.pos.bar?.[k] || 0 },
         bar(k, d) { if (!this.pos.bar) this.pos.bar = { white: 0, black: 0 }; this.pos.bar[k] = Math.max(0, Math.min(15, this.barV(k) + d)); this.sync() },
-        dieV(i) { return this.pos.dice?.[i] || 0 },
-        setDie(i, v) { const a = [this.dieV(0), this.dieV(1)]; a[i] = +v; this.pos.dice = a.filter(x => x >= 1 && x <= 6); this.sync() },
+        syncDice() { this.pos.dice = [Number(this.d0), Number(this.d1)].filter(x => x >= 1 && x <= 6); this.sync() },
         setTurn(t) { this.pos.turn = t; this.sync() },
-        setCubeVal(v) { if (!this.pos.cube) this.pos.cube = { value: 1, owner: null }; this.pos.cube.value = +v; if (+v === 1) this.pos.cube.owner = null; this.sync() },
-        setCubeOwner(o) { if (!this.pos.cube) this.pos.cube = { value: 1, owner: null }; this.pos.cube.owner = o || null; if (!o) this.pos.cube.value = 1; this.sync() },
-        // Düzeltilmiş konumu Livewire $pos'una deferred yaz (her tıklamada roundtrip YOK; Kaydet action commit'inde uçar).
+        onCubeVal() { if (Number(this.pos.cube.value) === 1) this.pos.cube.owner = null; this.sync() },
+        onCubeOwner() { if (!this.pos.cube.owner) this.pos.cube.value = 1; this.sync() },
+        // Düzeltilmiş konumu Livewire $pos'una deferred yaz (Kaydet action commit'inde uçar).
         sync() { this.$wire.set('pos', this.pos, false) }
-    }" style="display:flex;flex-direction:column;gap:14px;user-select:none">
+    }">
 
-    {{-- Fırça: aktif renk/sil --}}
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <b style="font-size:13px">Renk:</b>
-        <button type="button" @click="brush='me'" :style="{ background: brush==='me' ? '#1b2730':'#fff', color: brush==='me' ? '#fff':'#111827', outline: brush==='me' ? '2px solid #1b2730':'none' }"
-            style="height:32px;padding:0 14px;border-radius:8px;border:1px solid #d1d5db;font-size:13px;font-weight:600">● Sen</button>
-        <button type="button" @click="brush='opp'" :style="{ background: brush==='opp' ? '#b5423a':'#fff', color: brush==='opp' ? '#fff':'#111827', outline: brush==='opp' ? '2px solid #b5423a':'none' }"
-            style="height:32px;padding:0 14px;border-radius:8px;border:1px solid #d1d5db;font-size:13px;font-weight:600">● Rakip</button>
-        <button type="button" @click="brush='erase'" :style="{ background: brush==='erase' ? '#6b7280':'#fff', color: brush==='erase' ? '#fff':'#111827', outline: brush==='erase' ? '2px solid #6b7280':'none' }"
-            style="height:32px;padding:0 14px;border-radius:8px;border:1px solid #d1d5db;font-size:13px;font-weight:600">✕ Taş Sil</button>
-        <button type="button" @click="clearBoard()"
-            style="height:32px;padding:0 14px;border-radius:8px;border:1px solid #e0b4b4;background:#fff;color:#b5423a;font-size:13px;font-weight:600">🗑 Tahtayı Boşalt</button>
-        <span style="font-size:12px;color:#6b7280">Noktaya tıkla → taş ekle/çıkar</span>
+    {{-- Fırça --}}
+    <div class="fd-card fd-row">
+        <span class="fd-label" style="margin-right:2px">Taş</span>
+        <button type="button" class="fd-chip me" :class="brush==='me' && 'on'" @click="brush='me'"><span class="fd-sw me"></span> Sen</button>
+        <button type="button" class="fd-chip opp" :class="brush==='opp' && 'on'" @click="brush='opp'"><span class="fd-sw opp"></span> Rakip</button>
+        <button type="button" class="fd-chip era" :class="brush==='erase' && 'on'" @click="brush='erase'">✕ Taş Sil</button>
+        <span style="width:1px;height:22px;background:var(--br)"></span>
+        <button type="button" class="fd-chip danger" @click="clearBoard()">🗑 Tahtayı Boşalt</button>
+        <span class="fd-hint" x-text="brush==='erase' ? 'Taşa tıkla → kaldır' : 'Noktaya tıkla → taş ekle'"></span>
     </div>
 
-    {{-- Foto (sol) + tahta (sağ) yan yana --}}
-    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
-        <div style="flex:1 1 260px;max-width:340px;display:flex;flex-direction:column;gap:8px">
-            <img src="{{ $photoUrl }}" alt="" style="width:100%;border-radius:8px;border:1px solid #e5e7eb;object-fit:contain"/>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px">
-                <span style="background:#f3f4f6;border-radius:999px;padding:3px 10px">Zar okudu: <b>{{ count($readDice) ? implode('-', $readDice) : '—' }}</b></span>
-                <span style="background:#f3f4f6;border-radius:999px;padding:3px 10px">Küp okudu: <b>{{ $readCubeLabel }}</b></span>
+    {{-- Foto + tahta --}}
+    <div class="fd-grid">
+        <div style="display:flex;flex-direction:column;gap:10px">
+            <img src="{{ $photoUrl }}" alt="" class="fd-photo"/>
+            <div class="fd-row" style="gap:7px">
+                <span class="fd-read">Zar okudu: <b>{{ count($readDice) ? implode('-', $readDice) : '—' }}</b></span>
+                <span class="fd-read">Küp okudu: <b>{{ $readCubeLabel }}</b></span>
             </div>
         </div>
-        <svg viewBox="0 0 {{ $W }} {{ $H }}" role="img" aria-label="Düzeltme tahtası"
-            style="flex:1 1 340px;max-width:460px;width:100%;background:#1b2730;border-radius:8px;touch-action:manipulation">
-            <rect x="0" y="0" width="{{ $W }}" height="{{ $H }}" rx="8" fill="#1b2730"/>
-            <rect x="{{ $W / 2 - $barW / 2 }}" y="0" width="{{ $barW }}" height="{{ $H }}" fill="#0f1720"/>
-            @foreach ([['top', true], ['bot', false]] as [$half, $isTop])
-                @for ($c = 0; $c < 12; $c++)
-                    @php
-                        $idx = $isTop ? $topIdx($c) : $botIdx($c);
-                        $x = $colX($c);
-                        $hw = $pw / 2 - 1;
-                        $baseY = $isTop ? $m : $H - $m;
-                        $apexY = $isTop ? $H / 2 - 14 : $H / 2 + 14;
-                        $dark = $isTop ? ($c % 2 === 0) : ($c % 2 === 1);
-                    @endphp
-                    <polygon points="{{ $x - $hw }},{{ $baseY }} {{ $x + $hw }},{{ $baseY }} {{ $x }},{{ $apexY }}"
-                        fill="{{ $dark ? '#2f4150' : '#d8cfc0' }}" opacity="0.55"/>
-                    @for ($k = 0; $k < 5; $k++)
-                        <circle cx="{{ $x }}" cy="{{ $isTop ? $cyTop($k) : $cyBot($k) }}" r="{{ $r }}"
-                            x-show="mag({{ $idx }}) > {{ $k }}" :fill="fill({{ $idx }})"
-                            stroke="rgba(0,0,0,.35)" stroke-width="1" style="pointer-events:none"/>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <svg viewBox="0 0 {{ $W }} {{ $H }}" role="img" aria-label="Düzeltme tahtası" class="fd-board"
+                style="background:#1b2730;border-radius:10px;touch-action:manipulation">
+                <rect x="0" y="0" width="{{ $W }}" height="{{ $H }}" rx="8" fill="#1b2730"/>
+                <rect x="{{ $W / 2 - $barW / 2 }}" y="0" width="{{ $barW }}" height="{{ $H }}" fill="#0f1720"/>
+                @foreach ([['top', true], ['bot', false]] as [$half, $isTop])
+                    @for ($c = 0; $c < 12; $c++)
+                        @php
+                            $idx = $isTop ? $topIdx($c) : $botIdx($c);
+                            $x = $colX($c);
+                            $hw = $pw / 2 - 1;
+                            $baseY = $isTop ? $m : $H - $m;
+                            $apexY = $isTop ? $H / 2 - 14 : $H / 2 + 14;
+                            $dark = $isTop ? ($c % 2 === 0) : ($c % 2 === 1);
+                        @endphp
+                        <polygon points="{{ $x - $hw }},{{ $baseY }} {{ $x + $hw }},{{ $baseY }} {{ $x }},{{ $apexY }}"
+                            fill="{{ $dark ? '#2f4150' : '#d8cfc0' }}" opacity="0.55"/>
+                        @for ($k = 0; $k < 5; $k++)
+                            <circle cx="{{ $x }}" cy="{{ $isTop ? $cyTop($k) : $cyBot($k) }}" r="{{ $r }}"
+                                x-show="mag({{ $idx }}) > {{ $k }}" :fill="fill({{ $idx }})"
+                                stroke="rgba(0,0,0,.35)" stroke-width="1" style="pointer-events:none"/>
+                        @endfor
+                        <text x="{{ $x }}" y="{{ ($isTop ? $cyTop(4) : $cyBot(4)) + 3.5 }}" font-size="10" text-anchor="middle"
+                            font-weight="700" x-show="mag({{ $idx }}) > 5" x-text="mag({{ $idx }})"
+                            :fill="(pos.points[{{ $idx }}]>0) !== mineDark ? '#333' : '#fff'" style="pointer-events:none"/>
+                        <rect x="{{ $x - $pw / 2 }}" y="{{ $isTop ? 0 : $H / 2 }}" width="{{ $pw }}" height="{{ $H / 2 }}"
+                            fill="transparent" style="cursor:pointer" @click="paint({{ $idx }})"/>
                     @endfor
-                    <text x="{{ $x }}" y="{{ ($isTop ? $cyTop(4) : $cyBot(4)) + 3.5 }}" font-size="10" text-anchor="middle"
-                        font-weight="700" x-show="mag({{ $idx }}) > 5" x-text="mag({{ $idx }})"
-                        :fill="(pos.points[{{ $idx }}]>0) !== mineDark ? '#333' : '#fff'" style="pointer-events:none"/>
-                    <rect x="{{ $x - $pw / 2 }}" y="{{ $isTop ? 0 : $H / 2 }}" width="{{ $pw }}" height="{{ $H / 2 }}"
-                        fill="transparent" style="cursor:pointer" @click="paint({{ $idx }})"/>
-                @endfor
-            @endforeach
-        </svg>
+                @endforeach
+            </svg>
+
+            {{-- Bar / Sıra / Zar / Küp --}}
+            <div class="fd-ctl-grid" style="width:100%">
+                <div class="fd-ctl">
+                    <span class="fd-label">Bar (kırık taş)</span>
+                    <div class="fd-row" style="gap:8px">
+                        <span class="fd-sw me"></span><span style="font-size:13px">Sen</span>
+                        <button type="button" class="fd-step" @click="bar('white',-1)">−</button>
+                        <span class="fd-num" x-text="barV('white')"></span>
+                        <button type="button" class="fd-step" @click="bar('white',1)">+</button>
+                    </div>
+                    <div class="fd-row" style="gap:8px">
+                        <span class="fd-sw opp"></span><span style="font-size:13px">Rakip</span>
+                        <button type="button" class="fd-step" @click="bar('black',-1)">−</button>
+                        <span class="fd-num" x-text="barV('black')"></span>
+                        <button type="button" class="fd-step" @click="bar('black',1)">+</button>
+                    </div>
+                </div>
+
+                <div class="fd-ctl">
+                    <span class="fd-label">Sıra</span>
+                    <div class="fd-row">
+                        <button type="button" class="fd-chip" :class="(pos.turn||'white')==='white' && 'on me'" @click="setTurn('white')"><span class="fd-sw me"></span> Sen</button>
+                        <button type="button" class="fd-chip" :class="pos.turn==='black' && 'on opp'" @click="setTurn('black')"><span class="fd-sw opp"></span> Rakip</button>
+                    </div>
+                </div>
+
+                <div class="fd-ctl">
+                    <span class="fd-label">🎲 Zar <span style="text-transform:none;font-weight:500">(yanlışsa düzelt)</span></span>
+                    <div class="fd-row" style="gap:8px">
+                        <select class="fd-select" x-model.number="d0" @change="syncDice()">
+                            <option value="0">—</option>
+                            @for ($v = 1; $v <= 6; $v++)<option value="{{ $v }}">{{ $v }}</option>@endfor
+                        </select>
+                        <span style="color:var(--muted)">–</span>
+                        <select class="fd-select" x-model.number="d1" @change="syncDice()">
+                            <option value="0">—</option>
+                            @for ($v = 1; $v <= 6; $v++)<option value="{{ $v }}">{{ $v }}</option>@endfor
+                        </select>
+                    </div>
+                </div>
+
+                <div class="fd-ctl">
+                    <span class="fd-label">Küp</span>
+                    <div class="fd-row" style="gap:8px">
+                        <select class="fd-select" x-model.number="pos.cube.value" @change="onCubeVal()">
+                            @foreach ([1, 2, 4, 8, 16, 32, 64] as $v)<option value="{{ $v }}">{{ $v }}</option>@endforeach
+                        </select>
+                        <select class="fd-select" x-model="pos.cube.owner" @change="onCubeOwner()">
+                            <option value="">orta</option>
+                            <option value="white">sen</option>
+                            <option value="black">rakip</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    {{-- Bar / Sıra / Zar / Küp --}}
-    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;align-items:center">
-        <div style="display:flex;align-items:center;gap:6px">
-            <b>Bar</b>
-            <span>Sen</span>
-            <button type="button" @click="bar('white',-1)" style="width:26px;height:26px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#111827">−</button>
-            <span x-text="barV('white')" style="min-width:16px;text-align:center"></span>
-            <button type="button" @click="bar('white',1)" style="width:26px;height:26px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#111827">+</button>
-            <span>Rakip</span>
-            <button type="button" @click="bar('black',-1)" style="width:26px;height:26px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#111827">−</button>
-            <span x-text="barV('black')" style="min-width:16px;text-align:center"></span>
-            <button type="button" @click="bar('black',1)" style="width:26px;height:26px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#111827">+</button>
-        </div>
-    </div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;align-items:center">
-        <div style="display:flex;align-items:center;gap:6px">
-            <b>Sıra</b>
-            <button type="button" @click="setTurn('white')" :style="{ background: (pos.turn||'white')==='white' ? '#1b2730':'#fff', color: (pos.turn||'white')==='white' ? '#fff':'#111827' }"
-                style="height:28px;padding:0 10px;border-radius:6px;border:1px solid #d1d5db;font-size:12px">Sen</button>
-            <button type="button" @click="setTurn('black')" :style="{ background: pos.turn==='black' ? '#b5423a':'#fff', color: pos.turn==='black' ? '#fff':'#111827' }"
-                style="height:28px;padding:0 10px;border-radius:6px;border:1px solid #d1d5db;font-size:12px">Rakip</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-            <b>Zar</b>
-            <select @change="setDie(0,$event.target.value)" style="height:28px;border-radius:6px;border:1px solid #d1d5db;padding:0 4px">
-                <template x-for="v in [0,1,2,3,4,5,6]" :key="v"><option :value="v" :selected="dieV(0)===v" x-text="v || '—'"></option></template>
-            </select>
-            <select @change="setDie(1,$event.target.value)" style="height:28px;border-radius:6px;border:1px solid #d1d5db;padding:0 4px">
-                <template x-for="v in [0,1,2,3,4,5,6]" :key="v"><option :value="v" :selected="dieV(1)===v" x-text="v || '—'"></option></template>
-            </select>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-            <b>Küp</b>
-            <select @change="setCubeVal($event.target.value)" style="height:28px;border-radius:6px;border:1px solid #d1d5db;padding:0 4px">
-                <template x-for="v in [1,2,4,8,16,32,64]" :key="v"><option :value="v" :selected="(pos.cube?.value||1)===v" x-text="v"></option></template>
-            </select>
-            <select @change="setCubeOwner($event.target.value)" style="height:28px;border-radius:6px;border:1px solid #d1d5db;padding:0 4px">
-                <option value="" :selected="!(pos.cube?.owner)">orta</option>
-                <option value="white" :selected="pos.cube?.owner==='white'">sen</option>
-                <option value="black" :selected="pos.cube?.owner==='black'">rakip</option>
-            </select>
-        </div>
-    </div>
-
-    {{-- Kaydet (header action'a ek, belirgin) → $pos ground_truth'a yazılır, listeye dön --}}
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px">
-        <button type="button" @click="$wire.save()" wire:loading.attr="disabled" wire:target="save"
-            style="height:40px;padding:0 20px;border-radius:9px;border:0;background:#15803d;color:#fff;font-size:14px;font-weight:700;cursor:pointer">
+    {{-- Kaydet --}}
+    <div class="fd-row" style="margin-top:2px">
+        <button type="button" class="fd-save" @click="$wire.save()" wire:loading.attr="disabled" wire:target="save">
             ✓ Kaydet → Eğitime hazır
         </button>
-        <span wire:loading wire:target="save" style="font-size:12px;color:#6b7280">Kaydediliyor…</span>
-        <span style="font-size:11.5px;color:#6b7280;line-height:1.4;flex:1 1 240px">
-            Soldaki fotoğrafa bak; renk seç (Sen/Rakip), tahtada ilgili noktaya tıklayarak taşları doğru say. Bar/Sıra/Zar/Küp'ü düzelt → Kaydet (eğitim etiketi).
-        </span>
+        <span wire:loading wire:target="save" class="fd-hint">Kaydediliyor…</span>
+        <span class="fd-hint" style="flex:1 1 220px">Fotoğrafa bak; renk seç, noktalara tıklayarak taşları doğru say. Bar/Sıra/Zar/Küp'ü düzelt → Kaydet.</span>
     </div>
 </div>
 </x-filament-panels::page>
