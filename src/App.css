@@ -39015,10 +39015,24 @@ body:has(.register-overlay) .chat-panel.closed {
   color: var(--muted);
 }
 .lvl-val {
-  font-weight: 600;
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+/* Rakamlar ÜSTTE (öne çıkar ama bold DEĞİL), kademe adı ALTTA (soluk). */
+.lvl-band {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.lvl-name {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.lvl-end-hi .lvl-val {
+  align-items: flex-end;
 }
 .lvl-row-range .lvl-val {
+  flex-direction: row;
   color: var(--accent);
 }
 .lvl-preview {

@@ -192,13 +192,15 @@ export function LevelRangeSlider({
             <span className="lvl-end lvl-end-lo">
               <span className="lvl-lab">{t('level.lowest')}</span>
               <span className="lvl-val">
-                {nameOf(loStop)} · {bandOf(loStop)}
+                <span className="lvl-band">{bandOf(loStop)}</span>
+                <span className="lvl-name">{nameOf(loStop)}</span>
               </span>
             </span>
             <span className="lvl-end lvl-end-hi">
               <span className="lvl-lab">{t('level.highest')}</span>
               <span className="lvl-val">
-                {nameOf(hiStop)} · {bandOf(hiStop)}
+                <span className="lvl-band">{bandOf(hiStop)}</span>
+                <span className="lvl-name">{nameOf(hiStop)}</span>
               </span>
             </span>
           </div>
