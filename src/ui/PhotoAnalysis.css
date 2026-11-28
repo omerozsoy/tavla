@@ -33,6 +33,31 @@
 .page-host .photo-x {
   display: none;
 }
+/* Gercek sayfa: dar/ortali modal kolonu DEGIL -> SOLA DAYALI + standart sayfa genisligi
+   (seo-landing/service deseni: max-width 1400 + margin 0 + clamp yatay padding). Baslik ve
+   icerik sola dayanir; form/sonuc bloklari okunur genislikte kalir. */
+.page-host .photo-page {
+  max-width: 1400px;
+  margin: 0;
+  padding: 22px clamp(16px, 3vw, 44px) 56px;
+}
+.page-host .photo-head {
+  text-align: left;
+}
+.page-host .photo-title {
+  justify-content: flex-start;
+}
+.page-host .photo-sub {
+  margin-inline: 0;
+}
+.page-host .photo-capture {
+  max-width: 560px;
+  margin-inline: 0;
+}
+.page-host .photo-result {
+  max-width: 940px;
+  margin-inline: 0;
+}
 .photo-head {
   text-align: center;
   margin: 4px 0 20px;
