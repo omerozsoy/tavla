@@ -362,6 +362,35 @@
   }
 }
 
+/* Cekilen fotograf sutunu — varsayilan GIZLI (mobil): ustteki onizleme + alttaki board/panel kalir. */
+.photo-main-photo {
+  display: none;
+}
+.photo-main-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+}
+/* Web (>=1025, gercek sayfa): sonuc 3 sutun -> FOTO | BOARD | EN IYI HAMLE yan yana
+   (kullanici direktifi, YALNIZ web). Foto sutunu gorunur, ust buyuk onizleme gizlenir
+   (tekrar olmasin), sonuc 3 sutun sigacak kadar genisler (board 468 + foto 240 + panel ~480). */
+@media (min-width: 1025px) {
+  .photo-main-photo {
+    display: block;
+    flex: 0 0 240px;
+    max-width: 240px;
+    align-self: flex-start;
+  }
+  .page-host .photo-page.has-result .photo-result {
+    max-width: 1260px;
+  }
+  .photo-page.has-result .photo-preview {
+    display: none;
+  }
+}
+
 /* Board + pip etiketleri */
 .photo-board-wrap {
   container-type: inline-size;

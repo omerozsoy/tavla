@@ -356,7 +356,7 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
   const done = result?.status === 'done' && result.valid && (cands.length > 0 || !!cube?.proper || cantDouble)
 
   return (
-    <div className="photo-page">
+    <div className={`photo-page${done ? ' has-result' : ''}`}>
       <button className="photo-x" onClick={onClose} type="button" aria-label={t('common.close')}>
         <Icon name="x" size={20} />
       </button>
@@ -459,6 +459,13 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
           {done ? (
             <>
               <div className="photo-main">
+                {/* Web (genis ekran): cekilen fotograf board'un YANINDA — karsilastirma + en iyi
+                    hamle yaninda. CSS ile yalniz >=1025px'te gorunur (mobilde ustteki onizleme kalir). */}
+                {preview && (
+                  <div className="photo-main-photo">
+                    <img src={preview} alt="" />
+                  </div>
+                )}
                 <div className="photo-main-board">
               {result!.position?.points &&
                 (() => {
