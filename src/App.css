@@ -38940,7 +38940,7 @@ body:has(.register-overlay) .chat-panel.closed {
 .lvl-track {
   position: relative;
   height: 34px;
-  margin: 2px 14px 6px;
+  margin: 22px 14px 6px; /* üst boşluk: tutamaç üstündeki rakam pill'i için */
   touch-action: pan-y; /* dikey scroll serbest, yatay sürükleme tutamaca */
 }
 .lvl-rail {
@@ -39035,12 +39035,63 @@ body:has(.register-overlay) .chat-panel.closed {
 .lvl-prev-loss {
   color: #c9563f;
 }
-.lvl-prbonus,
 .lvl-hint {
   font-size: 0.78rem;
   color: var(--muted);
   margin: 6px 2px 0;
   line-height: 1.35;
+}
+/* Bekleme uyarısı: başlığın hemen altında, turuncu (dikkat çekici). */
+.lvl-hint-top {
+  color: #d9741f;
+  font-weight: 600;
+  margin: 0 2px 8px;
+}
+/* Tutamaç üzerindeki rakam (hangi seviyede olduğu): tutamacın hemen üstünde pill. */
+.lvl-handle-val {
+  position: absolute;
+  bottom: calc(100% + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 14%, var(--card, #fff));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 6px;
+  padding: 2px 5px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* En düşük (sol) / en yüksek (sağ) seviye yan yana. */
+.lvl-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lvl-end {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.lvl-end-hi {
+  text-align: right;
+  align-items: flex-end;
+}
+/* Bu aralıkta kaç oyuncu çevrimiçi (arayacak kimse yoksa boşuna arama). */
+.lvl-online {
+  font-size: 0.84rem;
+  color: var(--muted);
+  margin: 10px 2px 0;
+}
+.lvl-online b {
+  color: var(--accent);
+}
+.lvl-online-zero,
+.lvl-online-zero b {
+  color: #d9741f;
 }
 
 /* Oyun Arayanlar — Rakip Seviyesi rozeti + mesaj satırı */

@@ -15,14 +15,34 @@ export interface LevelStop {
 }
 
 /**
- * Oyuncunun rating-rütbesini MERKEZ alıp ±span rütbelik pencere döndürür; liste başına/sonuna
- * yakınsa mevcut olanlarla daralır. Varsayılan span=5 (solda 5 alt, sağda 5 üst).
+ * DİNAMİK ±spread pencere (kullanıcı direktifi 2026-11-28): oyuncunun RATING'ini merkez alıp
+ * yalnız [rating−spread, rating+spread] ile kesişen rütbe kademelerini döndürür (spread=500).
+ * Dışındaki kademeler pencereye GİRMEZ -> seçilemez (tutamaç oralara gidemez). Band'lar eşit
+ * genişlikte olmadığından (DIVISIONS) sayı değil RATING eşiğiyle kesilir; liste uçlarına yakınsa
+ * doğal olarak daralır. Böylece her oyuncu kendinden en çok ±spread puanlık rakip seçebilir.
  */
-export function levelWindow(rating: number, span = 5): LevelStop[] {
-  const selfKey = rankOf(rating).divKey
-  const self = RANKS.findIndex((r) => r.divKey === selfKey)
-  const lo = Math.max(0, self - span)
-  const hi = Math.min(RANKS.length - 1, self + span)
+export function levelWindow(rating: number, spread = 500): LevelStop[] {
+  const loR = rating - spread
+  const hiR = rating + spread
+  const bandMax = (i: number): number | null => (RANKS[i + 1] ? RANKS[i + 1].min - 1 : null) // null = açık uçlu zirve
+  // En düşük kademe: bandı loR'a ERİŞEN ilk rütbe (bandMax >= loR; apex daima erişir).
+  let lo = 0
+  for (let i = 0; i < RANKS.length; i++) {
+    const bm = bandMax(i)
+    if (bm == null || bm >= loR) {
+      lo = i
+      break
+    }
+  }
+  // En yüksek kademe: min'i hiR'yi AŞMAYAN son rütbe.
+  let hi = lo
+  for (let i = RANKS.length - 1; i >= 0; i--) {
+    if (RANKS[i].min <= hiR) {
+      hi = i
+      break
+    }
+  }
+  if (hi < lo) hi = lo
   const stops: LevelStop[] = []
   for (let i = lo; i <= hi; i++) {
     const next = RANKS[i + 1]

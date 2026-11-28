@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEven
 import { useT } from '../i18n'
 import { levelWindow, payloadFromRange, rangeFromStops, selfStopIndex, type LevelStop } from '../levelRange'
 import { lossDelta, winDelta } from './Scoring'
+import { onlinePlayers, type OnlinePlayer } from '../api'
 
 export interface LevelRangeValue {
   minRating: number // 0 = alt sınır serbest
@@ -34,8 +35,21 @@ export function LevelRangeSlider({
   const [lo, setLo] = useState(0) // varsayılan: en geniş
   const [hi, setHi] = useState(last)
   const [all, setAll] = useState(false)
+  const [online, setOnline] = useState<OnlinePlayer[] | null>(null) // bu aralıkta kaç rakip çevrimiçi
   const trackRef = useRef<HTMLDivElement>(null)
   const active = useRef<'lo' | 'hi' | null>(null)
+
+  // Çevrimiçi oyuncuları bir kez çek -> seçilen banda düşen (maçta olmayan) sayısını göster.
+  // Böylece uygun rakip yoksa oyuncu boşuna aramaz. İstemci-tarafı filtre, sürükledikçe güncellenir.
+  useEffect(() => {
+    let alive = true
+    onlinePlayers()
+      .then((p) => alive && setOnline(p))
+      .catch(() => alive && setOnline([]))
+    return () => {
+      alive = false
+    }
+  }, [])
 
   // Değer anında yukarı akar. onChange'i ref'le -> inline prop loop'u olmaz.
   const onChangeRef = useRef(onChange)
@@ -98,6 +112,12 @@ export function LevelRangeSlider({
   const lossHi = Math.max(lossX, lossY)
   const span = (a: number, b: number, sign: string) => (a === b ? `${sign}${a}` : `${sign}${a} … ${sign}${b}`)
 
+  // Seçilen banda düşen çevrimiçi (maçta olmayan) oyuncu sayısı; "Tüm seviyeler"de tüm havuz.
+  const effMin = all ? 0 : range.min
+  const effMax = all ? Infinity : range.max != null ? range.max : Infinity
+  const matchCount =
+    online == null ? null : online.filter((p) => !p.in_game && p.rating >= effMin && p.rating <= effMax).length
+
   return (
     <div className={'lvl' + (all ? ' lvl-all' : '')}>
       <div className="lvl-head">
@@ -110,6 +130,8 @@ export function LevelRangeSlider({
           {t('level.all')}
         </button>
       </div>
+
+      <p className="lvl-hint lvl-hint-top">{t('level.waitHint')}</p>
 
       <div
         className="lvl-track"
@@ -144,7 +166,9 @@ export function LevelRangeSlider({
               aria-valuemin={stops[0].min}
               aria-valuemax={hiStop.max ?? stops[last].min}
               aria-valuenow={loStop.min}
-            />
+            >
+              <span className="lvl-handle-val">{loStop.min}</span>
+            </button>
             <button
               type="button"
               className="lvl-handle"
@@ -155,23 +179,27 @@ export function LevelRangeSlider({
               aria-valuemin={loStop.min}
               aria-valuemax={stops[last].max ?? stops[last].min}
               aria-valuenow={hiStop.max ?? hiStop.min}
-            />
+            >
+              <span className="lvl-handle-val">{hiStop.max != null ? hiStop.max : `${hiStop.min}+`}</span>
+            </button>
           </>
         )}
       </div>
 
       {!all && (
         <div className="lvl-readout">
-          <div className="lvl-row">
-            <span className="lvl-lab">{t('level.lowest')}</span>
-            <span className="lvl-val">
-              {nameOf(loStop)} · {bandOf(loStop)}
+          <div className="lvl-ends">
+            <span className="lvl-end lvl-end-lo">
+              <span className="lvl-lab">{t('level.lowest')}</span>
+              <span className="lvl-val">
+                {nameOf(loStop)} · {bandOf(loStop)}
+              </span>
             </span>
-          </div>
-          <div className="lvl-row">
-            <span className="lvl-lab">{t('level.highest')}</span>
-            <span className="lvl-val">
-              {nameOf(hiStop)} · {bandOf(hiStop)}
+            <span className="lvl-end lvl-end-hi">
+              <span className="lvl-lab">{t('level.highest')}</span>
+              <span className="lvl-val">
+                {nameOf(hiStop)} · {bandOf(hiStop)}
+              </span>
             </span>
           </div>
           <div className="lvl-row lvl-row-range">
@@ -185,8 +213,10 @@ export function LevelRangeSlider({
         <span className="lvl-prev-win">{t('level.win')}: {span(winLo, winHi, '+')}</span>
         <span className="lvl-prev-loss">{t('level.loss')}: {span(lossLo, lossHi, '−')}</span>
       </div>
-      <p className="lvl-prbonus">{t('level.prBonus')}</p>
-      <p className="lvl-hint">{t('level.waitHint')}</p>
+
+      <p className={'lvl-online' + (matchCount === 0 ? ' lvl-online-zero' : '')}>
+        {t('level.online')}: <b>{matchCount == null ? '…' : matchCount}</b>
+      </p>
     </div>
   )
 }

@@ -17,7 +17,6 @@ import { Button } from '@/components/ui/button'
 import playerPlayIcon from '../assets/player-play.svg'
 import diceSpinIcon from '../assets/dice-spin.gif'
 import { MOBILE_UI } from '../appEnv'
-import { rankOf } from '../ranks'
 
 // Canli mac tipi: Turnuva | Arkadaslik | Puan Maci (N-puan) | Tek Mac (1 oyun)
 type LiveCat = 'single' | 'match' | 'friendly' | 'duel' | 'tournament'
@@ -780,7 +779,9 @@ export function SeekersPanel({
               const hasRange = loR != null || hiR != null
               const eligible =
                 myRating == null ? true : (loR == null || myRating >= loR) && (hiR == null || myRating <= hiR)
-              const rankName = (r: number) => rankOf(r).code ?? t(rankOf(r).divKey)
+              // Aradığı puan aralığı — RAKAMLA (direkt): "1400–1649", açık üst "1400+", açık alt "≤1649".
+              const rangeLabel =
+                loR != null && hiR != null ? `${loR}–${hiR}` : loR != null ? `${loR}+` : hiR != null ? `≤${hiR}` : ''
               return (
                 <div
                   key={`${s.kind}-${s.id}`}
@@ -831,9 +832,9 @@ export function SeekersPanel({
                         {/* Havuz eşleşmeleri her zaman puanlı (RoomController::matchmaking mode='ranked').
                             Bilgi amaçlı rozet: bu maç rating'i etkiler. */}
                         <span className="seek-chip seek-chip-rated">{t('seekers.rated')}</span>
-                        {hasRange && (
+                        {hasRange && rangeLabel && (
                           <span className="seek-chip seek-chip-level" title={t('level.range')}>
-                            {rankName(loR ?? 0)}–{hiR != null ? rankName(hiR) : '∞'}
+                            {rangeLabel}
                           </span>
                         )}
                       </span>
