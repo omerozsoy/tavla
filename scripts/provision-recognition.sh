@@ -9,9 +9,12 @@ export HOME="$BASE"                      # uv/pip kendi içini burada tutsun (ta
 export UV_PYTHON_INSTALL_DIR="$BASE/uv-python"
 export UV_CACHE_DIR="$BASE/uv-cache"
 export UV_NO_PROGRESS=1
+export UV_NO_CONFIG=1                     # uv üst dizinlerde uv.toml ARAMASIN (sudo -u tavla /home/forge'dan
+                                         # koşunca /home/forge/uv.toml -> Permission denied tuzağı; 2026-11-28)
 UV="$BASE/bin/uv"
 
 mkdir -p "$BASE/bin"
+cd "$BASE"                               # CWD tavla-sahipli olsun (uv CWD'den yukarı config arar -> EACCES önle)
 
 echo "== 1) uv binary =="
 if [ ! -x "$UV" ]; then
