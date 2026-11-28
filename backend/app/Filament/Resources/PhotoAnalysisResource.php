@@ -94,9 +94,9 @@ class PhotoAnalysisResource extends Resource
                     'photoUrl' => route('admin.photo-analysis.image', $record),
                 ])->render()))
                 ->columnSpanFull(),
-            Forms\Components\Select::make('review_status')->label('İnceleme durumu')
-                ->options(['labeled' => 'Düzeltildi (eğitime hazır)', 'skipped' => 'Kullanılamaz / atla'])
-                ->placeholder('İncelenmedi'),
+            // Dropdown YOK: Kaydet = bu konumu doğru onayladın -> otomatik "eğitime hazır" (labeled) + listeye dön.
+            Forms\Components\Placeholder::make('ready')->label('Durum')
+                ->content('Fotoğraftaki konum doğruysa (gerekirse düzelttikten sonra) Kaydet\'e bas → ✓ Eğitime hazır olarak işaretlenir, listeye dönülür.'),
         ]);
     }
 
