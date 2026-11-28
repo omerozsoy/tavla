@@ -1,0 +1,175 @@
+/* Admin foto düzeltme sayfası — gerçek Board + düzenleme kontrolleri. */
+.fd-page {
+  position: relative;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px 18px 56px;
+}
+.fd-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: inherit;
+  cursor: pointer;
+}
+.fd-x:hover {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+.fd-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.35rem;
+  margin: 0 0 16px;
+}
+.fd-id {
+  opacity: 0.5;
+  font-weight: 500;
+}
+.fd-loading,
+.fd-err {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  opacity: 0.8;
+}
+.fd-err {
+  color: #b5423a;
+}
+
+.fd-brush {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.fd-brush button {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: var(--color-card, #fff);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.fd-brush button.on.me {
+  background: #1b2730;
+  color: #fff;
+  border-color: #1b2730;
+}
+.fd-brush button.on.opp {
+  background: #b5423a;
+  color: #fff;
+  border-color: #b5423a;
+}
+.fd-brush button.on.erase {
+  background: #6b7280;
+  color: #fff;
+  border-color: #6b7280;
+}
+.fd-clear {
+  color: #b5423a !important;
+}
+.fd-hint {
+  font-size: 0.82rem;
+  opacity: 0.6;
+}
+
+.fd-main {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.fd-photo {
+  flex: 1 1 300px;
+  max-width: 440px;
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  object-fit: contain;
+  background: #000;
+}
+.fd-board {
+  flex: 1 1 440px;
+  container-type: inline-size;
+  width: 100%;
+  max-width: 560px;
+  --board-h: max(220px, min(calc((100cqw - 12px) / 1.52), calc(100vh - 260px)));
+  --checker: calc(var(--board-h) / 11);
+  --col: calc(var(--checker) * 1.14);
+  --point-w: var(--col);
+  --bar-w: calc(var(--checker) * 1.4);
+  --tri-h: calc(var(--board-h) * 0.35);
+  --point-h: var(--tri-h);
+  --dice-size: calc(var(--checker) * 0.76);
+  --tray-w: calc(var(--checker) * 1.5);
+  --bearoff-w: var(--tray-w);
+  --cube-size: clamp(16px, calc(var(--bar-w) * 0.62), 40px);
+}
+
+.fd-ctl {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0;
+}
+.fd-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+.fd-row button {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: var(--color-card, #fff);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.fd-row button.on {
+  background: #1b2730;
+  color: #fff;
+  border-color: #1b2730;
+}
+.fd-row select {
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: var(--color-card, #fff);
+  color: inherit;
+  padding: 0 6px;
+}
+.fd-num {
+  min-width: 18px;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.fd-read {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  font-style: italic;
+}
+.fd-save {
+  min-width: 220px;
+  gap: 8px;
+}
