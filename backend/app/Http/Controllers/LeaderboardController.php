@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\CareerPrService;
 use App\Support\DuelService;
+use App\Support\RankDivisions;
 use App\Support\RankService;
 use App\Support\TeamLeague\TeamSeason;
 use Illuminate\Http\Request;
@@ -228,6 +229,60 @@ class LeaderboardController extends Controller
         });
 
         return response()->json(['players' => $rows->values()]);
+    }
+
+    // Herkese acik: ÜNVAN SIRALAMASI — oyuncular efektif rütbesine göre (GM > Advanced > ...).
+    // Her satir: unvan (rank_key) + puan (rating) + WXP + PR. Yeni sistem KAPALIysa bos.
+    public function rankLeaderboard(Request $request)
+    {
+        if (! RankService::active() || ! Schema::hasColumn('users', 'rank_key')) {
+            return response()->json(['players' => []]);
+        }
+        $limit = min(100, max(1, (int) $request->query('limit', 100)));
+        $rows = Cache::remember("leaderboard:rank:{$limit}", 30, function () use ($limit) {
+            // Tier gücü: TIERS sırası (rookie=0 … sgm1=19). Yüksek index = güçlü rütbe.
+            $idx = array_flip(array_keys(RankDivisions::TIERS));
+            $users = User::whereNotNull('rank_key')
+                ->when(Schema::hasColumn('users', 'is_system'), fn ($q) => $q->where('is_system', false))
+                ->notDeleted()
+                ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'rank_key', 'total_wxp', 'career_pr', 'plan', 'plan_until', 'last_seen', 'presence_status', 'is_admin', 'is_support']);
+
+            return $users
+                ->sort(function ($a, $b) use ($idx) {
+                    $ta = $idx[$a->rank_key] ?? -1;
+                    $tb = $idx[$b->rank_key] ?? -1;
+                    if ($ta !== $tb) {
+                        return $tb <=> $ta;                 // güçlü rütbe önce
+                    }
+
+                    return (int) $b->rating <=> (int) $a->rating; // aynı rütbede yüksek puan önce
+                })
+                ->take($limit)
+                ->values()
+                ->map(function ($u, $i) {
+                    $online = $u->last_seen && ! in_array($u->presence_status, ['offline', 'ghost'], true)
+                        && Carbon::parse($u->last_seen)->gt(now()->subMinutes(2));
+
+                    return [
+                        'rank' => $i + 1,
+                        'id' => $u->id,
+                        'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                        'avatar' => $u->avatar,
+                        'frame' => $u->avatar_frame,
+                        'country' => $u->country,
+                        'rating' => (int) ($u->rating ?? 1500),
+                        'rank_key' => $u->rank_key,
+                        'wxp' => $u->total_wxp ?? 0,
+                        'career_pr' => $u->career_pr, // null olabilir (yeterli analiz yok) -> frontend '–'
+                        'premium' => $u->plan_active !== 'free',
+                        'is_admin' => (bool) $u->is_admin,
+                        'is_support' => (bool) $u->is_support,
+                        'status' => $online ? ($u->presence_status ?: 'available') : 'offline',
+                    ];
+                });
+        });
+
+        return response()->json(['players' => $rows]);
     }
 
     // Herkese acik: id -> efektif rütbe anahtarı (div.*) haritası. İsim yanındaki rozet

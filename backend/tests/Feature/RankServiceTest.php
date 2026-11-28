@@ -6,6 +6,7 @@ use App\Models\MatchResult;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\CareerPrService;
+use App\Support\RankDivisions;
 use App\Support\RankService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -84,6 +85,45 @@ class RankServiceTest extends TestCase
         $this->getJson('/api/ranks?ids='.$u->id)
             ->assertOk()
             ->assertDontSee('div.m2');
+    }
+
+    // Ünvan sıralaması: efektif rütbeye göre (GM > Advanced). KAPALIyken boş.
+    public function test_rank_leaderboard_sorted_by_tier(): void
+    {
+        $gm = $this->user(2240);
+        $gm->forceFill(['rank_key' => 'div.g2', 'is_system' => false])->save();
+        $adv = $this->user(1850);
+        $adv->forceFill(['rank_key' => 'div.a3', 'is_system' => false])->save();
+
+        Setting::put('rank_system_active', '0');
+        $this->getJson('/api/leaderboard/rank')->assertOk()->assertJsonPath('players', []);
+
+        Setting::put('rank_system_active', '1');
+        $players = $this->getJson('/api/leaderboard/rank')->assertOk()->json('players');
+        $this->assertCount(2, $players);
+        $this->assertSame('div.g2', $players[0]['rank_key']); // güçlü rütbe önce
+        $this->assertSame('div.a3', $players[1]['rank_key']);
+    }
+
+    // Önizleme: önbellekten (rank_window_pr/rank_ep) dağılım + düşer/yükselir sayar.
+    public function test_preview_distribution(): void
+    {
+        $u1 = $this->user(2240);
+        $u1->forceFill(['rank_window_pr' => 5.2, 'rank_ep' => 540, 'rank_key' => 'div.m2', 'is_system' => false])->save();
+        $u2 = $this->user(2240);
+        $u2->forceFill(['rank_window_pr' => 5.2, 'rank_ep' => 540, 'rank_key' => 'div.m2', 'is_system' => false])->save();
+
+        // Mevcut eşiklerle: ikisi de m2, değişmez.
+        $res = RankService::previewDistribution(RankDivisions::thresholds(), RankDivisions::prThresholds(), RankDivisions::epThresholds());
+        $this->assertSame(2, $res['counts']['div.m2']);
+        $this->assertSame(2, $res['same']);
+
+        // m2 PR'ını 5.5->5.0 sıkılaştır: PR 5.2 artık m2 değil -> m3'e DÜŞER.
+        $pr = RankDivisions::prThresholds();
+        $pr['div.m2'] = 5.0;
+        $res2 = RankService::previewDistribution(RankDivisions::thresholds(), $pr, RankDivisions::epThresholds());
+        $this->assertSame(2, $res2['counts']['div.m3']);
+        $this->assertSame(2, $res2['down']);
     }
 
     // refresh() rank_key önbelleğini yazar.

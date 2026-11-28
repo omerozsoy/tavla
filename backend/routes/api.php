@@ -105,6 +105,7 @@ Route::post('/csp-report', function (Request $r) {
     return response()->noContent();
 })->middleware('throttle:120,1,csp-report');
 Route::get('/leaderboard', [LeaderboardController::class, 'leaderboard']);
+Route::get('/leaderboard/rank', [LeaderboardController::class, 'rankLeaderboard']); // Ünvan Sıralaması (efektif rütbe)
 Route::get('/leaderboard/pr', [LeaderboardController::class, 'prLeaderboard']); // PR Sıralaması (Career PR)
 Route::get('/leaderboard/search', [LeaderboardController::class, 'leaderboardSearch']); // isme göre ara (ilk 100'de olmayanlar)
 Route::get('/duels/leaderboard', [LeaderboardController::class, 'duelLeaderboard']); // Bireysel Düello sıralaması (bireysel + takım)

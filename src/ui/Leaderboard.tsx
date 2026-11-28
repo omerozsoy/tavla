@@ -5,7 +5,7 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { leaderboard, prLeaderboard, wxpBreakdown, searchLeaderboard, type LeaderRow, type PrLeaderRow, type WxpBreakdown } from '../api'
+import { leaderboard, rankLeaderboard, prLeaderboard, wxpBreakdown, searchLeaderboard, type LeaderRow, type PrLeaderRow, type WxpBreakdown } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import PublicProfile from './PublicProfile'
@@ -31,9 +31,10 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
     if (error) setReloadKey((k) => k + 1)
   })
   // Secili sekme URL'de (?s=) tutulur -> refresh/geri-tusu sekmeyi korur (yoksa 'rating'e donerdi).
-  const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'pr'>(() => {
+  const [by, setBy] = useState<'rank' | 'rating' | 'coins' | 'wxp' | 'pr'>(() => {
     const s = new URLSearchParams(window.location.search).get('s')
-    return s === 'pr' || s === 'coins' || s === 'wxp' ? s : 'rating'
+    // Ünvan (rank) 1. sekme + varsayılan; URL'de açıkça başka sekme seçiliyse onu koru.
+    return s === 'pr' || s === 'coins' || s === 'wxp' || s === 'rating' ? s : 'rank'
   })
   const [prRows, setPrRows] = useState<PrLeaderRow[] | null>(null)
   const [prMeta, setPrMeta] = useState<{ minMatches: number; minDecisions: number } | null>(null)
@@ -54,7 +55,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
   // Sekme -> URL (?s=). 'rating' varsayilan: param yazma. Pathname'i router koruyor (search preserve).
   useEffect(() => {
     const url = new URL(window.location.href)
-    if (by === 'rating') url.searchParams.delete('s')
+    if (by === 'rank') url.searchParams.delete('s') // 'rank' = varsayılan sekme
     else url.searchParams.set('s', by)
     window.history.replaceState(null, '', url.pathname + url.search)
   }, [by])
@@ -86,6 +87,15 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
       }
     }
     setRows(null)
+    // Ünvan sekmesi: efektif rütbeye göre sıralı (GM > Advanced > ...).
+    if (by === 'rank') {
+      rankLeaderboard(100)
+        .then((r) => alive && setRows(r))
+        .catch(() => alive && setError(true))
+      return () => {
+        alive = false
+      }
+    }
     // Her tab: ilk 100 oyuncu (10'ar sayfalanir)
     leaderboard(100, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
       .then((r) => alive && setRows(r))
@@ -121,7 +131,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
     setSearchRows(null) // yeni sorgu -> eski sonuclari gosterme (debounce suresince bos)
     setSearchErr(false)
     const timer = setTimeout(() => {
-      searchLeaderboard(q, by)
+      searchLeaderboard(q, by === 'rank' ? 'rating' : by)
         .then((r) => alive && setSearchRows(r))
         .catch(() => {
           if (alive) {
@@ -267,13 +277,58 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
     )
   }
 
+  // Ünvan satırı: ünvan (isim altı rozet) + Puan + WXP + PR.
+  const renderRankRow = (r: LeaderRow) => {
+    const mine = currentName && r.name === currentName
+    return (
+      <div
+        key={r.rank}
+        className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''} ${r.id ? 'clickable' : ''}`}
+        onClick={() => r.id && setProfileId(r.id)}
+      >
+        <span className="lb-rank">{medal(r.rank) || r.rank}</span>
+        <span className="lb-name">
+          <PlayerIdentity
+            userId={r.id}
+            name={r.name}
+            rating={r.rating}
+            rankKey={r.rank_key}
+            avatar={r.avatar}
+            frame={r.frame}
+            size={26}
+            rankSize="sm"
+            premium={r.premium}
+            admin={r.is_admin}
+            support={r.is_support}
+            animated
+            statusDot={r.status}
+          />
+        </span>
+        <span className="lb-flag">
+          <CountryFlag code={r.country} size={22} />
+        </span>
+        <span className="lb-games">{r.rating}</span>
+        <span className="lb-wl">{(r.wxp ?? 0).toLocaleString('tr-TR')}</span>
+        <span className="lb-wr" aria-hidden="true" />
+        <span className="lb-rating lb-pr-val">{r.career_pr != null ? r.career_pr.toFixed(2) : '–'}</span>
+      </div>
+    )
+  }
+
   // Arama/PR/standart tablo basligi: by'a gore dogru sutunlar (tek yerden).
   const renderHead = () => (
     <div className="lb-head">
       <span className="lb-rank">#</span>
       <span className="lb-name">{t('lb.player')}</span>
       <span className="lb-flag" aria-hidden="true" />
-      {by === 'pr' ? (
+      {by === 'rank' ? (
+        <>
+          <span className="lb-games">{t('lb.rating')}</span>
+          <span className="lb-wl">{t('lb.byWxp')}</span>
+          <span className="lb-wr" aria-hidden="true" />
+          <span className="lb-rating">PR</span>
+        </>
+      ) : by === 'pr' ? (
         <>
           <span className="lb-games">{t('lb.prMatches')}</span>
           <span className="lb-wl">{t('lb.prDecisions')}</span>
@@ -321,6 +376,9 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
           </div>
         </div>
         <div className="rep-filter">
+          <Button variant={by === 'rank' ? 'default' : 'ghost'} aria-pressed={by === 'rank'} onClick={() => changeTab('rank')}>
+            <Icon name="medal" size={16} /> {t('lb.byRank')}
+          </Button>
           <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => changeTab('rating')}>
             <Icon name="star" size={16} /> {t('lb.rating')}
           </Button>
@@ -391,7 +449,9 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
                 <div className="lb-body">
                   {by === 'pr'
                     ? (searchRows as PrLeaderRow[]).map(renderPrRow)
-                    : (searchRows as LeaderRow[]).map(renderRow)}
+                    : by === 'rank'
+                      ? (searchRows as LeaderRow[]).map(renderRankRow)
+                      : (searchRows as LeaderRow[]).map(renderRow)}
                 </div>
               </div>
             )}
@@ -411,7 +471,7 @@ export default function Leaderboard({ currentName, currentId, onClose, onAddFrie
         {!isSearching && by !== 'pr' && rows !== null && rows.length > 0 && (
           <div className="lb-table">
             {renderHead()}
-            <div className="lb-body">{rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map(renderRow)}</div>
+            <div className="lb-body">{rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map(by === 'rank' ? renderRankRow : renderRow)}</div>
           </div>
         )}
         {!isSearching && by !== 'pr' && rows !== null && rows.length > 0 && renderPager(rows.length)}

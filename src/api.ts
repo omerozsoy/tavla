@@ -684,6 +684,7 @@ export interface LeaderRow {
   country?: string | null
   rating: number
   rank_key?: string | null // efektif rütbe (yeni sistem AÇIKken)
+  career_pr?: number | null // Ünvan sekmesi: PR sütunu (null=veri yok -> '–')
   coins?: number
   wxp?: number
   wins: number
@@ -727,6 +728,12 @@ export async function savePrefs(prefs: Record<string, string>): Promise<void> {
 
 export async function leaderboard(limit = 100, by: 'rating' | 'coins' | 'wxp' = 'rating'): Promise<LeaderRow[]> {
   const data = await req<{ players: LeaderRow[] }>(`/leaderboard?limit=${limit}&by=${by}`)
+  return data.players
+}
+
+// Ünvan Sıralaması: efektif rütbeye göre (GM > Advanced > ...). Satır: ünvan+puan+WXP+PR.
+export async function rankLeaderboard(limit = 100): Promise<LeaderRow[]> {
+  const data = await req<{ players: LeaderRow[] }>(`/leaderboard/rank?limit=${limit}`)
   return data.players
 }
 
@@ -930,14 +937,21 @@ export interface RankDivisionCfg {
   divisions: Record<string, number>
   prMax: Record<string, number>
   epMin: Record<string, number>
+  announce: boolean // admin "rütbe sistemi yenilendi" duyuru bannerı açık mı
 }
 export async function getRankDivisions(): Promise<RankDivisionCfg> {
   const d = await req<{
     divisions?: Record<string, number>
     prMax?: Record<string, number>
     epMin?: Record<string, number>
+    announce?: boolean
   }>('/rank-divisions')
-  return { divisions: d.divisions || {}, prMax: d.prMax || {}, epMin: d.epMin || {} }
+  return {
+    divisions: d.divisions || {},
+    prMax: d.prMax || {},
+    epMin: d.epMin || {},
+    announce: !!d.announce,
+  }
 }
 
 // ---- Kulupler & Lig ----

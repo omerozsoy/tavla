@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Support\RankDivisions;
 
 /**
@@ -23,6 +24,8 @@ class RankDivisionController extends Controller
             'divisions' => (object) RankDivisions::thresholds(),
             'prMax' => (object) RankDivisions::prThresholds(),
             'epMin' => (object) RankDivisions::epThresholds(),
+            // Duyuru bannerı (admin açarsa sitede "rütbe sistemi yenilendi" şeridi).
+            'announce' => Setting::get('rank_system_announce', '0') === '1',
         ]);
     }
 }

@@ -1333,6 +1333,8 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'rank.hintPr': '{r} olmak için PR değerini {n} veya altına düşürmelisin.',
   'rank.hintEp': '{r} olmak için {n} EP’ye ulaşmalısın.',
   // Kaynaklar / referanslar — neyi referans aldığımız
+  'rank.announceText': 'Rütbe sistemi yenilendi: artık rütbeni Puan + PR + EP birlikte belirliyor.',
+  'rank.announceCta': 'Nasıl çalışır?',
   'rank.refTitle': 'Kaynaklar',
   'rank.refIntro': 'Rütbe, PR ve EP eşiklerinde aşağıdaki uluslararası kaynakları referans aldık:',
   'rank.src1': 'Rütbelerin PR ve EP kriterlerine göre belirlenmesi, kalıcı unvan sistemi.',
@@ -1345,6 +1347,7 @@ Yalnızca gerçekten oynanan lig maçları TavlaTV rating'ini etkiler; hükmen v
   'lb.byCoins': 'Coin',
   'lb.byWxp': 'WXP',
   'lb.byPr': 'PR',
+  'lb.byRank': 'Ünvan',
   'toprank.pr': 'PR sıralamasında {r}.',
   'toprank.rating': 'Rating sıralamasında {r}.',
   'toprank.prMedal': 'PR Sıralaması',
