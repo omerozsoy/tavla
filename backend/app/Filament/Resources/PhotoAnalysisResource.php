@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PhotoAnalysisResource\Pages;
 use App\Models\PhotoAnalysis;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -44,27 +43,9 @@ class PhotoAnalysisResource extends Resource
 
     public static function form(Form $form): Form
     {
-        // SALT İNCELEME (read-only). Gerçek düzeltme React SPA'da: liste "Düzelt" -> /foto-duzelt/<id>.
-        return $form->schema([
-            Forms\Components\Placeholder::make('status')->label('Durum')
-                ->content(fn (?PhotoAnalysis $r) => $r?->status ?? '—'),
-            Forms\Components\Placeholder::make('valid')->label('Öz-denetim')
-                ->content(fn (?PhotoAnalysis $r) => $r?->valid ? '✓ geçerli' : '✗ güvenilmez'),
-            Forms\Components\Placeholder::make('reported_at')->label('Hatalı bildirimi')
-                ->content(fn (?PhotoAnalysis $r) => $r?->reported_at ? '⚑ '.$r->reported_at->format('d.m.Y H:i') : '—'),
-            Forms\Components\Placeholder::make('debug')->label('Tanıma debug')
-                ->content(fn (?PhotoAnalysis $r) => json_encode($r?->debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '—')
-                ->columnSpanFull(),
-            Forms\Components\Placeholder::make('position')->label('Tanınan konum (ham)')
-                ->content(fn (?PhotoAnalysis $r) => json_encode($r?->position, JSON_PRETTY_PRINT) ?: '—')
-                ->columnSpanFull(),
-            Forms\Components\Placeholder::make('hint')->label('gnubg hint')
-                ->content(fn (?PhotoAnalysis $r) => json_encode($r?->hint, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: '—')
-                ->columnSpanFull(),
-            Forms\Components\Placeholder::make('ground_truth')->label('Eğitim etiketi (ground_truth)')
-                ->content(fn (?PhotoAnalysis $r) => json_encode($r?->ground_truth, JSON_PRETTY_PRINT) ?: '— (henüz düzeltilmedi)')
-                ->columnSpanFull(),
-        ]);
+        // Düzenleme/inceleme sayfası YOK (ham JSON dökümleri admin işine yaramıyordu). Düzeltme React
+        // SPA'da: liste "Düzelt" -> /foto-duzelt/<id>. form() yalnız soyut sözleşme için boş.
+        return $form->schema([]);
     }
 
     public static function table(Table $table): Table
@@ -95,10 +76,9 @@ class PhotoAnalysisResource extends Resource
                         ->where('valid', true)->whereNull('review_status')),
             ])
             ->actions([
-                // Gerçek Board'da düzelt (React SPA; admin oturumu açık sekmede). İnceleme sayfası salt-görüntü.
+                // Gerçek Board'da düzelt (React SPA; admin oturumu açık sekmede). Ham-JSON İncele sayfası kaldırıldı.
                 Tables\Actions\Action::make('duzelt')->label('Düzelt')->icon('heroicon-o-pencil-square')
                     ->color('primary')->url(fn (PhotoAnalysis $r) => "/foto-duzelt/{$r->id}")->openUrlInNewTab(),
-                Tables\Actions\EditAction::make()->label('İncele'),
                 Tables\Actions\DeleteAction::make()->label('Sil'),
             ])
             ->bulkActions([
@@ -114,7 +94,6 @@ class PhotoAnalysisResource extends Resource
     {
         return [
             'index' => Pages\ListPhotoAnalyses::route('/'),
-            'edit' => Pages\EditPhotoAnalysis::route('/{record}/edit'),
         ];
     }
 }
