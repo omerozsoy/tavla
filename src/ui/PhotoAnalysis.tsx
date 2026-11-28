@@ -26,119 +26,6 @@ const EMPTY_FROMS: Set<number | 'bar'> = new Set()
 const EMPTY_TARGETS: Set<number | 'off'> = new Set()
 const noop = () => {}
 
-// Taninan konumu (points[24], fotografi ceken +, rakip -) hafif SVG tahtaya cizer — kullanici tanimanin
-// dogrulugunu GORSEL dogrulasin (oyunun Board bileseni oyun-durumuna bagli; burada gerekmez).
-// Standart numaralama: ust 13-18|19-24 (sol->sag), alt 12-7|6-1 (sol->sag), orta bar.
-// mineDark: fotografi ceken KOYU taslarla oynuyor -> pozitifler koyu cizilir (fotodaki gercek renk).
-// dice + diceRight: okunan zarlar fotodaki TARAFINDA cizilir (sag = fotografi ceken atti, sol = rakip).
-const PIPS: Record<number, [number, number][]> = {
-  1: [[0, 0]],
-  2: [[-1, -1], [1, 1]],
-  3: [[-1, -1], [0, 0], [1, 1]],
-  4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
-  5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
-  6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]],
-}
-export function PositionBoard({
-  points,
-  mineDark,
-  dice,
-  diceRight,
-  homeLeft = false,
-  cube,
-  offer = null,
-}: {
-  points: number[]
-  mineDark: boolean
-  dice: number[]
-  diceRight: boolean
-  /** kup: bar uzerinde, sahibinin tarafinda (rakip ust / ceken alt / orta); orta kup 64 gosterir */
-  cube?: { value: number; owner: string | null } | null
-  /** cekilmis kup: sag (sen cektin) / sol (sana cekildi) yarinin ORTASINDA, teklif edilen degerle */
-  offer?: { by: string; value: number } | null
-  /** evler solda: numaralama aynali -> cizim fotodaki gibi gorunsun diye kolonlar aynalanir */
-  homeLeft?: boolean
-}) {
-  const W = 360, H = 240, m = 6, barW = 20
-  const fieldW = (W - 2 * m - barW) / 2
-  const pw = fieldW / 6
-  const r = Math.min(pw / 2 - 1.5, 12)
-  const colX = (c: number) => (c < 6 ? m + (c + 0.5) * pw : m + fieldW + barW + (c - 6 + 0.5) * pw)
-  // c = fotodaki kolon (soldan saga 0..11). Evler sagda: ust 13..24, alt 12..1; solda: ayna.
-  const topPoint = (c: number) => (homeLeft ? 24 - c : 13 + c)
-  const botPoint = (c: number) => (homeLeft ? 1 + c : 12 - c)
-
-  const tri = (c: number, top: boolean, dark: boolean) => {
-    const x = colX(c), hw = pw / 2 - 1
-    const baseY = top ? m : H - m
-    const apexY = top ? H / 2 - 14 : H / 2 + 14
-    return <polygon key={`t${top ? 'T' : 'B'}${c}`} points={`${x - hw},${baseY} ${x + hw},${baseY} ${x},${apexY}`} fill={dark ? '#2f4150' : '#d8cfc0'} opacity={0.55} />
-  }
-  const stack = (c: number, top: boolean, n: number) => {
-    if (!n) return null
-    const x = colX(c), count = Math.abs(n), white = n > 0 !== mineDark, vis = Math.min(count, 5)
-    const dy = 2 * r - 2
-    const cy = (i: number) => (top ? m + r + i * dy : H - m - r - i * dy)
-    return (
-      <g key={`s${top ? 'T' : 'B'}${c}`}>
-        {Array.from({ length: vis }, (_, i) => (
-          <circle key={i} cx={x} cy={cy(i)} r={r} fill={white ? '#f3eee1' : '#b5423a'} stroke="rgba(0,0,0,.35)" strokeWidth={1} />
-        ))}
-        {count > 5 && (
-          <text x={x} y={cy(4) + 3.5} fontSize={10} textAnchor="middle" fontWeight="700" fill={white ? '#333' : '#fff'}>{count}</text>
-        )}
-      </g>
-    )
-  }
-
-  // Zarlar: ilgili yarinin ortasinda yan yana (en fazla 2 cizilir; cift zar bile 2 zar olarak atilir)
-  const ds = 24
-  const shown = dice.filter((d) => d >= 1 && d <= 6).slice(0, 2)
-  const halfCx = diceRight ? m + fieldW + barW + fieldW / 2 : m + fieldW / 2
-  const die = (v: number, i: number) => {
-    const cx = halfCx + (i - (shown.length - 1) / 2) * (ds + 8)
-    const cy = H / 2
-    return (
-      <g key={`d${i}`}>
-        <rect x={cx - ds / 2} y={cy - ds / 2} width={ds} height={ds} rx={5} fill="#fbf8f1" stroke="rgba(0,0,0,.45)" strokeWidth={1} />
-        {PIPS[v].map(([px, py], k) => (
-          <circle key={k} cx={cx + px * ds * 0.27} cy={cy + py * ds * 0.27} r={2.4} fill="#1b2730" />
-        ))}
-      </g>
-    )
-  }
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="photo-board" role="img" aria-label="board">
-      <rect x={0} y={0} width={W} height={H} rx={8} fill="#1b2730" />
-      <rect x={W / 2 - barW / 2} y={0} width={barW} height={H} fill="#0f1720" />
-      {Array.from({ length: 12 }, (_, c) => tri(c, true, c % 2 === 0))}
-      {Array.from({ length: 12 }, (_, c) => tri(c, false, c % 2 === 1))}
-      {Array.from({ length: 12 }, (_, c) => stack(c, true, points[topPoint(c) - 1] || 0))}
-      {Array.from({ length: 12 }, (_, c) => stack(c, false, points[botPoint(c) - 1] || 0))}
-      {shown.map(die)}
-      {(cube || offer) && (
-        <g>
-          {(() => {
-            const cs = 22
-            const val = offer ? offer.value : cube!.owner ? cube!.value : 64
-            const cx = offer ? (offer.by === 'white' ? m + fieldW + barW + fieldW / 2 : m + fieldW / 2) : W / 2
-            const cy = offer ? H / 2 : cube!.owner === 'black' ? m + cs / 2 + 2 : cube!.owner === 'white' ? H - m - cs / 2 - 2 : H / 2
-            return (
-              <>
-                <rect x={cx - cs / 2} y={cy - cs / 2} width={cs} height={cs} rx={3} fill="#fbf8f1" stroke="#c9a227" strokeWidth={1.5} />
-                <text x={cx} y={cy + 4} fontSize={val >= 10 ? 10 : 12} fontWeight="800" textAnchor="middle" fill="#1b2730">
-                  {val}
-                </text>
-              </>
-            )
-          })()}
-        </g>
-      )}
-    </svg>
-  )
-}
-
 /**
  * Fotograftan Pozisyon Analizi: kullanici tahta fotografi ceker/secer -> sunucu tanima (foto->
  * yapisal konum) + gnubg -> en iyi hamle. Tanima tahtayi OTOMATIK bulup duzeltir (manuel kose YOK).
@@ -546,12 +433,10 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   // Pip'ler tahtanin KENDI taraflarinda: rakip ustte, fotografi ceken altta (+ tas rengi)
                   const [pm, po] = pips(result!.position!.points, result!.position!.bar)
                   const d = pm - po
-                  const mineDark = result!.debug?.photographer === 'dark'
-                  // Hamle varsa (zar atılmış) -> kullanıcının DEFAULT temalı tahtası + hamle okları
-                  // (aynı hamle analizi gibi). Kup kararında (zar yok, ok yok) basit doğrulama SVG'si kalır.
                   const hasMove = cands.length > 0
-                  // Temalı tahta fotoğrafı çekeni her zaman BEYAZ (alt) çizer -> pip nokta renkleri de ona göre.
-                  const youDark = hasMove ? false : mineDark
+                  // Standart temalı tahta fotoğrafı çekeni HER ZAMAN beyaz (alt) çizer -> pip nokta
+                  // renkleri de ona göre (sen=beyaz, rakip=koyu). Kup kararında da aynı tahta kullanılır.
+                  const youDark = false
                   const tag = (who: string, n: number, dark: boolean) => (
                     <div className="photo-pip-tag">
                       <span className={`photo-pip-dot${dark ? ' dark' : ''}`} />
@@ -586,46 +471,34 @@ export default function PhotoAnalysis({ onClose, titleOverride }: { onClose: () 
                   return (
                     <>
                       {tag(t('photo.opp'), po, !youDark)}
-                      {hasMove ? (
-                        <div className="photo-board-wrap">
-                          <PinchZoom className="photo-board-stage">
-                            <Board
-                              state={bstate}
-                              selectableFroms={EMPTY_FROMS}
-                              targets={EMPTY_TARGETS}
-                              selectedFrom={null}
-                              onSelectFrom={noop}
-                              onSelectTarget={noop}
-                              onDragFrom={noop}
-                              pipTop={pipCount(bstate, 'black')}
-                              pipBottom={pipCount(bstate, 'white')}
-                              cube={bcube}
-                              mirror={homeLeft}
-                              numberFrom="white"
-                              centerLeft={diceOnRight ? undefined : boardDice}
-                              centerRight={diceOnRight ? boardDice : undefined}
-                              showPip={false}
+                      <div className="photo-board-wrap">
+                        <PinchZoom className="photo-board-stage">
+                          <Board
+                            state={bstate}
+                            selectableFroms={EMPTY_FROMS}
+                            targets={EMPTY_TARGETS}
+                            selectedFrom={null}
+                            onSelectFrom={noop}
+                            onSelectTarget={noop}
+                            onDragFrom={noop}
+                            pipTop={pipCount(bstate, 'black')}
+                            pipBottom={pipCount(bstate, 'white')}
+                            cube={bcube}
+                            mirror={homeLeft}
+                            numberFrom="white"
+                            centerLeft={diceOnRight ? undefined : boardDice}
+                            centerRight={diceOnRight ? boardDice : undefined}
+                            showPip={false}
+                          />
+                          {steps.length > 0 && (
+                            <MoveArrows
+                              steps={steps}
+                              dep={`${sel}:${homeLeft ? 'L' : 'R'}:${steps.map((s) => `${s.from}>${s.to}`).join(',')}`}
+                              mover={turn}
                             />
-                            {steps.length > 0 && (
-                              <MoveArrows
-                                steps={steps}
-                                dep={`${sel}:${homeLeft ? 'L' : 'R'}:${steps.map((s) => `${s.from}>${s.to}`).join(',')}`}
-                                mover={turn}
-                              />
-                            )}
-                          </PinchZoom>
-                        </div>
-                      ) : (
-                        <PositionBoard
-                          points={result!.position!.points}
-                          mineDark={mineDark}
-                          dice={result!.position!.dice ?? []}
-                          diceRight={result!.debug?.dice_side !== 'left'}
-                          homeLeft={homeLeft}
-                          cube={result!.position!.cube}
-                          offer={result!.position!.cube_offer ?? null}
-                        />
-                      )}
+                          )}
+                        </PinchZoom>
+                      </div>
                       {tag(t('photo.you'), pm, youDark)}
                       <div className="photo-pips">
                         {d === 0 ? (
