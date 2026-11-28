@@ -369,6 +369,28 @@ export async function reportPhotoAnalysis(id: number): Promise<{ ok: boolean }> 
   return req(`/photo-analysis/${id}/report`, { method: 'POST' })
 }
 
+// --- Admin foto duzeltme (/foto-duzelt/<id>): gercek Board'da duzelt -> ground_truth kaydet ---
+export interface AdminPhotoAnalysis {
+  id: number
+  position: PhotoAnalysisResult['position'] | null
+  recognized: { dice: number[]; cube: { value: number; owner: string | null } | null }
+  flip: boolean
+  photographer: string | null
+  status: string
+  valid: boolean
+  image_url: string
+}
+
+/** Admin: kaydi getir (tanınan konum + okunan zar/küp + imzalı görsel URL). */
+export async function adminGetPhotoAnalysis(id: number): Promise<AdminPhotoAnalysis> {
+  return req(`/admin/photo-analysis/${id}`)
+}
+
+/** Admin: duzeltilmis konumu egitim etiketi (ground_truth) olarak kaydet. */
+export async function adminLabelPhotoAnalysis(id: number, groundTruth: object): Promise<{ ok: boolean }> {
+  return req(`/admin/photo-analysis/${id}/label`, { method: 'POST', body: JSON.stringify({ ground_truth: groundTruth }) })
+}
+
 export async function register(
   input: Profile & { password: string },
 ): Promise<ServerUser> {
